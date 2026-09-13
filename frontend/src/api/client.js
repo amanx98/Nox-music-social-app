@@ -99,3 +99,9 @@ export async function getTopArtists(period = "overall") {
 export async function getQuilts() {
   return apiRequest("/quilts/");
 }
+
+export async function deleteQuilt(quiltId) {
+  return apiRequest(`/quilts/${quiltId}`, {
+    method: "DELETE",
+  });
+}

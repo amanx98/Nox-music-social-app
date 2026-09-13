@@ -86,3 +86,26 @@ def list_quilts(
         }
         for q in quilts
     ]
+
+@router.delete("/{quilt_id}")
+def delete_quilt(
+    quilt_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    import os
+    quilt = session.exec(
+        select(AlbumQuilt).where(AlbumQuilt.id == quilt_id, AlbumQuilt.user_id == current_user.id)
+    ).first()
+    if not quilt:
+        raise HTTPException(status_code=404, detail="Quilt not found")
+
+    if quilt.image_path and os.path.exists(quilt.image_path):
+        try:
+            os.remove(quilt.image_path)
+        except Exception:
+            pass
+
+    session.delete(quilt)
+    session.commit()
+    return {"ok": True, "message": "Quilt deleted", "id": quilt_id}

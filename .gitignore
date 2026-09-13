@@ -5,6 +5,8 @@ backend/**/__pycache__/
 backend/.env
 backend/static/quilts/*
 !backend/static/quilts/.gitkeep
+*.db
+*.sqlite3
 
 # Node / frontend
 frontend/node_modules/

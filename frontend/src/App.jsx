@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { getMe } from "./api/client";
+import { ToastProvider } from "./components/Toast";
 import Login from "./Login";
 import Register from "./Register";
 import Layout from "./Layout";
@@ -8,45 +10,73 @@ import ProfilePage from "./pages/ProfilePage";
 
 function App() {
   const [user, setUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(true);
   const [showRegister, setShowRegister] = useState(false);
 
-  if (!user) {
+  useEffect(() => {
+    async function checkAuth() {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setLoadingUser(false);
+        return;
+      }
+      try {
+        const me = await getMe();
+        setUser(me);
+      } catch {
+        localStorage.removeItem("access_token");
+      } finally {
+        setLoadingUser(false);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("access_token");
+    setUser(null);
+  }
+
+  if (loadingUser) {
     return (
-      <div>
-        {showRegister ? (
-          <Register onRegisterSuccess={() => setShowRegister(false)} />
-        ) : (
-          <Login onLoginSuccess={setUser} />
-        )}
-        <div style={{ textAlign: "center", marginTop: "12px" }}>
-          <button
-            onClick={() => setShowRegister(!showRegister)}
-            style={{
-              background: "none",
-              color: "var(--cream-text-dim)",
-              textTransform: "none",
-              letterSpacing: "normal",
-              fontWeight: 400,
-              padding: 0,
-            }}
-          >
-            {showRegister ? "Already have an account? Log in" : "Need an account? Register"}
-          </button>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+        <div style={{ textAlign: "center" }}>
+          <div className="vinyl-disc animate-spin-slow" style={{ width: "56px", height: "56px", marginBottom: "16px" }} />
+          <div className="brand-title" style={{ fontSize: "28px" }}>NOX<span className="brand-dot">.</span></div>
+          <p className="meta" style={{ marginTop: "6px" }}>Tuning frequencies...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout user={user} />}>
-          <Route index element={<FeedPage />} />
-          <Route path="profile" element={<ProfilePage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+    <ToastProvider>
+      {!user ? (
+        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          {showRegister ? (
+            <Register
+              onRegisterSuccess={() => setShowRegister(false)}
+              onSwitchToLogin={() => setShowRegister(false)}
+            />
+          ) : (
+            <Login
+              onLoginSuccess={setUser}
+              onSwitchToRegister={() => setShowRegister(true)}
+            />
+          )}
+        </div>
+      ) : (
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
+              <Route index element={<FeedPage user={user} />} />
+              <Route path="profile" element={<ProfilePage user={user} onLogout={handleLogout} />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      )}
+    </ToastProvider>
   );
 }
 

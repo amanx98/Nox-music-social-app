@@ -20,6 +20,11 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+@app.on_event("startup")
+def on_startup():
+    from sqlmodel import SQLModel
+    SQLModel.metadata.create_all(engine)
+
 app.include_router(auth_router)
 
 @app.get("/health")
