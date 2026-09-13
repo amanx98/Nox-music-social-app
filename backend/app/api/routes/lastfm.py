@@ -109,7 +109,7 @@ async def lastfm_top_tracks(
         for t in tracks
     ]
 
-from app.services.lastfm_client import get_top_artists
+from app.services.lastfm_client import get_top_artists, get_artist_details
 
 @router.get("/top-artists")
 async def lastfm_top_artists(
@@ -126,3 +126,7 @@ async def lastfm_top_artists(
     data = await get_top_artists(profile.lastfm_username, period=period)
     artists = data.get("topartists", {}).get("artist", [])
     return [{"name": a["name"], "playcount": a["playcount"]} for a in artists]
+
+@router.get("/artist-details")
+async def lastfm_artist_details(artist: str):
+    return await get_artist_details(artist)

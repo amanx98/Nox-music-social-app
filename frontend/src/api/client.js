@@ -105,3 +105,18 @@ export async function deleteQuilt(quiltId) {
     method: "DELETE",
   });
 }
+
+export async function getArtistDetails(artistName) {
+  try {
+    return await apiRequest(`/lastfm/artist-details?artist=${encodeURIComponent(artistName)}`);
+  } catch {
+    // Graceful fallback with artist name
+    return {
+      name: artistName,
+      image: null,
+      images: [],
+      fans: null,
+      top_tracks: [],
+    };
+  }
+}

@@ -6,6 +6,7 @@ import Avatar from "../components/Avatar";
 import TopAlbums from "../TopAlbums";
 import TopArtists from "../TopArtists";
 import QuiltGallery from "../QuiltGallery";
+import ThemeSelector from "../components/ThemeSelector";
 
 const MUSIC_ICONS = ["💽", "📻", "🎧", "🎹", "🎸", "🎙️", "🎷", "🔊", "🥁", "🎺"];
 
@@ -229,6 +230,12 @@ export default function ProfilePage() {
           📊 Listening Stats
         </button>
         <button
+          className={`profile-tab ${activeTab === "themes" ? "active" : ""}`}
+          onClick={() => setActiveTab("themes")}
+        >
+          🎨 Theme &amp; Atmosphere
+        </button>
+        <button
           className={`profile-tab ${activeTab === "settings" ? "active" : ""}`}
           onClick={() => setActiveTab("settings")}
         >
@@ -243,6 +250,18 @@ export default function ProfilePage() {
         <div>
           <TopAlbums />
           <TopArtists />
+        </div>
+      )}
+
+      {activeTab === "themes" && (
+        <div className="card" style={{ maxWidth: "800px" }}>
+          <div style={{ marginBottom: "16px" }}>
+            <h3 style={{ margin: "0 0 6px" }}>🎨 Color Themes & Atmosphere</h3>
+            <p className="meta" style={{ margin: 0 }}>
+              Customize Nox with ultra-deep OLED blacks, subtle ambient glows, and rich gradient palettes.
+            </p>
+          </div>
+          <ThemeSelector />
         </div>
       )}
 

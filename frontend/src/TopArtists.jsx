@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { getTopArtists } from "./api/client";
+import { getTopArtists, getArtistDetails } from "./api/client";
+import ArtistModal from "./components/ArtistModal";
 
 const PERIODS = [
   { value: "overall", label: "All Time" },
@@ -10,11 +11,14 @@ const PERIODS = [
   { value: "12month", label: "1 Year" },
 ];
 
-export default function TopArtists() {
+export default function TopArtists({ onSelectTag }) {
   const [artists, setArtists] = useState([]);
   const [period, setPeriod] = useState("overall");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
+  const [selectedArtist, setSelectedArtist] = useState(null);
+  const [artistPhotos, setArtistPhotos] = useState({});
 
   useEffect(() => {
     loadArtists(period);
@@ -25,7 +29,23 @@ export default function TopArtists() {
     setError("");
     try {
       const data = await getTopArtists(p);
-      setArtists(data || []);
+      const list = data || [];
+      setArtists(list);
+
+      // Fetch artist photos in background for the top artists
+      list.slice(0, 18).forEach(async (artist) => {
+        try {
+          const details = await getArtistDetails(artist.name);
+          if (details?.image) {
+            setArtistPhotos((prev) => ({
+              ...prev,
+              [artist.name]: details.image,
+            }));
+          }
+        } catch {
+          // ignore background image failures
+        }
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -37,29 +57,56 @@ export default function TopArtists() {
 
   return (
     <div style={{ marginBottom: "40px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+      {/* Header with Title, Period Chips, and View Mode Toggle */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "14px", marginBottom: "18px" }}>
         <div>
-          <h2>Top Artists Leaderboard</h2>
-          <p className="meta" style={{ margin: 0 }}>Your most frequently scrobbled musicians.</p>
+          <h2>Top Artists</h2>
+          <p className="meta" style={{ margin: 0 }}>
+            Click on any artist to explore photography, discography, and song audio previews.
+          </p>
         </div>
 
-        {/* Period Chips */}
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {PERIODS.map((p) => (
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          {/* View Mode Switcher */}
+          <div style={{ display: "flex", background: "var(--bg-card)", padding: "3px", borderRadius: "var(--radius)", border: "1px solid var(--border)" }}>
             <button
-              key={p.value}
-              className={`btn-ghost ${period === p.value ? "badge-mustard" : ""}`}
-              style={{
-                fontSize: "12px",
-                padding: "4px 10px",
-                borderRadius: "var(--radius-full)",
-                border: period === p.value ? "1px solid var(--mustard)" : "1px solid var(--border)",
-              }}
-              onClick={() => setPeriod(p.value)}
+              type="button"
+              className={`btn-ghost ${viewMode === "grid" ? "badge-mustard" : ""}`}
+              onClick={() => setViewMode("grid")}
+              style={{ padding: "4px 10px", fontSize: "12px", borderRadius: "4px" }}
+              title="Grid View"
             >
-              {p.label}
+              ⊞ Grid
             </button>
-          ))}
+            <button
+              type="button"
+              className={`btn-ghost ${viewMode === "list" ? "badge-mustard" : ""}`}
+              onClick={() => setViewMode("list")}
+              style={{ padding: "4px 10px", fontSize: "12px", borderRadius: "4px" }}
+              title="List View"
+            >
+              ☰ List
+            </button>
+          </div>
+
+          {/* Period Chips */}
+          <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+            {PERIODS.map((p) => (
+              <button
+                key={p.value}
+                className={`btn-ghost ${period === p.value ? "badge-mustard" : ""}`}
+                style={{
+                  fontSize: "11.5px",
+                  padding: "4px 9px",
+                  borderRadius: "var(--radius-full)",
+                  border: period === p.value ? "1px solid var(--mustard)" : "1px solid var(--border)",
+                }}
+                onClick={() => setPeriod(p.value)}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -68,23 +115,81 @@ export default function TopArtists() {
           {error}
         </div>
       ) : loading ? (
-        <div style={{ textAlign: "center", padding: "30px", color: "var(--cream-text-muted)" }}>
-          <span className="spin" style={{ display: "inline-block", fontSize: "24px" }}>💿</span>
-          <p className="meta" style={{ marginTop: "8px" }}>Fetching artist stats...</p>
+        <div style={{ textAlign: "center", padding: "40px", color: "var(--cream-text-muted)" }}>
+          <span className="spin" style={{ display: "inline-block", fontSize: "28px" }}>💿</span>
+          <p className="meta" style={{ marginTop: "10px" }}>Tuning artist frequencies...</p>
         </div>
       ) : artists.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: "30px" }}>
           <p className="meta" style={{ margin: 0 }}>No artists recorded for this period.</p>
         </div>
+      ) : viewMode === "grid" ? (
+        /* GRID VIEW WITH PHOTOS */
+        <div className="artist-grid">
+          {artists.map((artist, i) => {
+            const photoUrl = artistPhotos[artist.name];
+
+            return (
+              <div
+                key={artist.name}
+                className="artist-card-grid"
+                onClick={() => setSelectedArtist(artist)}
+                title={`Explore ${artist.name}`}
+              >
+                <div className="artist-portrait-box">
+                  {/* Rank Badge */}
+                  <span className="artist-rank-badge">
+                    #{String(i + 1).padStart(2, "0")}
+                  </span>
+
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={artist.name} />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: "linear-gradient(135deg, #181512 0%, #0d0c0a 100%)",
+                        fontSize: "36px",
+                      }}
+                    >
+                      🎙️
+                    </div>
+                  )}
+                </div>
+
+                <div className="artist-card-info">
+                  <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--cream-text)", marginBottom: "4px", lineHeight: "1.25" }}>
+                    {artist.name}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span className="meta" style={{ color: "var(--teal)", fontSize: "11.5px", fontWeight: 600 }}>
+                      {artist.playcount} scrobbles
+                    </span>
+                    <span style={{ fontSize: "11px", color: "var(--cream-text-muted)" }}>
+                      Discography →
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       ) : (
+        /* LIST VIEW WITH THUMBNAILS */
         <div className="card" style={{ padding: "8px 16px" }}>
           {artists.map((artist, i) => {
             const plays = parseInt(artist.playcount || 0, 10);
             const percentage = Math.max(8, Math.round((plays / (maxPlays || 1)) * 100));
+            const photoUrl = artistPhotos[artist.name];
 
             return (
               <div
                 key={i}
+                onClick={() => setSelectedArtist(artist)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -92,7 +197,11 @@ export default function TopArtists() {
                   padding: "12px 6px",
                   borderBottom: i < artists.length - 1 ? "1px solid var(--border)" : "none",
                   gap: "16px",
+                  cursor: "pointer",
+                  borderRadius: "var(--radius)",
+                  transition: "background 0.15s ease",
                 }}
+                className="track-row"
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: 0 }}>
                   <span
@@ -105,8 +214,21 @@ export default function TopArtists() {
                     #{String(i + 1).padStart(2, "0")}
                   </span>
 
+                  {/* Thumbnail portrait */}
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt={artist.name}
+                      style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid var(--border-strong)" }}
+                    />
+                  ) : (
+                    <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "var(--bg-subtle)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>
+                      🎙️
+                    </div>
+                  )}
+
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--cream-text)", marginBottom: "4px" }}>
+                    <div style={{ fontWeight: 600, fontSize: "14.5px", color: "var(--cream-text)", marginBottom: "4px" }}>
                       {artist.name}
                     </div>
 
@@ -124,15 +246,27 @@ export default function TopArtists() {
                   </div>
                 </div>
 
-                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ textAlign: "right", flexShrink: 0, display: "flex", alignItems: "center", gap: "8px" }}>
                   <span className="badge badge-teal" style={{ fontSize: "11px" }}>
                     {artist.playcount} scrobbles
+                  </span>
+                  <span style={{ color: "var(--cream-text-muted)", fontSize: "13px" }}>
+                    →
                   </span>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {/* Clickable Artist Details & Discography Modal */}
+      {selectedArtist && (
+        <ArtistModal
+          artist={selectedArtist}
+          onClose={() => setSelectedArtist(null)}
+          onSelectTag={onSelectTag}
+        />
       )}
     </div>
   );
