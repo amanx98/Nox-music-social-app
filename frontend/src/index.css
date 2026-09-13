@@ -1,129 +1,86 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Permanent+Marker&family=Sedgwick+Ave&display=swap');
+@import "tailwindcss";
+@import "./styles/tokens.css";
 
-:root, [data-theme="midnight"] {
-  --bg: #060607;
-  --bg-raised: #0b0b0d;
-  --bg-card: #111114;
-  --bg-subtle: #18181d;
-  --surface: #EDE6D6;
-  --surface-dim: #e3dac5;
-  --teal: #2F6F6E;
-  --teal-hover: #3b8785;
-  --teal-dim: rgba(47, 111, 110, 0.2);
-  --mustard: #D9A441;
-  --mustard-hover: #e8b350;
-  --mustard-dim: rgba(217, 164, 65, 0.12);
-  --coral: #E06D53;
-  --coral-hover: #f07d64;
-  --coral-dim: rgba(224, 109, 83, 0.15);
-  --ink: #1C1A16;
-  --ink-soft: #6b6354;
-  --cream-text: #F4EFE2;
-  --cream-text-dim: #b8af9c;
-  --cream-text-muted: #7d7566;
-  --border: rgba(244, 239, 226, 0.06);
-  --border-strong: rgba(244, 239, 226, 0.12);
-  --border-dark: rgba(28, 26, 22, 0.12);
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 14px;
-  --radius-full: 9999px;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65);
+/* Tailwind CSS v4 Theme Integration (Inline enables runtime theme swapping) */
+@theme inline {
+  --color-surface: var(--color-surface);
+  --color-surface-raised: var(--color-surface-raised);
+  --color-surface-sunken: var(--color-surface-sunken);
+  --color-surface-hover: var(--color-surface-hover);
 
-  --accent-gradient: linear-gradient(135deg, #D9A441 0%, #f59e0b 100%);
-  --cursor-glow: rgba(217, 164, 65, 0.075);
-  --cursor-glow-strong: rgba(217, 164, 65, 0.15);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-dim: var(--color-text-dim);
+  --color-text-inverse: var(--color-text-inverse);
 
-  --font-display: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-  --font-graffiti: 'Sedgwick Ave', 'Permanent Marker', cursive;
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-border-hover: var(--color-border-hover);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-muted: var(--color-accent-muted);
+  --color-accent-text: var(--color-accent-text);
+
+  --color-secondary: var(--color-secondary);
+  --color-secondary-hover: var(--color-secondary-hover);
+  --color-secondary-muted: var(--color-secondary-muted);
+
+  --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
+  --color-danger-muted: var(--color-danger-muted);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-graffiti: var(--font-graffiti);
+
+  --text-2xs: var(--text-2xs);
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
+  --text-4xl: var(--text-4xl);
+
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+  --shadow-4: var(--shadow-4);
+  --shadow-5: var(--shadow-5);
 }
 
-[data-theme="cyber"] {
-  --bg: #050508;
-  --bg-raised: #09090f;
-  --bg-card: #0f0f17;
-  --bg-subtle: #161622;
-  --mustard: #a855f7;
-  --mustard-hover: #c084fc;
-  --mustard-dim: rgba(168, 85, 247, 0.12);
-  --teal: #06b6d4;
-  --teal-hover: #22d3ee;
-  --teal-dim: rgba(6, 182, 212, 0.18);
-  --cream-text: #f5f3ff;
-  --cream-text-dim: #c4b5fd;
-  --cream-text-muted: #8b5cf6;
-  --border: rgba(168, 85, 247, 0.08);
-  --border-strong: rgba(168, 85, 247, 0.16);
-  --accent-gradient: linear-gradient(135deg, #a855f7 0%, #06b6d4 100%);
-  --cursor-glow: rgba(168, 85, 247, 0.075);
-  --cursor-glow-strong: rgba(168, 85, 247, 0.15);
-}
-
-[data-theme="emerald"] {
-  --bg: #040605;
-  --bg-raised: #070c09;
-  --bg-card: #0c140f;
-  --bg-subtle: #121d17;
-  --mustard: #10b981;
-  --mustard-hover: #34d399;
-  --mustard-dim: rgba(16, 185, 129, 0.12);
-  --teal: #059669;
-  --teal-hover: #10b981;
-  --teal-dim: rgba(5, 150, 105, 0.18);
-  --cream-text: #ecfdf5;
-  --cream-text-dim: #a7f3d0;
-  --cream-text-muted: #6ee7b7;
-  --border: rgba(16, 185, 129, 0.08);
-  --border-strong: rgba(16, 185, 129, 0.16);
-  --accent-gradient: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-  --cursor-glow: rgba(16, 185, 129, 0.075);
-  --cursor-glow-strong: rgba(16, 185, 129, 0.15);
-}
-
-[data-theme="crimson"] {
-  --bg: #070405;
-  --bg-raised: #0d080a;
-  --bg-card: #140d10;
-  --bg-subtle: #1c1317;
-  --mustard: #f43f5e;
-  --mustard-hover: #fb7185;
-  --mustard-dim: rgba(244, 63, 94, 0.12);
-  --teal: #e11d48;
-  --teal-hover: #f43f5e;
-  --teal-dim: rgba(225, 29, 72, 0.18);
-  --cream-text: #fff1f2;
-  --cream-text-dim: #fecdd3;
-  --cream-text-muted: #fb7185;
-  --border: rgba(244, 63, 94, 0.08);
-  --border-strong: rgba(244, 63, 94, 0.16);
-  --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
-  --cursor-glow: rgba(244, 63, 94, 0.075);
-  --cursor-glow-strong: rgba(244, 63, 94, 0.15);
-}
-
-[data-theme="cobalt"], [data-theme="solar"] {
-  --bg: #040608;
-  --bg-raised: #070c10;
-  --bg-card: #0c1218;
-  --bg-subtle: #121a22;
-  --mustard: #06b6d4;
-  --mustard-hover: #22d3ee;
-  --mustard-dim: rgba(6, 182, 212, 0.12);
-  --teal: #0284c7;
-  --teal-hover: #0ea5e9;
-  --teal-dim: rgba(2, 132, 199, 0.18);
-  --cream-text: #f0fdf4;
-  --cream-text-dim: #bae6fd;
-  --cream-text-muted: #7dd3fc;
-  --border: rgba(6, 182, 212, 0.08);
-  --border-strong: rgba(6, 182, 212, 0.16);
-  --accent-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
-  --cursor-glow: rgba(6, 182, 212, 0.075);
-  --cursor-glow-strong: rgba(6, 182, 212, 0.15);
+/* Backward-compatibility token bridge */
+:root {
+  --bg: var(--color-surface);
+  --bg-raised: var(--color-surface-raised);
+  --bg-card: var(--color-surface-raised);
+  --bg-subtle: var(--color-surface-hover);
+  --cream-text: var(--color-text);
+  --cream-text-dim: var(--color-text-muted);
+  --cream-text-muted: var(--color-text-dim);
+  --border: var(--color-border);
+  --border-strong: var(--color-border-strong);
+  --mustard: var(--color-accent);
+  --mustard-hover: var(--color-accent-hover);
+  --mustard-dim: var(--color-accent-muted);
+  --teal: var(--color-secondary);
+  --teal-hover: var(--color-secondary-hover);
+  --teal-dim: var(--color-secondary-muted);
+  --coral: var(--color-danger);
+  --coral-hover: var(--color-danger-hover);
+  --coral-dim: var(--color-danger-muted);
+  --radius: var(--radius-md);
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
 }
 
 * {
@@ -133,11 +90,11 @@
 html, body, #root {
   min-height: 100%;
   margin: 0;
-  background-color: var(--bg);
-  color: var(--cream-text);
-  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 1.5;
+  line-height: var(--leading-normal);
   -webkit-font-smoothing: antialiased;
 }
 

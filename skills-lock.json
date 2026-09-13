@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "anti-ai-slop-audit": {
+      "source": "AvnehSBhatia/UltraUI",
+      "sourceType": "github",
+      "skillPath": "skills/primitives/anti-ai-slop-audit/SKILL.md",
+      "computedHash": "12a5e7c38f780ce882530c9a46c371fff86d781e342fcc11597e1df79f69b584"
+    },
+    "app-ui-surfaces-toolkit": {
+      "source": "AvnehSBhatia/UltraUI",
+      "sourceType": "github",
+      "skillPath": "skills/app/app-ui-surfaces-toolkit/SKILL.md",
+      "computedHash": "a14461fe55f32701375437c8e3675940c582230cc848421dcff0182322160070"
+    },
+    "bento-grid-layouts": {
+      "source": "AvnehSBhatia/UltraUI",
+      "sourceType": "github",
+      "skillPath": "skills/primitives/bento-grid-layouts/SKILL.md",
+      "computedHash": "26aa2fa7d9688fd1be183cd18a784555caa63af851ed9b5183a7ed93c3e1bd89"
+    },
+    "design-system-foundations-toolkit": {
+      "source": "AvnehSBhatia/UltraUI",
+      "sourceType": "github",
+      "skillPath": "skills/ds/design-system-foundations-toolkit/SKILL.md",
+      "computedHash": "8d19ee19e8a8b7e34a92376240a0bd65b07943eac821a8127db91606e1813bd3"
+    },
+    "frontend-qa-audit-toolkit": {
+      "source": "AvnehSBhatia/UltraUI",
+      "sourceType": "github",
+      "skillPath": "skills/qa/frontend-qa-audit-toolkit/SKILL.md",
+      "computedHash": "c670ff4709fe1ef4cd18ae7948385dcd0f70fda6c4ec0aeb1ddc4193f6dda66e"
+    },
+    "nav-and-page-transitions-toolkit": {
+      "source": "AvnehSBhatia/UltraUI",
+      "sourceType": "github",
+      "skillPath": "skills/nav/nav-and-page-transitions-toolkit/SKILL.md",
+      "computedHash": "2ff0023f34dc7b7dd51e8b124121d50683cdcf07571a12e665ccefc853dda4ab"
+    }
+  }
+}
