@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { getMe } from "./api/client";
 import { ToastProvider } from "./components/Toast";
+import CursorSpotlight from "./components/CursorSpotlight";
 import Login from "./Login";
 import Register from "./Register";
 import Layout from "./Layout";
@@ -51,6 +52,7 @@ function App() {
 
   return (
     <ToastProvider>
+      <CursorSpotlight />
       {!user ? (
         <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           {showRegister ? (

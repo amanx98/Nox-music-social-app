@@ -87,12 +87,12 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
         <div
           style={{
             position: "relative",
-            height: "260px",
+            height: "220px",
             background: photos.length > 0 ? `url(${photos[activePhotoIndex]}) center/cover no-repeat` : "var(--bg-subtle)",
             borderBottom: "1px solid var(--border)",
             display: "flex",
             alignItems: "flex-end",
-            padding: "24px",
+            padding: "20px 24px",
           }}
         >
           {/* Ambient Dark Gradient Overlay */}
@@ -100,7 +100,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
             style={{
               position: "absolute",
               inset: 0,
-              background: "linear-gradient(to top, var(--bg-card) 0%, rgba(9, 8, 7, 0.4) 60%, rgba(9, 8, 7, 0.8) 100%)",
+              background: "linear-gradient(to top, var(--bg-card) 0%, rgba(6, 6, 7, 0.5) 60%, rgba(6, 6, 7, 0.85) 100%)",
             }}
           />
 
@@ -110,10 +110,10 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
             onClick={onClose}
             style={{
               position: "absolute",
-              top: "16px",
-              right: "16px",
-              fontSize: "18px",
-              padding: "6px 12px",
+              top: "14px",
+              right: "14px",
+              fontSize: "16px",
+              padding: "5px 10px",
               borderRadius: "50%",
               background: "rgba(0,0,0,0.6)",
               color: "#fff",
@@ -126,17 +126,17 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
           {/* Artist Headline Info */}
           <div style={{ position: "relative", zIndex: 2, width: "100%" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-              <span className="badge badge-mustard" style={{ fontSize: "11px" }}>
+              <span className="badge badge-mustard" style={{ fontSize: "10.5px" }}>
                 ARTIST SPOTLIGHT
               </span>
               {artist.playcount && (
-                <span className="badge badge-teal" style={{ fontSize: "11px" }}>
+                <span className="badge badge-teal" style={{ fontSize: "10.5px" }}>
                   {artist.playcount} Plays in your history
                 </span>
               )}
             </div>
 
-            <h1 style={{ margin: "4px 0", fontSize: "36px", color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}>
+            <h1 style={{ margin: "4px 0", fontSize: "24px", color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}>
               {artist.name}
             </h1>
 

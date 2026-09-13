@@ -98,21 +98,20 @@ async def get_artist_details(artist_name: str) -> dict:
         "fans": None,
         "top_tracks": [],
     }
+    headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
     try:
-        async with httpx.AsyncClient(verify=False, timeout=8.0) as client:
+        async with httpx.AsyncClient(verify=False, timeout=8.0, headers=headers) as client:
             resp = await client.get(f"https://api.deezer.com/search/artist?q={artist_name}")
+            artist_id = None
             if resp.status_code == 200:
                 data = resp.json().get("data", [])
                 if data:
                     a = data[0]
                     artist_id = a.get("id")
-                    pic_xl = a.get("picture_xl")
-                    pic_big = a.get("picture_big")
-                    pic_med = a.get("picture_medium")
-
-                    result["image"] = pic_xl or pic_big or pic_med
-                    pics = [p for p in [pic_xl, pic_big, pic_med] if p]
-                    result["images"] = list(dict.fromkeys(pics))
+                    pic_xl = a.get("picture_xl") or a.get("picture_big") or a.get("picture_medium")
+                    if pic_xl:
+                        result["image"] = pic_xl
+                        result["images"].append(pic_xl)
                     result["fans"] = a.get("nb_fan")
 
                     tracks_data = []
@@ -147,6 +146,35 @@ async def get_artist_details(artist_name: str) -> dict:
                             }
                             for t in tracks_data
                         ]
+
+            # Fetch distinct photos from TheAudioDB
+            try:
+                tadb_resp = await client.get("https://www.theaudiodb.com/api/v1/json/2/search.php", params={"s": artist_name})
+                if tadb_resp.status_code == 200:
+                    artists = tadb_resp.json().get("artists") or []
+                    if artists:
+                        artist_obj = artists[0]
+                        for key in ["strArtistFanart", "strArtistFanart2", "strArtistFanart3", "strArtistFanart4", "strArtistThumb"]:
+                            photo_url = artist_obj.get(key)
+                            if photo_url and photo_url not in result["images"]:
+                                result["images"].append(photo_url)
+            except Exception:
+                pass
+
+            # Fetch distinct Wikipedia photo
+            try:
+                wiki_slug = artist_name.replace(" ", "_")
+                wiki_resp = await client.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{wiki_slug}")
+                if wiki_resp.status_code == 200:
+                    orig = wiki_resp.json().get("originalimage", {}).get("source")
+                    if orig and orig not in result["images"]:
+                        result["images"].append(orig)
+            except Exception:
+                pass
+
+            # If still no primary image but found other images, set first image as primary
+            if not result["image"] and result["images"]:
+                result["image"] = result["images"][0]
     except Exception:
         pass
 
