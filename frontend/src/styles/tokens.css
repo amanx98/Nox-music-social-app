@@ -10,20 +10,20 @@
      1. Primitive Color Tokens (OKLCH - Perceptual Uniformity)
      ========================================================================== */
 
-  /* Neutral Obsidian Scale (warm dark slate) */
-  --obsidian-950: oklch(0.11 0.005 260);
-  --obsidian-900: oklch(0.14 0.006 260);
-  --obsidian-850: oklch(0.16 0.007 260);
-  --obsidian-800: oklch(0.19 0.008 260);
-  --obsidian-750: oklch(0.24 0.008 260);
-  --obsidian-700: oklch(0.30 0.009 260);
-  --obsidian-600: oklch(0.42 0.010 260);
-  --obsidian-500: oklch(0.55 0.010 260);
-  --obsidian-400: oklch(0.68 0.009 260);
-  --obsidian-300: oklch(0.78 0.008 260);
-  --obsidian-200: oklch(0.88 0.006 260);
-  --obsidian-100: oklch(0.94 0.005 260);
-  --obsidian-50:  oklch(0.97 0.003 260);
+  /* Neutral Obsidian Scale: Pitch black base to pristine almost-white */
+  --obsidian-950: oklch(0.04 0.002 260); /* Deep pitch black base canvas #060608 */
+  --obsidian-900: oklch(0.09 0.004 260); /* Deep rich card surface #0f0f13 */
+  --obsidian-850: oklch(0.13 0.005 260); /* Raised surface & wells #17171d */
+  --obsidian-800: oklch(0.18 0.006 260); /* Subtle hover fill #212128 */
+  --obsidian-750: oklch(0.25 0.007 260); /* Clean hairline borders #31313c */
+  --obsidian-700: oklch(0.33 0.008 260); /* Emphasized borders #434350 */
+  --obsidian-600: oklch(0.48 0.009 260); /* Low contrast dividers */
+  --obsidian-500: oklch(0.65 0.010 260); /* Low-priority indicators */
+  --obsidian-400: oklch(0.78 0.008 260); /* Tertiary & captions (#c4c4cb) */
+  --obsidian-300: oklch(0.86 0.006 260); /* Secondary text (#dadade) */
+  --obsidian-200: oklch(0.93 0.004 260); /* High contrast silver (#eeeeee) */
+  --obsidian-100: oklch(0.98 0.002 260); /* Primary almost-white (#fafafa) */
+  --obsidian-50:  oklch(1.00 0.000 0);   /* Pure pristine white (#ffffff) */
 
   /* Warm Gold / Amber Scale (Primary Identity) */
   --amber-400: oklch(0.80 0.14 78);
@@ -58,22 +58,22 @@
      ========================================================================== */
   color-scheme: dark;
 
-  /* Surfaces - Elevation by lightness, never pure black to prevent halation */
-  --color-surface:        var(--obsidian-900);  /* Base canvas */
-  --color-surface-raised: var(--obsidian-800);  /* Elevated cards, drawers */
-  --color-surface-sunken: var(--obsidian-950);  /* Wells, inputs, code */
-  --color-surface-hover:  var(--obsidian-750);  /* Surface hover state */
+  /* Surfaces - Authentic deep black contrast */
+  --color-surface:        var(--obsidian-950);  /* Deep pitch black base canvas */
+  --color-surface-raised: var(--obsidian-900);  /* Deep noir cards */
+  --color-surface-sunken: var(--obsidian-950);  /* Sunken wells / toolbar */
+  --color-surface-hover:  var(--obsidian-850);  /* Clean surface hover state */
 
-  /* Text & Typography */
-  --color-text:           var(--obsidian-100);  /* Primary text (soft warm cream, not pure white) */
-  --color-text-muted:     var(--obsidian-400);  /* Secondary & metadata */
-  --color-text-dim:       var(--obsidian-500);  /* Tertiary & captions */
-  --color-text-inverse:   var(--obsidian-950);  /* On bright accent fills */
+  /* Text & Typography - High Contrast Contract */
+  --color-text:           var(--obsidian-100);  /* Almost white, crisp and bold */
+  --color-text-muted:     var(--obsidian-300);  /* Crisp silver secondary */
+  --color-text-dim:       var(--obsidian-400);  /* Legible tertiary / timestamp */
+  --color-text-inverse:   var(--obsidian-950);  /* Black text on bright fills */
 
   /* Hairlines & Dividers */
   --color-border:         var(--obsidian-750);  /* Hairline borders */
   --color-border-strong:  var(--obsidian-700);  /* Emphasized dividers */
-  --color-border-hover:   var(--obsidian-600);  /* Interactive border focus */
+  --color-border-hover:   var(--obsidian-500);  /* Interactive border focus */
 
   /* Accent (Primary Brand Action) */
   --color-accent:         var(--amber-500);

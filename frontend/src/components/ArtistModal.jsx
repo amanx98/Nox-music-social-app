@@ -146,7 +146,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
             {/* Clear, subtle gradient (does not darken faces harshly) */}
             <div className="absolute inset-0 bg-gradient-to-t from-surface-raised via-black/35 to-black/25 pointer-events-none" />
 
-            {/* Top Toolbar: Expand Full Photo button & Close */}
+            {/* Top Toolbar: Sleek Icon Buttons with High Contrast */}
             <div className="absolute top-3.5 inset-x-3.5 z-20 flex items-center justify-between">
               {currentPhoto ? (
                 <button
@@ -155,10 +155,11 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                     e.stopPropagation();
                     setShowPhotoLightbox(true);
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/65 hover:bg-black/85 text-white backdrop-blur-md text-xs font-mono border border-white/20 transition-all cursor-pointer shadow-1"
+                  title="Expand uncropped photo"
+                  aria-label="Expand uncropped photo"
+                  className="w-8 h-8 rounded-full bg-black/75 hover:bg-white text-white hover:text-black border border-white/25 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
                 >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  <span>View Full Photo</span>
+                  <Maximize2 className="w-4 h-4 stroke-[2]" />
                 </button>
               ) : <div />}
 
@@ -169,9 +170,9 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   onClose();
                 }}
                 aria-label="Close"
-                className="w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer border border-white/15"
+                className="w-8 h-8 rounded-full bg-black/75 hover:bg-white text-white hover:text-black border border-white/25 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
 
@@ -216,8 +217,8 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                 {/* Photo Gallery Thumbnails */}
                 {photos.length > 1 && (
                   <div className="space-y-2">
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-text-dim block">
-                      Gallery ({photos.length}) &middot; Click to preview
+                    <span className="font-mono text-2xs uppercase tracking-wider text-text-dim block">
+                      Photos ({photos.length})
                     </span>
                     <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                       {photos.map((imgUrl, idx) => (
@@ -362,34 +363,30 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
         >
           <div className="relative max-w-4xl max-h-[92vh] w-full flex flex-col items-center justify-center">
             {/* Lightbox Header Bar */}
-            <div className="w-full flex items-center justify-between pb-3 text-white/80">
-              <div className="font-heading font-bold text-sm text-white truncate">
-                {artist.name} &middot; Full Uncropped Photo
+            <div className="w-full flex items-center justify-between pb-3 text-white">
+              <div className="font-heading font-bold text-base text-white truncate">
+                {artist.name}
               </div>
               <button
                 type="button"
                 onClick={() => setShowPhotoLightbox(false)}
-                className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
-                aria-label="Close photo"
+                className="w-8 h-8 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-2"
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
 
             {/* Uncropped Full-Frame Photo */}
             <div
-              className="relative max-h-[80vh] overflow-hidden rounded-xl border border-white/10 shadow-5 flex items-center justify-center bg-black/50"
+              className="relative max-h-[82vh] overflow-hidden rounded-xl border border-white/10 shadow-5 flex items-center justify-center bg-black/60"
               onClick={(e) => e.stopPropagation()}
             >
               <img
                 src={currentPhoto}
                 alt={artist.name}
-                className="max-h-[80vh] max-w-full object-contain rounded-lg select-none"
+                className="max-h-[82vh] max-w-full object-contain rounded-lg select-none"
               />
-            </div>
-
-            <div className="mt-2 text-center font-mono text-2xs text-white/50">
-              Click anywhere or press ESC to close
             </div>
           </div>
         </div>

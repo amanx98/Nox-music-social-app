@@ -216,10 +216,10 @@ export default function ProfilePage({ user }) {
       {/* Tabs Navigation */}
       <div className="profile-tabs border-b border-border flex gap-1">
         <button
-          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+          className={`profile-tab flex items-center gap-1.5 font-bold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
             activeTab === "quilts"
-              ? "border-accent text-accent"
-              : "border-transparent text-text-muted hover:text-text"
+              ? "border-white text-white"
+              : "border-transparent text-zinc-300 hover:text-white"
           }`}
           onClick={() => setActiveTab("quilts")}
         >
@@ -227,10 +227,10 @@ export default function ProfilePage({ user }) {
           <span>Quilts</span>
         </button>
         <button
-          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+          className={`profile-tab flex items-center gap-1.5 font-bold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
             activeTab === "stats"
-              ? "border-accent text-accent"
-              : "border-transparent text-text-muted hover:text-text"
+              ? "border-white text-white"
+              : "border-transparent text-zinc-300 hover:text-white"
           }`}
           onClick={() => setActiveTab("stats")}
         >
@@ -238,10 +238,10 @@ export default function ProfilePage({ user }) {
           <span>Stats</span>
         </button>
         <button
-          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+          className={`profile-tab flex items-center gap-1.5 font-bold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
             activeTab === "themes"
-              ? "border-accent text-accent"
-              : "border-transparent text-text-muted hover:text-text"
+              ? "border-white text-white"
+              : "border-transparent text-zinc-300 hover:text-white"
           }`}
           onClick={() => setActiveTab("themes")}
         >
@@ -249,10 +249,10 @@ export default function ProfilePage({ user }) {
           <span>Themes</span>
         </button>
         <button
-          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+          className={`profile-tab flex items-center gap-1.5 font-bold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
             activeTab === "settings"
-              ? "border-accent text-accent"
-              : "border-transparent text-text-muted hover:text-text"
+              ? "border-white text-white"
+              : "border-transparent text-zinc-300 hover:text-white"
           }`}
           onClick={() => setActiveTab("settings")}
         >
@@ -272,11 +272,11 @@ export default function ProfilePage({ user }) {
       )}
 
       {activeTab === "themes" && (
-        <div className="p-5 rounded-2xl border border-border bg-surface-raised max-w-2xl">
-          <div className="mb-4">
-            <h2 className="font-heading font-bold text-base text-text">Color Themes</h2>
+        <div className="p-6 rounded-2xl border border-border bg-surface-raised max-w-2xl space-y-3">
+          <div>
+            <h2 className="font-heading font-black text-lg text-white">Color Themes</h2>
             <p className="font-sans text-xs text-text-muted mt-0.5">
-              Select an ambient color palette tailored for your listening session.
+              Deep black atmospheric themes with subtle cursor spotlight tracking.
             </p>
           </div>
           <ThemeSelector />
@@ -284,30 +284,53 @@ export default function ProfilePage({ user }) {
       )}
 
       {activeTab === "settings" && (
-        <div className="p-5 rounded-2xl border border-border bg-surface-raised max-w-xl space-y-4">
-          <h2 className="font-heading font-bold text-base text-text">Account Settings</h2>
-
-          <div className="pt-2 border-t border-border space-y-3">
+        <div className="space-y-6 max-w-2xl">
+          {/* Section 1: Appearance & Themes */}
+          <div className="p-6 rounded-2xl border border-border bg-surface-raised space-y-4">
             <div>
-              <div className="font-semibold text-xs text-text">Last.fm Integration</div>
-              <div className="flex items-center gap-1.5 font-mono text-xs text-text-dim mt-1">
-                {lastfmConnected ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Connected &amp; Syncing</span>
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="w-3.5 h-3.5 text-text-dim" />
-                    <span>Not Connected</span>
-                  </>
-                )}
-              </div>
+              <h2 className="font-heading font-black text-lg text-white">Theme &amp; Look and Feel</h2>
+              <p className="font-sans text-xs text-text-muted mt-0.5">
+                Deep black atmospheric themes with subtle cursor spotlight tracking.
+              </p>
+            </div>
+            <ThemeSelector />
+          </div>
+
+          {/* Section 2: Last.fm Integration */}
+          <div className="p-6 rounded-2xl border border-border bg-surface-raised space-y-4">
+            <div>
+              <h2 className="font-heading font-black text-lg text-white">Integrations</h2>
+              <p className="font-sans text-xs text-text-muted mt-0.5">
+                Connect external music services to power scrobbles, topsters, and quilts.
+              </p>
             </div>
 
-            <Button variant="secondary" size="sm" onClick={connectLastfm}>
-              {lastfmConnected ? "Re-authorize Last.fm" : "Connect Last.fm Account"}
-            </Button>
+            <div className="p-4 rounded-xl bg-surface-sunken border border-border flex items-center justify-between gap-4">
+              <div>
+                <div className="font-semibold text-sm text-white">Last.fm Account</div>
+                <div className="flex items-center gap-1.5 font-mono text-xs mt-1">
+                  {lastfmConnected ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400 font-semibold">Connected &amp; Syncing</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-3.5 h-3.5 text-zinc-400" />
+                      <span className="text-zinc-400">Not Connected</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <Button
+                variant={lastfmConnected ? "secondary" : "primary"}
+                size="sm"
+                onClick={connectLastfm}
+              >
+                {lastfmConnected ? "Re-authorize" : "Connect Last.fm"}
+              </Button>
+            </div>
           </div>
         </div>
       )}

@@ -31,20 +31,17 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-2xs uppercase tracking-wider font-bold px-2.5 py-1 rounded bg-accent/15 text-accent border border-accent/25">
+            <span className="font-mono text-2xs uppercase tracking-wider font-bold px-2.5 py-1 rounded bg-white text-black shadow-1">
               Rank #{String(rank).padStart(2, "0")}
-            </span>
-            <span className="font-mono text-2xs text-text-dim">
-              Album Showcase
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-1"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
@@ -84,14 +81,11 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
             <div className="my-4 p-4 rounded-xl bg-surface-sunken border border-border flex items-center justify-between">
               <div>
                 <span className="font-mono text-2xs uppercase tracking-wider text-text-dim block">
-                  Total Scrobbles
+                  Scrobbles
                 </span>
-                <span className="font-mono text-2xl sm:text-3xl font-black text-accent tabular-nums">
+                <span className="font-mono text-2xl sm:text-3xl font-black text-text tabular-nums">
                   {Number(album.playcount || 0).toLocaleString()}
                 </span>
-              </div>
-              <div className="text-right font-mono text-2xs text-text-dim">
-                <span>Top Rotation</span>
               </div>
             </div>
 
@@ -101,19 +95,19 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
                 href={searchUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border hover:border-border-hover bg-surface hover:bg-surface-hover text-xs font-semibold text-text transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border hover:border-white bg-surface hover:bg-white text-xs font-semibold text-text hover:text-black transition-colors"
               >
                 <span>Spotify</span>
-                <ExternalLink className="w-3.5 h-3.5 text-text-dim" />
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <a
                 href={lastfmUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border hover:border-border-hover bg-surface hover:bg-surface-hover text-xs font-semibold text-text transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border hover:border-white bg-surface hover:bg-white text-xs font-semibold text-text hover:text-black transition-colors"
               >
                 <span>Last.fm</span>
-                <ExternalLink className="w-3.5 h-3.5 text-text-dim" />
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           </div>

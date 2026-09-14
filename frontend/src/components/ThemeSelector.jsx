@@ -5,47 +5,47 @@ export const THEMES = [
   {
     id: "midnight",
     name: "Obsidian Amber",
-    desc: "Deep obsidian black with subtle champagne amber cursor glow",
-    bg: "#060607",
-    cardBg: "#111114",
+    desc: "Deep obsidian black with champagne amber cursor glow",
+    bg: "#050506",
+    cardBg: "#0c0c0f",
     accent: "#D9A441",
-    glow: "rgba(217, 164, 65, 0.18)",
+    glow: "rgba(217, 164, 65, 0.20)",
   },
   {
     id: "cyber",
     name: "Cyber Violet",
-    desc: "Pitch void with translucent electric violet cursor mist",
+    desc: "Pitch void with electric violet cursor mist",
     bg: "#050508",
-    cardBg: "#0f0f17",
+    cardBg: "#0e0d14",
     accent: "#a855f7",
-    glow: "rgba(168, 85, 247, 0.18)",
+    glow: "rgba(168, 85, 247, 0.20)",
   },
   {
     id: "emerald",
     name: "Emerald Mist",
-    desc: "Obsidian black with delicate botanical emerald cursor tint",
+    desc: "Obsidian black with delicate emerald cursor tint",
     bg: "#040605",
-    cardBg: "#0c140f",
+    cardBg: "#09100c",
     accent: "#10b981",
-    glow: "rgba(16, 185, 129, 0.18)",
+    glow: "rgba(16, 185, 129, 0.20)",
   },
   {
     id: "crimson",
     name: "Velvet Rose",
-    desc: "Deep noir with faint ruby velvet cursor shade",
+    desc: "Deep noir with ruby velvet cursor shade",
     bg: "#070405",
-    cardBg: "#140d10",
+    cardBg: "#120a0d",
     accent: "#f43f5e",
-    glow: "rgba(244, 63, 94, 0.18)",
+    glow: "rgba(244, 63, 94, 0.20)",
   },
   {
     id: "chrome",
     name: "Monochrome Silver",
-    desc: "Deep obsidian noir with understated metallic silver highlights",
-    bg: "#060607",
-    cardBg: "#101012",
+    desc: "Deep obsidian noir with metallic silver highlights",
+    bg: "#050506",
+    cardBg: "#0d0d10",
     accent: "#e2e8f0",
-    glow: "rgba(226, 232, 240, 0.14)",
+    glow: "rgba(226, 232, 240, 0.18)",
   },
 ];
 
@@ -100,7 +100,7 @@ export default function ThemeSelector() {
                       height: "18px",
                       borderRadius: "50%",
                       background: t.bg,
-                      border: "1px solid rgba(255,255,255,0.2)",
+                      border: "1px solid rgba(255,255,255,0.3)",
                     }}
                     title="Deep Black Background"
                   />
@@ -120,21 +120,24 @@ export default function ThemeSelector() {
                   <span
                     style={{
                       fontSize: "11px",
-                      fontWeight: 700,
-                      color: t.accent,
+                      fontWeight: 800,
+                      background: "#ffffff",
+                      color: "#000000",
+                      padding: "2px 8px",
+                      borderRadius: "9999px",
                       fontFamily: "var(--font-mono)",
                     }}
                   >
-                    ✓ ACTIVE
+                    ACTIVE
                   </span>
                 )}
               </div>
 
               <div>
-                <div style={{ fontWeight: 700, fontSize: "15px", color: "var(--cream-text)" }}>
+                <div style={{ fontWeight: 700, fontSize: "15px", color: "#fafafa" }}>
                   {t.name}
                 </div>
-                <div className="meta" style={{ fontSize: "11.5px", marginTop: "3px", lineHeight: "1.4" }}>
+                <div style={{ fontSize: "12px", marginTop: "4px", lineHeight: "1.4", color: "#dadade" }}>
                   {t.desc}
                 </div>
               </div>
