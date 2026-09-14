@@ -10,19 +10,19 @@
      1. Primitive Color Tokens (OKLCH - Perceptual Uniformity)
      ========================================================================== */
 
-  /* Neutral Obsidian Scale: Pitch black base to pristine almost-white */
-  --obsidian-950: oklch(0.04 0.002 260); /* Deep pitch black base canvas #060608 */
-  --obsidian-900: oklch(0.09 0.004 260); /* Deep rich card surface #0f0f13 */
-  --obsidian-850: oklch(0.13 0.005 260); /* Raised surface & wells #17171d */
-  --obsidian-800: oklch(0.18 0.006 260); /* Subtle hover fill #212128 */
-  --obsidian-750: oklch(0.25 0.007 260); /* Clean hairline borders #31313c */
-  --obsidian-700: oklch(0.33 0.008 260); /* Emphasized borders #434350 */
-  --obsidian-600: oklch(0.48 0.009 260); /* Low contrast dividers */
+  /* Neutral Obsidian Scale: Luxurious studio dark base to crisp white */
+  --obsidian-950: oklch(0.10 0.005 260); /* Deep studio dark canvas (~#0f1015) */
+  --obsidian-900: oklch(0.15 0.006 260); /* Clear card surface (~#171820) */
+  --obsidian-850: oklch(0.19 0.007 260); /* Raised surface & wells (~#1f212b) */
+  --obsidian-800: oklch(0.24 0.008 260); /* Subtle hover fill (~#2a2c37) */
+  --obsidian-750: oklch(0.29 0.008 260); /* Clean crisp borders (~#363845) */
+  --obsidian-700: oklch(0.38 0.009 260); /* Emphasized dividers */
+  --obsidian-600: oklch(0.50 0.009 260); /* Low contrast dividers */
   --obsidian-500: oklch(0.65 0.010 260); /* Low-priority indicators */
-  --obsidian-400: oklch(0.78 0.008 260); /* Tertiary & captions (#c4c4cb) */
-  --obsidian-300: oklch(0.86 0.006 260); /* Secondary text (#dadade) */
-  --obsidian-200: oklch(0.93 0.004 260); /* High contrast silver (#eeeeee) */
-  --obsidian-100: oklch(0.98 0.002 260); /* Primary almost-white (#fafafa) */
+  --obsidian-400: oklch(0.78 0.007 260); /* Tertiary & captions (#c5c5cb) */
+  --obsidian-300: oklch(0.88 0.005 260); /* Secondary text (#e1e1e6) */
+  --obsidian-200: oklch(0.95 0.003 260); /* High contrast silver (#f2f2f4) */
+  --obsidian-100: oklch(0.99 0.001 260); /* Pure pristine white (#ffffff) */
   --obsidian-50:  oklch(1.00 0.000 0);   /* Pure pristine white (#ffffff) */
 
   /* Warm Gold / Amber Scale (Primary Identity) */
@@ -58,17 +58,17 @@
      ========================================================================== */
   color-scheme: dark;
 
-  /* Surfaces - Authentic deep black contrast */
-  --color-surface:        var(--obsidian-950);  /* Deep pitch black base canvas */
-  --color-surface-raised: var(--obsidian-900);  /* Deep noir cards */
-  --color-surface-sunken: var(--obsidian-950);  /* Sunken wells / toolbar */
-  --color-surface-hover:  var(--obsidian-850);  /* Clean surface hover state */
+  /* Surfaces - Studio dark depth without pitch blackness */
+  --color-surface:        var(--obsidian-950);  /* Studio dark base canvas (~#0f1015) */
+  --color-surface-raised: var(--obsidian-900);  /* Clean distinct card surface (~#171820) */
+  --color-surface-sunken: oklch(0.08 0.004 260); /* Sunken wells (~#0c0d12) */
+  --color-surface-hover:  var(--obsidian-850);  /* Clean surface hover state (~#1f212b) */
 
-  /* Text & Typography - High Contrast Contract */
-  --color-text:           var(--obsidian-100);  /* Almost white, crisp and bold */
-  --color-text-muted:     var(--obsidian-300);  /* Crisp silver secondary */
-  --color-text-dim:       var(--obsidian-400);  /* Legible tertiary / timestamp */
-  --color-text-inverse:   var(--obsidian-950);  /* Black text on bright fills */
+  /* Text & Typography - High Contrast Crisp Whites */
+  --color-text:           var(--obsidian-100);  /* Pure crisp white (#ffffff) */
+  --color-text-muted:     var(--obsidian-300);  /* Crisp light silver (#e1e1e6) */
+  --color-text-dim:       var(--obsidian-400);  /* Legible tertiary / timestamp (#c5c5cb) */
+  --color-text-inverse:   var(--obsidian-950);  /* Dark text on bright fills */
 
   /* Hairlines & Dividers */
   --color-border:         var(--obsidian-750);  /* Hairline borders */

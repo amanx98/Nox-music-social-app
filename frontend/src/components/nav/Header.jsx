@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { MessageSquare, LayoutGrid, LogOut, Menu } from "lucide-react";
+import { MessageSquare, LayoutGrid, LogOut, Menu, User } from "lucide-react";
 import Avatar from "../Avatar";
 import { cn } from "../../lib/cn";
 
@@ -57,7 +57,7 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
             aria-expanded={isDrawerOpen}
             aria-controls="mobile-drawer"
             aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 cursor-pointer"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-white hover:bg-surface-raised transition-colors focus-visible:outline-2 cursor-pointer"
           >
             <Menu className="w-5 h-5 stroke-[1.75]" />
           </button>
@@ -67,14 +67,14 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
             to="/"
             className="flex items-center gap-2 group focus-visible:outline-2 rounded-sm"
           >
-            <span className="font-heading font-extrabold text-xl tracking-tight text-text group-hover:text-accent transition-colors">
+            <span className="font-heading font-extrabold text-xl tracking-tight text-white group-hover:text-accent transition-colors">
               NOX<span className="text-accent">.</span>
             </span>
           </Link>
         </div>
 
         {/* Center: Desktop Navigation Tabs */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1">
+        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
           <NavLinkItem
             to="/"
             label="Feed"
@@ -82,9 +82,15 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
             active={location.pathname === "/"}
           />
           <NavLinkItem
-            to="/profile"
-            label="Topsters & Quilts"
+            to="/topsters"
+            label="Topsters"
             icon={<LayoutGrid className="w-4 h-4 stroke-[1.75]" />}
+            active={location.pathname === "/topsters"}
+          />
+          <NavLinkItem
+            to="/profile"
+            label="Profile"
+            icon={<User className="w-4 h-4 stroke-[1.75]" />}
             active={location.pathname === "/profile"}
           />
         </nav>
@@ -94,11 +100,11 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
           {user && (
             <Link
               to="/profile"
-              className="flex items-center gap-2 py-1 px-2 rounded-full hover:bg-surface-raised border border-transparent hover:border-border transition-colors focus-visible:outline-2"
+              className="flex items-center gap-2 py-1 px-3 rounded-full hover:bg-white/5 border border-border transition-colors focus-visible:outline-2"
               title="Open profile"
             >
-              <Avatar username={user.username} size={28} />
-              <span className="hidden sm:inline-block font-sans text-xs font-semibold text-text max-w-[110px] truncate">
+              <Avatar username={user.username} size={26} />
+              <span className="font-sans text-xs font-semibold text-white max-w-[120px] truncate">
                 {user.username}
               </span>
             </Link>
@@ -127,10 +133,10 @@ function NavLinkItem({ to, label, icon, active }) {
     <Link
       to={to}
       className={cn(
-        "h-9 px-3.5 flex items-center gap-2 rounded-lg text-xs font-semibold transition-colors focus-visible:outline-2",
+        "h-9 px-4 flex items-center gap-2 rounded-full text-xs font-semibold transition-all focus-visible:outline-2",
         active
-          ? "bg-surface-raised text-accent border border-border/80 shadow-1"
-          : "text-text-muted hover:text-text hover:bg-surface-raised/60"
+          ? "bg-white text-zinc-950 shadow-sm"
+          : "text-zinc-400 hover:text-white hover:bg-white/5"
       )}
     >
       <span aria-hidden="true">{icon}</span>

@@ -72,7 +72,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
               <Route index element={<FeedPage user={user} />} />
-              <Route path="profile" element={<ProfilePage user={user} onLogout={handleLogout} />} />
+              <Route path="topsters" element={<ProfilePage user={user} initialTab="quilts" onLogout={handleLogout} />} />
+              <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Routes>

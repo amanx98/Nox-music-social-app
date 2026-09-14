@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { X, MessageSquare, LayoutGrid, LogOut } from "lucide-react";
+import { X, MessageSquare, LayoutGrid, LogOut, User } from "lucide-react";
 import Avatar from "../Avatar";
 import { cn } from "../../lib/cn";
 
@@ -166,9 +166,16 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
               onClick={onClose}
             />
             <DrawerLink
-              to="/profile"
-              label="Topsters & Quilts"
+              to="/topsters"
+              label="Topsters"
               icon={<LayoutGrid className="w-4 h-4 stroke-[1.75]" />}
+              active={location.pathname === "/topsters"}
+              onClick={onClose}
+            />
+            <DrawerLink
+              to="/profile"
+              label="Profile"
+              icon={<User className="w-4 h-4 stroke-[1.75]" />}
               active={location.pathname === "/profile"}
               onClick={onClose}
             />
@@ -178,23 +185,27 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
         {/* User Footer Card */}
         {user && (
           <div className="pt-4 border-t border-border flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
+            <Link
+              to="/profile"
+              onClick={onClose}
+              className="flex items-center gap-2.5 min-w-0 group hover:opacity-85 transition-opacity"
+            >
               <Avatar username={user.username} size={34} />
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-text truncate">
+                <div className="text-xs font-semibold text-white group-hover:text-accent transition-colors truncate">
                   {user.username}
                 </div>
-                <div className="font-mono text-2xs text-text-dim truncate">
+                <div className="font-mono text-2xs text-text-muted truncate">
                   @{user.username.toLowerCase()}
                 </div>
               </div>
-            </div>
+            </Link>
 
             {onLogout && (
               <button
                 type="button"
                 onClick={onLogout}
-                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors cursor-pointer"
                 title="Sign out"
                 aria-label="Sign out"
               >
@@ -214,10 +225,10 @@ function DrawerLink({ to, label, icon, active, onClick }) {
       to={to}
       onClick={onClick}
       className={cn(
-        "h-10 px-3 flex items-center gap-3 rounded-lg text-xs font-semibold transition-colors",
+        "h-10 px-3.5 flex items-center gap-3 rounded-full text-xs font-semibold transition-all",
         active
-          ? "bg-accent/15 text-accent border border-accent/25"
-          : "text-text-muted hover:text-text hover:bg-surface"
+          ? "bg-white text-zinc-950 shadow-sm"
+          : "text-zinc-400 hover:text-white hover:bg-white/5"
       )}
     >
       <span aria-hidden="true">{icon}</span>
