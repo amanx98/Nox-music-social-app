@@ -27,6 +27,7 @@ import BentoTopsterGrid from "./components/quilt/BentoTopsterGrid";
 import AlbumDetailModal from "./components/quilt/AlbumDetailModal";
 import ArtistModal from "./components/ArtistModal";
 import Button from "./components/ui/Button";
+import { cn } from "./lib/cn";
 
 const PERIODS = [
   { value: "overall", label: "All Time" },
