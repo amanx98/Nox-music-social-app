@@ -102,3 +102,5 @@ Card.Title = CardTitle;
 Card.Description = CardDescription;
 Card.Body = CardBody;
 Card.Footer = CardFooter;
+
+export default Card;

@@ -242,6 +242,29 @@
    8. Universal Accessibility Contract
    ========================================================================== */
 
+/* Skip link (Accessible keyboard skip to main content) */
+.skip-link {
+  position: fixed;
+  top: -120px;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-sm);
+  z-index: 9999;
+  text-decoration: none;
+  transition: top var(--motion-fast) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+  top: 1rem;
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
 /* Visible focus rings that never disappear without replacement */
 :focus-visible {
   outline: 2px solid var(--color-accent);

@@ -1,0 +1,114 @@
+/* ==========================================================================
+   Bento Topster Grid Layout
+   Compliant with bento-grid-layouts skill:
+   - grid-template-areas with descriptive region names
+   - size = importance hierarchy (featured 2x2 cell = 4x area of secondary)
+   - distinct interior treatments per cell role
+   - responsive collapse preserving primary cell dominance
+   - container queries for interior adaptation
+   ========================================================================== */
+
+.bento-topster-grid {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: minmax(200px, auto) minmax(200px, auto) minmax(170px, auto);
+  grid-template-areas:
+    "featured featured top-2 top-3"
+    "featured featured top-4 top-5"
+    "stat-highlight rank-6 rank-7 rank-8";
+}
+
+.bento-featured       { grid-area: featured; }
+.bento-top-2          { grid-area: top-2; }
+.bento-top-3          { grid-area: top-3; }
+.bento-top-4          { grid-area: top-4; }
+.bento-top-5          { grid-area: top-5; }
+.bento-stat-highlight { grid-area: stat-highlight; }
+.bento-rank-6         { grid-area: rank-6; }
+.bento-rank-7         { grid-area: rank-7; }
+.bento-rank-8         { grid-area: rank-8; }
+
+/* Responsive Collapse (Preserves primary dominance!) */
+/* Tablet: 2 columns, primary spans full top row */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .bento-topster-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "featured featured"
+      "top-2 top-3"
+      "top-4 top-5"
+      "stat-highlight stat-highlight"
+      "rank-6 rank-7"
+      "rank-8 rank-8";
+  }
+}
+
+/* Mobile: 1 column, primary remains dominant hero */
+@media (max-width: 639px) {
+  .bento-topster-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "featured"
+      "top-2"
+      "top-3"
+      "top-4"
+      "top-5"
+      "stat-highlight"
+      "rank-6"
+      "rank-7"
+      "rank-8";
+  }
+}
+
+/* Cell specific styling and interactions */
+.bento-cell {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg, 12px);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease,
+              box-shadow 0.25s ease;
+}
+
+.bento-cell:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-3);
+}
+
+/* Primary Featured Cell Special Treatment */
+.bento-featured {
+  border-color: color-mix(in oklch, var(--color-accent) 30%, var(--color-border));
+  background: radial-gradient(
+    circle at top right,
+    color-mix(in oklch, var(--color-accent) 12%, var(--color-surface-raised)),
+    var(--color-surface-raised) 70%
+  );
+}
+
+.bento-featured:hover {
+  border-color: var(--color-accent);
+}
+
+/* Vinyl sleeve effect for primary cell */
+.vinyl-disc {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform-origin: center;
+}
+
+.bento-featured:hover .vinyl-disc {
+  transform: translateX(18px) rotate(45deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bento-cell,
+  .vinyl-disc {
+    transition: none !important;
+    transform: none !important;
+  }
+}

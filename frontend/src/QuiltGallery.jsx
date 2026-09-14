@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { generateQuilt, getQuilts, deleteQuilt } from "./api/client";
+import { generateQuilt, getQuilts, deleteQuilt, getTopAlbums } from "./api/client";
 import { useToast } from "./components/Toast";
 import LightboxModal from "./components/LightboxModal";
 import QuiltFolderModal from "./components/QuiltFolderModal";
+import BentoTopsterGrid from "./components/quilt/BentoTopsterGrid";
+import AlbumDetailModal from "./components/quilt/AlbumDetailModal";
+import Button from "./components/ui/Button";
 
 const PERIODS = [
   { value: "overall", label: "All Time" },
@@ -23,10 +26,22 @@ const DIMENSION_PRESETS = [
 
 export default function QuiltGallery() {
   const { addToast } = useToast();
+
+  // Top view mode: 'bento' or 'quilts'
+  const [viewMode, setViewMode] = useState("bento");
+
+  // Bento Topster state
+  const [bentoPeriod, setBentoPeriod] = useState("overall");
+  const [bentoAlbums, setBentoAlbums] = useState([]);
+  const [bentoLoading, setBentoLoading] = useState(false);
+  const [selectedBentoAlbum, setSelectedBentoAlbum] = useState(null);
+  const [selectedBentoRank, setSelectedBentoRank] = useState(1);
+
+  // Generated Quilts state
   const [quilts, setQuilts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [quiltLoading, setQuiltLoading] = useState(false);
   const [error, setError] = useState("");
-  const [period, setPeriod] = useState("overall");
+  const [quiltPeriod, setQuiltPeriod] = useState("overall");
   const [quiltType, setQuiltType] = useState("albums");
   const [gridSize, setGridSize] = useState(3);
 
@@ -46,6 +61,7 @@ export default function QuiltGallery() {
   const [showFolderModal, setShowFolderModal] = useState(false);
 
   useEffect(() => {
+    loadBentoAlbums(bentoPeriod);
     loadQuilts();
   }, []);
 
@@ -57,10 +73,28 @@ export default function QuiltGallery() {
     localStorage.setItem("nox_quilt_assignments", JSON.stringify(quiltFolders));
   }, [quiltFolders]);
 
+  async function loadBentoAlbums(period) {
+    setBentoLoading(true);
+    try {
+      const data = await getTopAlbums(period);
+      setBentoAlbums(Array.isArray(data) ? data : []);
+    } catch {
+      // Graceful fallback if Last.fm not yet connected
+      setBentoAlbums([]);
+    } finally {
+      setBentoLoading(false);
+    }
+  }
+
+  function handleBentoPeriodChange(p) {
+    setBentoPeriod(p);
+    loadBentoAlbums(p);
+  }
+
   async function loadQuilts() {
     try {
       const data = await getQuilts();
-      setQuilts(data);
+      setQuilts(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message);
     }
@@ -68,17 +102,17 @@ export default function QuiltGallery() {
 
   async function handleGenerate(e) {
     e.preventDefault();
-    setLoading(true);
+    setQuiltLoading(true);
     setError("");
     try {
-      await generateQuilt(period, quiltType, gridSize);
+      await generateQuilt(quiltPeriod, quiltType, gridSize);
       await loadQuilts();
       addToast("Quilt generated successfully!");
     } catch (err) {
       setError(err.message);
       addToast(err.message || "Failed to generate quilt", "error");
     } finally {
-      setLoading(false);
+      setQuiltLoading(false);
     }
   }
 
@@ -86,7 +120,6 @@ export default function QuiltGallery() {
     try {
       await deleteQuilt(id);
       setQuilts((prev) => prev.filter((q) => q.id !== id));
-      // remove from assignments
       setQuiltFolders((prev) => {
         const next = { ...prev };
         delete next[id];
@@ -94,7 +127,6 @@ export default function QuiltGallery() {
       });
       addToast("Quilt deleted");
     } catch {
-      // Fallback optimistic delete
       setQuilts((prev) => prev.filter((q) => q.id !== id));
       addToast("Quilt removed from gallery");
     }
@@ -150,7 +182,7 @@ export default function QuiltGallery() {
       });
   }
 
-  // Filter quilts
+  // Filter quilts by folder
   const filteredQuilts = quilts.filter((q) => {
     if (activeFolder === "all") return true;
     if (activeFolder === "unassigned") return !quiltFolders[q.id];
@@ -158,199 +190,373 @@ export default function QuiltGallery() {
   });
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "16px" }}>
+    <div className="space-y-6">
+      {/* Header & Mode Switcher */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border">
         <div>
-          <h2>Album &amp; Track Quilts</h2>
-          <p className="meta" style={{ margin: 0 }}>
-            Generate high-res visual collages from your actual listening history.
+          <h1 className="text-2xl sm:text-3xl font-heading font-black text-text tracking-tight">
+            Album Quilts &amp; Topsters
+          </h1>
+          <p className="text-xs sm:text-sm text-muted mt-1">
+            Hierarchical bento topsters and high-res composite collages generated from your music journey.
           </p>
+        </div>
+
+        {/* View Mode Switcher Pill Group */}
+        <div
+          role="tablist"
+          aria-label="Quilt Gallery Views"
+          className="inline-flex p-1 rounded-xl bg-surface-sunken border border-border self-start sm:self-auto"
+        >
+          <button
+            role="tab"
+            aria-selected={viewMode === "bento"}
+            onClick={() => setViewMode("bento")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+              viewMode === "bento"
+                ? "bg-surface-raised text-accent shadow-1 border border-border"
+                : "text-muted hover:text-text hover:bg-surface/50"
+            }`}
+          >
+            <span>🍱</span>
+            <span>Bento Topster</span>
+          </button>
+          <button
+            role="tab"
+            aria-selected={viewMode === "quilts"}
+            onClick={() => setViewMode("quilts")}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+              viewMode === "quilts"
+                ? "bg-surface-raised text-accent shadow-1 border border-border"
+                : "text-muted hover:text-text hover:bg-surface/50"
+            }`}
+          >
+            <span>🖼️</span>
+            <span>Quilt Studio ({quilts.length})</span>
+          </button>
         </div>
       </div>
 
       {error && (
-        <div style={{ padding: "12px 16px", background: "rgba(224, 109, 83, 0.15)", border: "1px solid var(--coral)", borderRadius: "var(--radius)", color: "#fca5a5", marginBottom: "16px" }}>
+        <div className="p-3 rounded-lg border border-danger/40 bg-danger-muted text-rose-300 text-xs">
           {error}
         </div>
       )}
 
-      {/* Quilt Generation Control Box */}
-      <div className="card" style={{ marginBottom: "28px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
-          <span style={{ fontSize: "20px" }}>🎛️</span>
-          <h3 style={{ margin: 0 }}>Quilt Studio</h3>
-        </div>
+      {/* ====================================================================
+          MODE 1: BENTO TOPSTER MOSAIC GRID (Skill: bento-grid-layouts)
+         ==================================================================== */}
+      {viewMode === "bento" && (
+        <div className="space-y-5 animate-fade-in">
+          {/* Time Window Filter Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-surface-raised border border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-muted">
+                Period:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p.value}
+                    onClick={() => handleBentoPeriodChange(p.value)}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                      bentoPeriod === p.value
+                        ? "bg-accent text-surface font-bold"
+                        : "bg-surface-sunken border border-border text-muted hover:text-text hover:border-border-hover"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        <form onSubmit={handleGenerate} style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
-          {/* Period selector */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label className="meta" style={{ fontSize: "11px" }}>TIME WINDOW</label>
-            <select value={period} onChange={(e) => setPeriod(e.target.value)}>
-              {PERIODS.map((p) => (
-                <option key={p.value} value={p.value}>{p.label}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <span className="text-2xs font-mono text-muted hidden sm:inline">
+                {bentoAlbums.length} albums synced
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadBentoAlbums(bentoPeriod)}
+                disabled={bentoLoading}
+              >
+                {bentoLoading ? "Syncing..." : "↻ Refresh"}
+              </Button>
+            </div>
           </div>
 
-          {/* Type selector */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label className="meta" style={{ fontSize: "11px" }}>MEDIA TYPE</label>
-            <select value={quiltType} onChange={(e) => setQuiltType(e.target.value)}>
-              <option value="albums">Top Albums</option>
-              <option value="tracks">Top Tracks</option>
-            </select>
-          </div>
+          {/* Render Responsive Bento Topster Grid */}
+          <BentoTopsterGrid
+            albums={bentoAlbums}
+            period={bentoPeriod}
+            isLoading={bentoLoading}
+            onSelectAlbum={(album, rank) => {
+              setSelectedBentoAlbum(album);
+              setSelectedBentoRank(rank);
+            }}
+          />
 
-          {/* Grid Size / Dimensions */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-            <label className="meta" style={{ fontSize: "11px" }}>GRID DIMENSIONS</label>
-            <select value={gridSize} onChange={(e) => setGridSize(Number(e.target.value))}>
-              {DIMENSION_PRESETS.map((preset) => (
-                <option key={preset.size} value={preset.size}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ alignSelf: "flex-end" }}>
-            <button type="submit" className="btn-primary" disabled={loading} style={{ height: "42px", padding: "0 22px" }}>
-              {loading ? (
-                <>
-                  <span className="spin" style={{ display: "inline-block" }}>💿</span>
-                  <span>Spinning Quilt...</span>
-                </>
-              ) : (
-                <>
-                  <span>✦</span>
-                  <span>Generate Quilt</span>
-                </>
-              )}
+          {/* Quick Explainer Callout */}
+          <div className="p-4 rounded-xl border border-border/80 bg-surface-sunken/60 flex items-center justify-between text-xs text-muted">
+            <div className="flex items-center gap-2">
+              <span className="text-base">💡</span>
+              <span>
+                Tip: Click any album in your Bento Topster to view details, verify play counts, or search tracks.
+              </span>
+            </div>
+            <button
+              onClick={() => setViewMode("quilts")}
+              className="text-accent hover:underline font-semibold flex-shrink-0"
+            >
+              Export to Quilt Canvas →
             </button>
           </div>
-        </form>
-      </div>
-
-      {/* Crates / Folders Bar */}
-      <div style={{ marginBottom: "20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-          <span className="meta" style={{ fontSize: "12px", color: "var(--cream-text)" }}>
-            CRATES &amp; COLLECTIONS ({filteredQuilts.length})
-          </span>
-          <button
-            className="btn-ghost"
-            style={{ fontSize: "12px", padding: "4px 8px" }}
-            onClick={() => setShowFolderModal(true)}
-          >
-            ⚙️ Manage Crates
-          </button>
-        </div>
-
-        <div className="crate-bar">
-          <button
-            className={`crate-pill ${activeFolder === "all" ? "active" : ""}`}
-            onClick={() => setActiveFolder("all")}
-          >
-            All Quilts ({quilts.length})
-          </button>
-
-          {folders.map((folder) => {
-            const count = quilts.filter((q) => quiltFolders[q.id] === folder).length;
-            return (
-              <button
-                key={folder}
-                className={`crate-pill ${activeFolder === folder ? "active" : ""}`}
-                onClick={() => setActiveFolder(folder)}
-              >
-                📁 {folder} ({count})
-              </button>
-            );
-          })}
-
-          <button
-            className={`crate-pill ${activeFolder === "unassigned" ? "active" : ""}`}
-            onClick={() => setActiveFolder("unassigned")}
-          >
-            Unassigned
-          </button>
-
-          <button
-            className="crate-pill"
-            style={{ borderStyle: "dashed" }}
-            onClick={() => setShowFolderModal(true)}
-          >
-            + New Crate
-          </button>
-        </div>
-      </div>
-
-      {/* Quilt Grid */}
-      {filteredQuilts.length === 0 ? (
-        <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
-          <div style={{ fontSize: "36px", marginBottom: "12px" }}>🖼️</div>
-          <h3 style={{ margin: 0, marginBottom: "6px" }}>No quilts in this crate</h3>
-          <p className="meta">
-            {quilts.length === 0
-              ? "Generate your first album or track quilt above using your Last.fm data."
-              : "Assign quilts to this folder by clicking on any quilt card."}
-          </p>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "22px" }}>
-          {filteredQuilts.map((quilt) => {
-            const assigned = quiltFolders[quilt.id];
-            return (
-              <div
-                key={quilt.id}
-                className="quilt-frame"
-                style={{ cursor: "pointer" }}
-                onClick={() => setActiveLightboxQuilt(quilt)}
-              >
-                <img src={quilt.image_url} alt={`Quilt ${quilt.id}`} />
-
-                <div className="quilt-actions">
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: "13px", textTransform: "capitalize", color: "var(--ink)" }}>
-                      {quilt.quilt_type} &middot; {quilt.period}
-                    </div>
-                    {assigned && (
-                      <span className="badge badge-mustard" style={{ marginTop: "4px", fontSize: "10px" }}>
-                        📁 {assigned}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: "flex", gap: "4px" }} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      className="btn-icon"
-                      onClick={(e) => handleDownloadQuick(quilt, e)}
-                      title="Download PNG"
-                      style={{ padding: "5px 7px" }}
-                    >
-                      ⬇
-                    </button>
-                    <button
-                      className="btn-icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (window.confirm("Delete this quilt?")) {
-                          handleDeleteQuilt(quilt.id);
-                        }
-                      }}
-                      title="Delete Quilt"
-                      style={{ padding: "5px 7px", color: "var(--coral)" }}
-                    >
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
         </div>
       )}
 
-      {/* Lightbox Modal */}
+      {/* ====================================================================
+          MODE 2: QUILT CANVAS STUDIO & CRATES
+         ==================================================================== */}
+      {viewMode === "quilts" && (
+        <div className="space-y-6 animate-fade-in">
+          {/* Quilt Generation Control Box */}
+          <div className="p-5 rounded-2xl border border-border bg-surface-raised shadow-2">
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="text-xl">🎛️</span>
+              <h2 className="text-base font-bold text-text">Quilt Studio</h2>
+            </div>
+
+            <form
+              onSubmit={handleGenerate}
+              className="flex flex-wrap items-end gap-3"
+            >
+              {/* Period selector */}
+              <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
+                <label className="text-2xs font-mono uppercase text-muted tracking-wider">
+                  Time Window
+                </label>
+                <select
+                  value={quiltPeriod}
+                  onChange={(e) => setQuiltPeriod(e.target.value)}
+                  className="px-3 py-2 rounded-lg bg-surface-sunken border border-border text-xs text-text focus:ring-2 focus:ring-accent focus:outline-none"
+                >
+                  {PERIODS.map((p) => (
+                    <option key={p.value} value={p.value}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Type selector */}
+              <div className="flex flex-col gap-1.5 flex-1 min-w-[130px]">
+                <label className="text-2xs font-mono uppercase text-muted tracking-wider">
+                  Media Type
+                </label>
+                <select
+                  value={quiltType}
+                  onChange={(e) => setQuiltType(e.target.value)}
+                  className="px-3 py-2 rounded-lg bg-surface-sunken border border-border text-xs text-text focus:ring-2 focus:ring-accent focus:outline-none"
+                >
+                  <option value="albums">Top Albums</option>
+                  <option value="tracks">Top Tracks</option>
+                </select>
+              </div>
+
+              {/* Grid Size / Dimensions */}
+              <div className="flex flex-col gap-1.5 flex-1 min-w-[150px]">
+                <label className="text-2xs font-mono uppercase text-muted tracking-wider">
+                  Grid Dimensions
+                </label>
+                <select
+                  value={gridSize}
+                  onChange={(e) => setGridSize(Number(e.target.value))}
+                  className="px-3 py-2 rounded-lg bg-surface-sunken border border-border text-xs text-text focus:ring-2 focus:ring-accent focus:outline-none"
+                >
+                  {DIMENSION_PRESETS.map((preset) => (
+                    <option key={preset.size} value={preset.size}>
+                      {preset.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  disabled={quiltLoading}
+                  className="h-[38px]"
+                >
+                  {quiltLoading ? (
+                    <>
+                      <span className="animate-spin">💿</span>
+                      <span>Spinning Quilt...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>✦</span>
+                      <span>Generate Quilt</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          {/* Crates / Folders Bar */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-2xs font-mono uppercase tracking-wider text-muted">
+                Crates &amp; Collections ({filteredQuilts.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowFolderModal(true)}
+                className="text-xs text-accent hover:underline font-semibold"
+              >
+                ⚙️ Manage Crates
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setActiveFolder("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  activeFolder === "all"
+                    ? "bg-accent text-surface font-bold shadow-1"
+                    : "bg-surface-sunken border border-border text-muted hover:text-text hover:border-border-hover"
+                }`}
+              >
+                All Quilts ({quilts.length})
+              </button>
+
+              {folders.map((folder) => {
+                const count = quilts.filter((q) => quiltFolders[q.id] === folder).length;
+                return (
+                  <button
+                    key={folder}
+                    onClick={() => setActiveFolder(folder)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                      activeFolder === folder
+                        ? "bg-accent text-surface font-bold shadow-1"
+                        : "bg-surface-sunken border border-border text-muted hover:text-text hover:border-border-hover"
+                    }`}
+                  >
+                    📁 {folder} ({count})
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setActiveFolder("unassigned")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  activeFolder === "unassigned"
+                    ? "bg-accent text-surface font-bold shadow-1"
+                    : "bg-surface-sunken border border-border text-muted hover:text-text hover:border-border-hover"
+                }`}
+              >
+                Unassigned
+              </button>
+
+              <button
+                onClick={() => setShowFolderModal(true)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-dashed border-border text-muted hover:text-text hover:border-accent"
+              >
+                + New Crate
+              </button>
+            </div>
+          </div>
+
+          {/* Quilt Grid */}
+          {filteredQuilts.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-surface-raised p-10 text-center">
+              <div className="text-4xl mb-3">🖼️</div>
+              <h3 className="text-base font-bold text-text mb-1">No quilts in this crate</h3>
+              <p className="text-xs text-muted max-w-sm mx-auto">
+                {quilts.length === 0
+                  ? "Generate your first album or track quilt above using your Last.fm data."
+                  : "Assign quilts to this crate by opening any quilt card."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {filteredQuilts.map((quilt) => {
+                const assigned = quiltFolders[quilt.id];
+                return (
+                  <div
+                    key={quilt.id}
+                    onClick={() => setActiveLightboxQuilt(quilt)}
+                    className="group rounded-xl overflow-hidden border border-border bg-surface-raised hover:border-border-hover transition-all duration-300 shadow-2 hover:shadow-4 cursor-pointer flex flex-col"
+                  >
+                    <div className="relative aspect-square overflow-hidden bg-surface-sunken">
+                      <img
+                        src={quilt.image_url}
+                        alt={`Quilt ${quilt.id}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+
+                    <div className="p-3.5 flex items-center justify-between gap-2 border-t border-border">
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-text capitalize truncate">
+                          {quilt.quilt_type} &middot; {quilt.period}
+                        </div>
+                        {assigned && (
+                          <span className="inline-block mt-1 text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                            📁 {assigned}
+                          </span>
+                        )}
+                      </div>
+
+                      <div
+                        className="flex items-center gap-1.5 flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadQuick(quilt, e)}
+                          title="Download PNG"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-text hover:bg-surface-sunken border border-border"
+                        >
+                          ⬇
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm("Delete this quilt?")) {
+                              handleDeleteQuilt(quilt.id);
+                            }
+                          }}
+                          title="Delete Quilt"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-danger hover:bg-danger-muted border border-border"
+                        >
+                          🗑
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Album Detail Modal (for Bento Topster) */}
+      {selectedBentoAlbum && (
+        <AlbumDetailModal
+          album={selectedBentoAlbum}
+          rank={selectedBentoRank}
+          onClose={() => setSelectedBentoAlbum(null)}
+        />
+      )}
+
+      {/* Lightbox Modal (for Quilt Canvas) */}
       {activeLightboxQuilt && (
         <LightboxModal
           quilt={activeLightboxQuilt}

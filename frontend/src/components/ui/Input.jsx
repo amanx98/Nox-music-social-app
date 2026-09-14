@@ -19,3 +19,4 @@ export const Input = forwardRef(function Input(
 });
 
 Input.displayName = "Input";
+export default Input;

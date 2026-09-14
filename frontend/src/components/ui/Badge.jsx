@@ -42,3 +42,4 @@ export const Badge = forwardRef(function Badge(
 });
 
 Badge.displayName = "Badge";
+export default Badge;

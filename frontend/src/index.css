@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./styles/tokens.css";
+@import "./styles/bento.css";
 
 /* Tailwind CSS v4 Theme Integration (Inline enables runtime theme swapping) */
 @theme inline {

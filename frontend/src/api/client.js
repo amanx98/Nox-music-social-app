@@ -59,8 +59,9 @@ export async function createTag(name, type) {
   });
 }
 
-export async function getThreads(tagId) {
-  return apiRequest(`/threads/?tag_id=${tagId}`);
+export async function getThreads(tagId = null) {
+  const query = tagId ? `?tag_id=${tagId}` : "";
+  return apiRequest(`/threads/${query}`);
 }
 
 export async function createThread(tagId, title, body) {
