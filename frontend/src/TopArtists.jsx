@@ -238,7 +238,7 @@ export default function TopArtists({ onSelectTag }) {
                         style={{
                           height: "100%",
                           width: `${percentage}%`,
-                          background: i === 0 ? "var(--mustard)" : "var(--teal)",
+                          background: i === 0 ? "var(--mustard)" : "var(--color-secondary)",
                           borderRadius: "2px",
                         }}
                       />

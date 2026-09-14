@@ -12,9 +12,14 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
   const touchCurrentX = useRef(0);
   const touchStartTime = useRef(0);
 
-  // Close on route change
+  const prevPathRef = useRef(location.pathname);
+
+  // Close only on actual route change (do not close immediately when opening)
   useEffect(() => {
-    if (isOpen) onClose();
+    if (prevPathRef.current !== location.pathname) {
+      prevPathRef.current = location.pathname;
+      if (isOpen) onClose();
+    }
   }, [location.pathname, isOpen, onClose]);
 
   // Focus trap & Escape key listener
@@ -59,14 +64,15 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
       }
     };
 
+    const triggerEl = triggerRef?.current;
     window.addEventListener("keydown", handleKeyDown);
     document.body.style.overflow = "hidden"; // Scroll lock
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
-      if (triggerRef?.current) {
-        triggerRef.current.focus();
+      if (triggerEl) {
+        triggerEl.focus();
       } else if (previouslyFocused && previouslyFocused.focus) {
         previouslyFocused.focus();
       }
@@ -102,7 +108,7 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
   if (!isOpen && dragOffset === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-[300] md:hidden" aria-hidden={!isOpen}>
+    <div className="fixed inset-0 z-[300]" aria-hidden={!isOpen}>
       {/* Backdrop */}
       <div
         className={cn(

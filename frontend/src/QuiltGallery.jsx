@@ -9,13 +9,23 @@ import {
   Download,
   RefreshCw,
   Settings,
+  Disc,
+  User,
 } from "lucide-react";
-import { generateQuilt, getQuilts, deleteQuilt, getTopAlbums } from "./api/client";
+import {
+  generateQuilt,
+  getQuilts,
+  deleteQuilt,
+  getTopAlbums,
+  getTopArtists,
+  getArtistDetails,
+} from "./api/client";
 import { useToast } from "./components/Toast";
 import LightboxModal from "./components/LightboxModal";
 import QuiltFolderModal from "./components/QuiltFolderModal";
 import BentoTopsterGrid from "./components/quilt/BentoTopsterGrid";
 import AlbumDetailModal from "./components/quilt/AlbumDetailModal";
+import ArtistModal from "./components/ArtistModal";
 import Button from "./components/ui/Button";
 
 const PERIODS = [
@@ -42,11 +52,14 @@ export default function QuiltGallery() {
   const [viewMode, setViewMode] = useState("bento");
 
   // Bento Topster state
+  const [bentoCategory, setBentoCategory] = useState("albums"); // "albums" | "artists"
   const [bentoPeriod, setBentoPeriod] = useState("overall");
   const [bentoAlbums, setBentoAlbums] = useState([]);
+  const [bentoArtists, setBentoArtists] = useState([]);
   const [bentoLoading, setBentoLoading] = useState(false);
   const [selectedBentoAlbum, setSelectedBentoAlbum] = useState(null);
   const [selectedBentoRank, setSelectedBentoRank] = useState(1);
+  const [selectedBentoArtist, setSelectedBentoArtist] = useState(null);
 
   // Generated Quilts state
   const [quilts, setQuilts] = useState([]);
@@ -96,9 +109,59 @@ export default function QuiltGallery() {
     }
   }
 
+  async function loadBentoArtists(period) {
+    setBentoLoading(true);
+    try {
+      const data = await getTopArtists(period);
+      const list = Array.isArray(data) ? data : [];
+      // Hydrate top 9 artists with photography
+      const top9 = list.slice(0, 9);
+      const hydrated = await Promise.all(
+        top9.map(async (item) => {
+          try {
+            const details = await getArtistDetails(item.name);
+            return {
+              ...item,
+              name: item.name,
+              playcount: item.playcount,
+              image_url: details.image || (details.images && details.images[0]) || null,
+              fans: details.fans,
+              details,
+            };
+          } catch {
+            return {
+              ...item,
+              name: item.name,
+              playcount: item.playcount,
+              image_url: null,
+            };
+          }
+        })
+      );
+      setBentoArtists(hydrated);
+    } catch {
+      setBentoArtists([]);
+    } finally {
+      setBentoLoading(false);
+    }
+  }
+
+  function handleBentoCategoryChange(cat) {
+    setBentoCategory(cat);
+    if (cat === "artists" && bentoArtists.length === 0) {
+      loadBentoArtists(bentoPeriod);
+    } else if (cat === "albums" && bentoAlbums.length === 0) {
+      loadBentoAlbums(bentoPeriod);
+    }
+  }
+
   function handleBentoPeriodChange(p) {
     setBentoPeriod(p);
-    loadBentoAlbums(p);
+    if (bentoCategory === "artists") {
+      loadBentoArtists(p);
+    } else {
+      loadBentoAlbums(p);
+    }
   }
 
   async function loadQuilts() {
@@ -256,28 +319,63 @@ export default function QuiltGallery() {
       {/* MODE 1: BENTO TOPSTER MOSAIC */}
       {viewMode === "bento" && (
         <div className="space-y-4">
-          {/* Period Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-surface-raised border border-border">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {PERIODS.map((p) => (
+          {/* Controls Bar: Category Switcher (Albums vs Artists) + Periods + Sync */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-surface-raised border border-border">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {/* Albums / Artists Pill Switcher */}
+              <div
+                role="group"
+                aria-label="Topster content type"
+                className="inline-flex p-0.5 rounded-lg bg-surface-sunken border border-border"
+              >
                 <button
-                  key={p.value}
-                  onClick={() => handleBentoPeriodChange(p.value)}
-                  className={`px-2.5 py-1 rounded-md font-mono text-xs transition-colors cursor-pointer ${
-                    bentoPeriod === p.value
-                      ? "bg-accent text-surface font-semibold"
-                      : "bg-surface-sunken border border-border text-text-muted hover:text-text"
+                  type="button"
+                  onClick={() => handleBentoCategoryChange("albums")}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    bentoCategory === "albums"
+                      ? "bg-surface-raised text-accent shadow-1 border border-border/80"
+                      : "text-text-muted hover:text-text"
                   }`}
                 >
-                  {p.label}
+                  <Disc className="w-3.5 h-3.5" />
+                  <span>Albums</span>
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => handleBentoCategoryChange("artists")}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                    bentoCategory === "artists"
+                      ? "bg-surface-raised text-accent shadow-1 border border-border/80"
+                      : "text-text-muted hover:text-text"
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Artists</span>
+                </button>
+              </div>
+
+              {/* Period Chips */}
+              <div className="flex items-center gap-1 flex-wrap">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p.value}
+                    onClick={() => handleBentoPeriodChange(p.value)}
+                    className={`px-2.5 py-1 rounded-md font-mono text-xs transition-colors cursor-pointer ${
+                      bentoPeriod === p.value
+                        ? "bg-accent text-surface font-semibold"
+                        : "bg-surface-sunken border border-border text-text-muted hover:text-text"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Button
               variant="outline"
               size="sm"
-              onClick={() => loadBentoAlbums(bentoPeriod)}
+              onClick={() => bentoCategory === "artists" ? loadBentoArtists(bentoPeriod) : loadBentoAlbums(bentoPeriod)}
               disabled={bentoLoading}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${bentoLoading ? "animate-spin" : ""}`} />
@@ -285,14 +383,19 @@ export default function QuiltGallery() {
             </Button>
           </div>
 
-          {/* Render Uncropped Bento Topster */}
+          {/* Render Uncropped Bento Topster (Albums or Artists) */}
           <BentoTopsterGrid
-            albums={bentoAlbums}
+            type={bentoCategory}
+            items={bentoCategory === "artists" ? bentoArtists : bentoAlbums}
             period={bentoPeriod}
             isLoading={bentoLoading}
-            onSelectAlbum={(album, rank) => {
-              setSelectedBentoAlbum(album);
-              setSelectedBentoRank(rank);
+            onSelectItem={(item, rank) => {
+              if (bentoCategory === "artists") {
+                setSelectedBentoArtist(item);
+              } else {
+                setSelectedBentoAlbum(item);
+                setSelectedBentoRank(rank);
+              }
             }}
           />
         </div>
@@ -506,6 +609,13 @@ export default function QuiltGallery() {
           album={selectedBentoAlbum}
           rank={selectedBentoRank}
           onClose={() => setSelectedBentoAlbum(null)}
+        />
+      )}
+
+      {selectedBentoArtist && (
+        <ArtistModal
+          artist={selectedBentoArtist}
+          onClose={() => setSelectedBentoArtist(null)}
         />
       )}
 

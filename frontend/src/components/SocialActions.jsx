@@ -83,14 +83,14 @@ export default function SocialActions({
       {/* Reply Button */}
       <button
         type="button"
-        className="group flex items-center gap-1.5 text-xs transition-colors hover:text-cyan-400 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded"
+        className="group flex items-center gap-1.5 text-xs transition-colors hover:text-text cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded"
         onClick={onReplyClick}
         aria-label={`Reply (${replyCount} replies)`}
       >
-        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-cyan-500/10">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-surface-raised">
           <MessageSquare className="w-4 h-4 stroke-[1.75]" />
         </div>
-        <span className="font-mono text-2xs tabular-nums text-text-dim group-hover:text-cyan-400">
+        <span className="font-mono text-2xs tabular-nums text-text-dim group-hover:text-text">
           {replyCount > 0 ? replyCount : ""}
         </span>
       </button>

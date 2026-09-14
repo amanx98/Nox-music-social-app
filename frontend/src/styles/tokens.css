@@ -31,10 +31,10 @@
   --amber-600: oklch(0.68 0.16 78);
   --amber-700: oklch(0.58 0.15 78);
 
-  /* Deep Teal / Cyan Scale (Secondary / Social) */
-  --teal-400: oklch(0.74 0.12 195);
-  --teal-500: oklch(0.66 0.14 195);
-  --teal-600: oklch(0.56 0.13 195);
+  /* Slate Scale (Secondary / Social) */
+  --slate-400: oklch(0.76 0.02 260);
+  --slate-500: oklch(0.68 0.02 260);
+  --slate-600: oklch(0.58 0.02 260);
 
   /* Velvet Rose / Coral Scale (Destructive / Alerts) */
   --rose-400: oklch(0.72 0.18 25);
@@ -49,9 +49,9 @@
   --emerald-400: oklch(0.76 0.15 150);
   --emerald-500: oklch(0.68 0.17 150);
 
-  /* Arctic Ice Blue Scale */
-  --cyan-400: oklch(0.78 0.13 220);
-  --cyan-500: oklch(0.70 0.15 220);
+  /* Silver Chrome Scale */
+  --chrome-400: oklch(0.92 0.008 260);
+  --chrome-500: oklch(0.85 0.010 260);
 
   /* ==========================================================================
      2. Semantic Color Tokens (Referenced by Components)
@@ -81,10 +81,10 @@
   --color-accent-muted:   oklch(0.75 0.15 78 / 0.12);
   --color-accent-text:    var(--obsidian-950);
 
-  /* Secondary (Music & Community) */
-  --color-secondary:       var(--teal-500);
-  --color-secondary-hover: var(--teal-400);
-  --color-secondary-muted: oklch(0.66 0.14 195 / 0.15);
+  /* Secondary (Muted Silver / Slate) */
+  --color-secondary:       var(--slate-400);
+  --color-secondary-hover: var(--slate-500);
+  --color-secondary-muted: oklch(0.76 0.02 260 / 0.12);
 
   /* Destructive / Alert */
   --color-danger:         var(--rose-500);
@@ -203,8 +203,8 @@
   --color-accent:         var(--violet-500);
   --color-accent-hover:   var(--violet-400);
   --color-accent-muted:   oklch(0.68 0.18 300 / 0.14);
-  --color-secondary:       var(--cyan-500);
-  --color-secondary-hover: var(--cyan-400);
+  --color-secondary:       var(--slate-400);
+  --color-secondary-hover: var(--slate-500);
   --cursor-glow:          oklch(0.68 0.18 300 / 0.08);
   --cursor-glow-strong:   oklch(0.68 0.18 300 / 0.16);
 }
@@ -213,8 +213,8 @@
   --color-accent:         var(--emerald-500);
   --color-accent-hover:   var(--emerald-400);
   --color-accent-muted:   oklch(0.68 0.17 150 / 0.14);
-  --color-secondary:       var(--teal-500);
-  --color-secondary-hover: var(--teal-400);
+  --color-secondary:       var(--slate-400);
+  --color-secondary-hover: var(--slate-500);
   --cursor-glow:          oklch(0.68 0.17 150 / 0.08);
   --cursor-glow-strong:   oklch(0.68 0.17 150 / 0.16);
 }
@@ -229,14 +229,14 @@
   --cursor-glow-strong:   oklch(0.65 0.20 25 / 0.16);
 }
 
-[data-theme="cobalt"], [data-theme="solar"] {
-  --color-accent:         var(--cyan-500);
-  --color-accent-hover:   var(--cyan-400);
-  --color-accent-muted:   oklch(0.70 0.15 220 / 0.14);
-  --color-secondary:       var(--violet-500);
-  --color-secondary-hover: var(--violet-400);
-  --cursor-glow:          oklch(0.70 0.15 220 / 0.08);
-  --cursor-glow-strong:   oklch(0.70 0.15 220 / 0.16);
+[data-theme="chrome"] {
+  --color-accent:         var(--chrome-400);
+  --color-accent-hover:   var(--chrome-500);
+  --color-accent-muted:   oklch(0.92 0.008 260 / 0.14);
+  --color-secondary:       var(--slate-400);
+  --color-secondary-hover: var(--slate-500);
+  --cursor-glow:          oklch(0.92 0.008 260 / 0.08);
+  --cursor-glow-strong:   oklch(0.92 0.008 260 / 0.15);
 }
 
 /* ==========================================================================

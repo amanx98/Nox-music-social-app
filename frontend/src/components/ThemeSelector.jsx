@@ -39,20 +39,25 @@ export const THEMES = [
     glow: "rgba(244, 63, 94, 0.18)",
   },
   {
-    id: "cobalt",
-    name: "Arctic Cyan",
-    desc: "Deep space noir with ethereal ice cyan cursor halo",
-    bg: "#040608",
-    cardBg: "#0c1218",
-    accent: "#06b6d4",
-    glow: "rgba(6, 182, 212, 0.18)",
+    id: "chrome",
+    name: "Monochrome Silver",
+    desc: "Deep obsidian noir with understated metallic silver highlights",
+    bg: "#060607",
+    cardBg: "#101012",
+    accent: "#e2e8f0",
+    glow: "rgba(226, 232, 240, 0.14)",
   },
 ];
 
 export default function ThemeSelector() {
   const { addToast } = useToast();
   const [currentTheme, setCurrentTheme] = useState(() => {
-    return localStorage.getItem("nox_theme") || "midnight";
+    const saved = localStorage.getItem("nox_theme");
+    if (saved === "cobalt") {
+      localStorage.setItem("nox_theme", "midnight");
+      return "midnight";
+    }
+    return saved || "midnight";
   });
 
   function handleSelectTheme(themeId) {

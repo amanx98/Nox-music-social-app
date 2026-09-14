@@ -57,7 +57,7 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
             aria-expanded={isDrawerOpen}
             aria-controls="mobile-drawer"
             aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
-            className="md:hidden min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2"
+            className="min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 cursor-pointer"
           >
             <Menu className="w-5 h-5 stroke-[1.75]" />
           </button>
