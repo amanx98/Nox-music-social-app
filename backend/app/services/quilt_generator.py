@@ -14,7 +14,7 @@ async def generate_quilt(albums: list[dict], grid_size: int = 3) -> str:
     canvas_size = grid_size * TILE_SIZE
     canvas = Image.new("RGB", (canvas_size, canvas_size), "black")
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         for i, album in enumerate(albums[: grid_size * grid_size]):
             if not album.get("image_url"):
                 continue

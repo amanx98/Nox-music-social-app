@@ -64,19 +64,31 @@ async def lastfm_top_albums(
 
     data = await get_top_albums(profile.lastfm_username, period=period)
     albums = data.get("topalbums", {}).get("album", [])
+    if isinstance(albums, dict):
+        albums = [albums]
+    elif not isinstance(albums, list):
+        albums = []
 
-    # Simplify the response to just what we need
+    def _extract_artist(alb):
+        art = alb.get("artist")
+        if isinstance(art, dict):
+            return art.get("name", "")
+        elif isinstance(art, str):
+            return art
+        return ""
+
     return [
         {
-            "name": album["name"],
-            "artist": album["artist"]["name"],
-            "playcount": album["playcount"],
+            "name": album.get("name", "Unknown Record"),
+            "artist": _extract_artist(album),
+            "playcount": album.get("playcount", 0),
             "image_url": next(
-                (img["#text"] for img in album.get("image", []) if img["size"] == "extralarge"),
+                (img.get("#text") for img in album.get("image", []) if isinstance(img, dict) and img.get("size") == "extralarge"),
                 None,
             ),
         }
         for album in albums
+        if isinstance(album, dict)
     ]
 
 from app.services.lastfm_client import get_lastfm_login_url, get_session_key, get_top_albums, get_top_tracks
@@ -95,18 +107,31 @@ async def lastfm_top_tracks(
 
     data = await get_top_tracks(profile.lastfm_username, period=period)
     tracks = data.get("toptracks", {}).get("track", [])
+    if isinstance(tracks, dict):
+        tracks = [tracks]
+    elif not isinstance(tracks, list):
+        tracks = []
+
+    def _extract_artist(t):
+        art = t.get("artist")
+        if isinstance(art, dict):
+            return art.get("name", "")
+        elif isinstance(art, str):
+            return art
+        return ""
 
     return [
         {
-            "name": t["name"],
-            "artist": t["artist"]["name"],
-            "playcount": t["playcount"],
+            "name": t.get("name", "Unknown Track"),
+            "artist": _extract_artist(t),
+            "playcount": t.get("playcount", 0),
             "image_url": next(
-                (img["#text"] for img in t.get("image", []) if img["size"] == "extralarge"),
+                (img.get("#text") for img in t.get("image", []) if isinstance(img, dict) and img.get("size") == "extralarge"),
                 None,
             ),
         }
         for t in tracks
+        if isinstance(t, dict)
     ]
 
 from app.services.lastfm_client import get_top_artists, get_artist_details
@@ -125,7 +150,16 @@ async def lastfm_top_artists(
 
     data = await get_top_artists(profile.lastfm_username, period=period)
     artists = data.get("topartists", {}).get("artist", [])
-    return [{"name": a["name"], "playcount": a["playcount"]} for a in artists]
+    if isinstance(artists, dict):
+        artists = [artists]
+    elif not isinstance(artists, list):
+        artists = []
+
+    return [
+        {"name": a.get("name", "Unknown Artist"), "playcount": a.get("playcount", 0)}
+        for a in artists
+        if isinstance(a, dict)
+    ]
 
 @router.get("/artist-details")
 async def lastfm_artist_details(artist: str):

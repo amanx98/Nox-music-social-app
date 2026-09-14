@@ -107,61 +107,66 @@ export default function BentoTopsterGrid({
           {/* ====================================================================
               1. Primary Cell: Featured #1 (Dominant 2x2 Square Tile)
              ==================================================================== */}
-          {featured && (
-            <button
-              type="button"
-              onClick={() => handleSelect?.(featured, 1)}
-              className="bento-cell bento-featured aspect-square relative group cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-accent focus:outline-none overflow-hidden"
-            >
-              {/* Uncropped 1:1 Cover Art / Photography */}
-              {featured.image_url ? (
-                <img
-                  src={featured.image_url}
-                  alt={isArtists ? featured.name : `${featured.name} by ${featured.artist}`}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-              ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-surface-sunken text-text-dim">
-                  {isArtists ? (
-                    <User className="w-12 h-12 stroke-[1.5]" />
-                  ) : (
-                    <Disc className="w-12 h-12 stroke-[1.5]" />
-                  )}
-                  <span className="mt-2 font-mono text-2xs">
-                    {isArtists ? "No Photo" : "No Artwork"}
+          {featured && (() => {
+            const fName = getItemName(featured);
+            const fArtist = getItemArtist(featured);
+
+            return (
+              <button
+                type="button"
+                onClick={() => handleSelect?.(featured, 1)}
+                className="bento-cell bento-featured aspect-square relative group cursor-pointer text-left focus-visible:ring-2 focus-visible:ring-accent focus:outline-none overflow-hidden"
+              >
+                {/* Uncropped 1:1 Cover Art / Photography */}
+                {featured.image_url ? (
+                  <img
+                    src={featured.image_url}
+                    alt={isArtists ? fName : `${fName} by ${fArtist}`}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-surface-sunken text-text-dim">
+                    {isArtists ? (
+                      <User className="w-12 h-12 stroke-[1.5]" />
+                    ) : (
+                      <Disc className="w-12 h-12 stroke-[1.5]" />
+                    )}
+                    <span className="mt-2 font-mono text-2xs">
+                      {isArtists ? "No Photo" : "No Artwork"}
+                    </span>
+                  </div>
+                )}
+
+                {/* Top Badges */}
+                <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
+                  <span className="font-mono text-2xs font-black uppercase tracking-wider px-2 py-0.5 rounded bg-accent text-surface shadow-1 flex items-center gap-1">
+                    <Crown className="w-3 h-3 stroke-[2.5]" />
+                    <span>#1</span>
                   </span>
                 </div>
-              )}
 
-              {/* Top Badges */}
-              <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1.5">
-                <span className="font-mono text-2xs font-black uppercase tracking-wider px-2 py-0.5 rounded bg-accent text-surface shadow-1 flex items-center gap-1">
-                  <Crown className="w-3 h-3 stroke-[2.5]" />
-                  <span>#1</span>
-                </span>
-              </div>
-
-              {/* Bottom Information Vignette */}
-              <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-3.5 sm:p-5 pt-12 flex flex-col justify-end">
-                <h3 className="font-heading text-sm sm:text-lg font-bold text-white tracking-tight line-clamp-1 group-hover:text-accent transition-colors">
-                  {getItemName(featured)}
-                </h3>
-                <p className="text-xs text-white/80 font-medium truncate mt-0.5">
-                  {isArtists ? (featured.fans ? `${Number(featured.fans).toLocaleString()} fans` : "Featured Artist") : getItemArtist(featured)}
-                </p>
-                <div className="mt-1.5 flex items-center justify-between font-mono text-2xs text-white/60">
-                  <span className="tabular-nums font-semibold text-accent">
-                    {Number(featured.playcount || 0).toLocaleString()} plays
-                  </span>
-                  <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
-                    View &rarr;
-                  </span>
+                {/* Bottom Information Vignette */}
+                <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-3.5 sm:p-5 pt-12 flex flex-col justify-end">
+                  <h3 className="font-heading text-sm sm:text-lg font-bold text-white tracking-tight line-clamp-1 group-hover:text-accent transition-colors">
+                    {fName}
+                  </h3>
+                  <p className="text-xs text-white/80 font-medium truncate mt-0.5">
+                    {isArtists ? (featured.fans ? `${Number(featured.fans).toLocaleString()} fans` : "Featured Artist") : fArtist}
+                  </p>
+                  <div className="mt-1.5 flex items-center justify-between font-mono text-2xs text-white/60">
+                    <span className="tabular-nums font-semibold text-accent">
+                      {Number(featured.playcount || 0).toLocaleString()} plays
+                    </span>
+                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
+                      View &rarr;
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </button>
-          )}
+              </button>
+            );
+          })()}
 
           {/* ====================================================================
               2. Secondary Cells: Ranks #02 to #09 (1x1 Square Tiles)

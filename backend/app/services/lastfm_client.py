@@ -23,7 +23,7 @@ async def get_session_key(token: str) -> dict:
     params["api_sig"] = _sign_params(params)
     params["format"] = "json"
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -37,7 +37,7 @@ async def get_top_albums(username: str, period: str = "overall", limit: int = 9)
         "limit": limit,
         "format": "json",
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -51,7 +51,7 @@ async def get_top_tracks(username: str, period: str = "overall", limit: int = 9)
         "limit": limit,
         "format": "json",
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -64,7 +64,7 @@ async def get_track_album_art(artist: str, track: str) -> str | None:
         "track": track,
         "format": "json",
     }
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         if response.status_code != 200:
             return None

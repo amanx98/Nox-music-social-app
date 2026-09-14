@@ -30,21 +30,35 @@ async def create_quilt(
     if quilt_type == "tracks":
         data = await get_top_tracks(profile.lastfm_username, period=period, limit=limit)
         items_raw = data.get("toptracks", {}).get("track", [])
+        if isinstance(items_raw, dict):
+            items_raw = [items_raw]
+        elif not isinstance(items_raw, list):
+            items_raw = []
         albums = []
         for t in items_raw:
-            art_url = await get_track_album_art(t["artist"]["name"], t["name"])
+            if not isinstance(t, dict):
+                continue
+            art_artist = t.get("artist")
+            artist_name = art_artist.get("name", "") if isinstance(art_artist, dict) else (art_artist if isinstance(art_artist, str) else "")
+            track_name = t.get("name", "")
+            art_url = await get_track_album_art(artist_name, track_name) if artist_name and track_name else None
             albums.append({"image_url": art_url})
     else:
         data = await get_top_albums(profile.lastfm_username, period=period, limit=limit)
         items_raw = data.get("topalbums", {}).get("album", [])
+        if isinstance(items_raw, dict):
+            items_raw = [items_raw]
+        elif not isinstance(items_raw, list):
+            items_raw = []
         albums = [
             {
                 "image_url": next(
-                    (img["#text"] for img in a.get("image", []) if img["size"] == "extralarge"),
+                    (img.get("#text") for img in a.get("image", []) if isinstance(img, dict) and img.get("size") == "extralarge"),
                     None,
                 )
             }
             for a in items_raw
+            if isinstance(a, dict)
         ]
 
     filepath = await generate_quilt(albums, grid_size=grid_size)

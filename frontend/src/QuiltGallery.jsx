@@ -272,10 +272,13 @@ export default function QuiltGallery() {
   }
 
   // Filter quilts by folder
-  const filteredQuilts = quilts.filter((q) => {
+  const safeQuilts = Array.isArray(quilts) ? quilts : [];
+  const safeQuiltFolders = quiltFolders && typeof quiltFolders === "object" ? quiltFolders : {};
+  const filteredQuilts = safeQuilts.filter((q) => {
+    if (!q) return false;
     if (activeFolder === "all") return true;
-    if (activeFolder === "unassigned") return !quiltFolders[q.id];
-    return quiltFolders[q.id] === activeFolder;
+    if (activeFolder === "unassigned") return !safeQuiltFolders[q.id];
+    return safeQuiltFolders[q.id] === activeFolder;
   });
 
   return (
@@ -500,11 +503,11 @@ export default function QuiltGallery() {
                     : "text-zinc-400 hover:text-white hover:bg-white/5"
                 )}
               >
-                All ({quilts.length})
+                All ({safeQuilts.length})
               </button>
 
-              {folders.map((folder) => {
-                const count = quilts.filter((q) => quiltFolders[q.id] === folder).length;
+              {(Array.isArray(folders) ? folders : []).map((folder) => {
+                const count = safeQuilts.filter((q) => q && safeQuiltFolders[q.id] === folder).length;
                 const isActive = activeFolder === folder;
                 return (
                   <button
