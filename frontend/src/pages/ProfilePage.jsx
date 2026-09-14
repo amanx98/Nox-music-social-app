@@ -18,6 +18,7 @@ import TopAlbums from "../TopAlbums";
 import TopArtists from "../TopArtists";
 import ThemeSelector from "../components/ThemeSelector";
 import Avatar from "../components/Avatar";
+import { apiRequest } from "../api/client";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
 import ErrorBoundary from "../components/ErrorBoundary";
@@ -119,8 +120,13 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
     addToast("Avatar icon updated");
   }
 
-  function connectLastfm() {
-    window.location.href = "http://localhost:8000/lastfm/login";
+  async function connectLastfm() {
+    try {
+      const data = await apiRequest("/lastfm/login");
+      window.location.href = data.login_url;
+    } catch (err) {
+      addToast(err.message || "Failed to connect to Last.fm", "error");
+    }
   }
 
   return (
