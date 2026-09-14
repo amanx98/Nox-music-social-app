@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { MessageSquare, Repeat2, Heart, Bookmark, Share2 } from "lucide-react";
 import { useToast } from "./Toast";
+import { cn } from "../lib/cn";
 
 export default function SocialActions({
   id,
@@ -8,6 +10,7 @@ export default function SocialActions({
   onReplyClick,
   initialLikes = 0,
   initialReposts = 0,
+  className,
 }) {
   const { addToast } = useToast();
   const storagePrefix = `nox_${type}_${id}`;
@@ -51,7 +54,7 @@ export default function SocialActions({
     localStorage.setItem(`${storagePrefix}_reposted`, String(newReposted));
     localStorage.setItem(`${storagePrefix}_reposts_count`, String(newCount));
     if (newReposted) {
-      addToast("Re-scrobbled to your profile!");
+      addToast("Reposted to your profile");
     }
   }
 
@@ -60,71 +63,109 @@ export default function SocialActions({
     const newBookmarked = !bookmarked;
     setBookmarked(newBookmarked);
     localStorage.setItem(`${storagePrefix}_bookmarked`, String(newBookmarked));
-    addToast(newBookmarked ? "Saved to your bookmarks" : "Removed from bookmarks");
+    addToast(newBookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
   }
 
   function handleShare(e) {
     e.stopPropagation();
     const shareUrl = window.location.origin + (window.location.pathname.includes("profile") ? "/" : window.location.pathname);
     navigator.clipboard?.writeText(shareUrl).then(
-      () => addToast("Link copied to clipboard!"),
-      () => addToast("Link ready to share: " + shareUrl)
+      () => addToast("Link copied to clipboard"),
+      () => addToast("Link: " + shareUrl)
     );
   }
 
   return (
-    <div className="social-actions" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={cn("flex items-center justify-between max-w-sm w-full text-text-muted select-none", className)}
+      onClick={(e) => e.stopPropagation()}
+    >
       {/* Reply Button */}
       <button
         type="button"
-        className="social-action-btn"
+        className="group flex items-center gap-1.5 text-xs transition-colors hover:text-cyan-400 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded"
         onClick={onReplyClick}
-        title="Reply"
+        aria-label={`Reply (${replyCount} replies)`}
       >
-        <span>💬</span>
-        <span>{replyCount}</span>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-cyan-500/10">
+          <MessageSquare className="w-4 h-4 stroke-[1.75]" />
+        </div>
+        <span className="font-mono text-2xs tabular-nums text-text-dim group-hover:text-cyan-400">
+          {replyCount > 0 ? replyCount : ""}
+        </span>
       </button>
 
       {/* Repost Button */}
       <button
         type="button"
-        className={`social-action-btn ${reposted ? "reposted" : ""}`}
+        className={cn(
+          "group flex items-center gap-1.5 text-xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded",
+          reposted ? "text-emerald-400" : "hover:text-emerald-400"
+        )}
         onClick={handleRepost}
-        title="Re-scrobble / Repost"
+        aria-label={`Repost (${reposts} reposts)`}
       >
-        <span>🔁</span>
-        <span>{reposts}</span>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-emerald-500/10">
+          <Repeat2 className="w-4 h-4 stroke-[1.75]" />
+        </div>
+        <span className={cn("font-mono text-2xs tabular-nums", reposted ? "text-emerald-400" : "text-text-dim group-hover:text-emerald-400")}>
+          {reposts > 0 ? reposts : ""}
+        </span>
       </button>
 
       {/* Like Button */}
       <button
         type="button"
-        className={`social-action-btn ${liked ? "liked" : ""}`}
+        className={cn(
+          "group flex items-center gap-1.5 text-xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded",
+          liked ? "text-rose-500" : "hover:text-rose-400"
+        )}
         onClick={handleLike}
-        title="Like"
+        aria-label={`Like (${likes} likes)`}
       >
-        <span>{liked ? "❤️" : "🤍"}</span>
-        <span>{likes}</span>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-rose-500/10">
+          <Heart
+            className={cn(
+              "w-4 h-4 stroke-[1.75] transition-transform group-active:scale-125",
+              liked && "fill-rose-500 stroke-rose-500"
+            )}
+          />
+        </div>
+        <span className={cn("font-mono text-2xs tabular-nums", liked ? "text-rose-500 font-medium" : "text-text-dim group-hover:text-rose-400")}>
+          {likes > 0 ? likes : ""}
+        </span>
       </button>
 
       {/* Bookmark Button */}
       <button
         type="button"
-        className={`social-action-btn ${bookmarked ? "bookmarked" : ""}`}
+        className={cn(
+          "group flex items-center gap-1 text-xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded",
+          bookmarked ? "text-amber-400" : "hover:text-amber-400"
+        )}
         onClick={handleBookmark}
-        title={bookmarked ? "Bookmarked" : "Save / Bookmark"}
+        aria-label={bookmarked ? "Bookmarked" : "Bookmark"}
       >
-        <span>{bookmarked ? "🔖" : "🏷️"}</span>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-amber-500/10">
+          <Bookmark
+            className={cn(
+              "w-4 h-4 stroke-[1.75]",
+              bookmarked && "fill-amber-400 stroke-amber-400"
+            )}
+          />
+        </div>
       </button>
 
       {/* Share Button */}
       <button
         type="button"
-        className="social-action-btn"
+        className="group flex items-center gap-1 text-xs transition-colors hover:text-accent cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded"
         onClick={handleShare}
-        title="Share"
+        aria-label="Share"
       >
-        <span>🔗</span>
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-accent/10">
+          <Share2 className="w-4 h-4 stroke-[1.75]" />
+        </div>
       </button>
     </div>
   );

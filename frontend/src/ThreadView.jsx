@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { ArrowLeft, Send, Heart, MessageSquare } from "lucide-react";
 import { getPosts, createPost } from "./api/client";
 import { useToast } from "./components/Toast";
 import Avatar from "./components/Avatar";
 import SocialActions from "./components/SocialActions";
+import { Button } from "./components/ui/Button";
 
 function formatTimeAgo(dateString) {
   if (!dateString) return "Recently";
@@ -10,11 +12,11 @@ function formatTimeAgo(dateString) {
   const now = new Date();
   const diffInSecs = Math.floor((now - date) / 1000);
 
-  if (diffInSecs < 60) return "Just now";
-  if (diffInSecs < 3600) return `${Math.floor(diffInSecs / 60)}m ago`;
-  if (diffInSecs < 86400) return `${Math.floor(diffInSecs / 3600)}h ago`;
-  if (diffInSecs < 604800) return `${Math.floor(diffInSecs / 86400)}d ago`;
-  return date.toLocaleDateString();
+  if (diffInSecs < 60) return "just now";
+  if (diffInSecs < 3600) return `${Math.floor(diffInSecs / 60)}m`;
+  if (diffInSecs < 86400) return `${Math.floor(diffInSecs / 3600)}h`;
+  if (diffInSecs < 604800) return `${Math.floor(diffInSecs / 86400)}d`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function ThreadView({ thread, onBack, user }) {
@@ -34,7 +36,7 @@ export default function ThreadView({ thread, onBack, user }) {
       const data = await getPosts(thread.id);
       setPosts(data || []);
     } catch (err) {
-      addToast(err.message || "Failed to load replies");
+      addToast(err.message || "Failed to load replies", "error");
     } finally {
       setLoading(false);
     }
@@ -48,10 +50,10 @@ export default function ThreadView({ thread, onBack, user }) {
     try {
       await createPost(thread.id, reply.trim());
       setReply("");
-      addToast("Reply posted!");
+      addToast("Reply posted");
       loadPosts();
     } catch (err) {
-      addToast(err.message || "Failed to post reply");
+      addToast(err.message || "Failed to post reply", "error");
     } finally {
       setSubmitting(false);
     }
@@ -63,50 +65,54 @@ export default function ThreadView({ thread, onBack, user }) {
     }
   }
 
-  const threadAuthor = `listener_${thread.user_id}`;
+  const threadAuthor = thread.author_name || thread.username || `listener_${thread.user_id}`;
+  const authorHandle = threadAuthor.toLowerCase().replace(/\s+/g, "_");
 
   return (
-    <div style={{ maxWidth: "800px" }}>
-      {/* Back Link */}
+    <div className="max-w-[760px] mx-auto w-full space-y-4">
+      {/* Back Button */}
       <button
         onClick={onBack}
-        className="btn-ghost"
-        style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "20px", fontSize: "13px" }}
+        className="inline-flex items-center gap-1.5 font-mono text-xs text-text-muted hover:text-text py-1 transition-colors cursor-pointer group"
       >
-        <span>←</span>
-        <span>Back to Discussions</span>
+        <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+        <span>Back to feed</span>
       </button>
 
-      {/* Main Original Post Card */}
-      <div className="social-card" style={{ padding: "24px", marginBottom: "28px", border: "1px solid var(--border-strong)" }}>
-        {/* Post Author Header */}
-        <div className="social-header" style={{ marginBottom: "16px" }}>
-          <div className="social-author">
-            <Avatar username={threadAuthor} size={46} />
+      {/* Main Post Card */}
+      <article className="rounded-xl border border-border bg-surface p-5 shadow-1 text-left space-y-3">
+        {/* Author Line */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Avatar username={threadAuthor} size={42} />
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span className="author-name" style={{ fontSize: "16px" }}>Listener #{thread.user_id}</span>
-                <span className="author-handle">@{threadAuthor}</span>
-                <span className="badge badge-mustard" style={{ fontSize: "10px" }}>OP</span>
+              <div className="flex items-center gap-1.5">
+                <span className="font-sans font-semibold text-sm text-text">{threadAuthor}</span>
+                <span className="font-mono text-2xs uppercase tracking-wider px-1.5 py-0.2 rounded bg-accent/15 text-accent border border-accent/30 font-semibold">
+                  OP
+                </span>
               </div>
-              <div className="meta" style={{ fontSize: "12px", marginTop: "2px" }}>
-                {formatTimeAgo(thread.created_at)} &middot; Original Post
+              <div className="flex items-baseline gap-1 text-xs text-text-dim font-mono">
+                <span>@{authorHandle}</span>
+                <span>&middot;</span>
+                <span>{formatTimeAgo(thread.created_at)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Title and Body */}
-        <h1 className="post-title" style={{ fontSize: "26px", lineHeight: "1.25", marginBottom: "14px" }}>
-          {thread.title}
-        </h1>
-
-        <div className="post-body" style={{ fontSize: "15.5px", color: "var(--cream-text)" }}>
-          {thread.body}
+        {/* Title & Body */}
+        <div className="space-y-2 pt-1">
+          <h1 className="font-heading font-black text-xl sm:text-2xl text-text leading-tight tracking-tight">
+            {thread.title}
+          </h1>
+          <p className="font-sans text-sm sm:text-base text-text/90 leading-relaxed whitespace-pre-line">
+            {thread.body}
+          </p>
         </div>
 
-        {/* Social Action Bar */}
-        <div style={{ marginTop: "20px" }}>
+        {/* Action Bar */}
+        <div className="pt-3 border-t border-border/60">
           <SocialActions
             id={thread.id}
             type="thread_detail"
@@ -115,76 +121,91 @@ export default function ThreadView({ thread, onBack, user }) {
             initialReposts={3}
           />
         </div>
-      </div>
+      </article>
 
-      {/* Replies Conversation Stream */}
-      <div style={{ marginBottom: "28px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px" }}>
-          <h3 style={{ margin: 0, fontSize: "17px" }}>
-            Discussion ({posts.length})
-          </h3>
-          <span className="meta">Threaded Conversation</span>
+      {/* Reply Composer Card */}
+      <form
+        onSubmit={handleReply}
+        className="rounded-xl border border-border bg-surface-raised p-4 flex gap-3 shadow-1"
+      >
+        <div className="pt-1 flex-shrink-0">
+          <Avatar username={user?.username || "me"} size={34} />
+        </div>
+        <div className="flex-1 space-y-2">
+          <textarea
+            placeholder="Post your reply..."
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={submitting}
+            rows={2}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-dim outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors resize-none"
+          />
+          <div className="flex items-center justify-between">
+            <span className="font-mono text-2xs text-text-dim">
+              Press <kbd className="px-1 py-0.5 rounded bg-surface-sunken border border-border">Ctrl+Enter</kbd> to send
+            </span>
+            <Button type="submit" variant="primary" size="sm" disabled={submitting || !reply.trim()}>
+              <Send className="w-3.5 h-3.5" />
+              <span>{submitting ? "Replying..." : "Reply"}</span>
+            </Button>
+          </div>
+        </div>
+      </form>
+
+      {/* Replies Stream */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="font-heading font-bold text-sm text-text flex items-center gap-1.5">
+            <MessageSquare className="w-4 h-4 text-text-dim" />
+            <span>Replies ({posts.length})</span>
+          </h2>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: "30px" }}>
-            <span className="spin" style={{ display: "inline-block", fontSize: "22px" }}>💿</span>
-            <p className="meta" style={{ marginTop: "6px" }}>Loading replies...</p>
+          <div className="rounded-xl border border-border bg-surface p-6 text-center text-text-muted font-mono text-xs animate-pulse">
+            Loading replies...
           </div>
         ) : posts.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "32px 20px", marginBottom: "24px" }}>
-            <p className="meta" style={{ margin: 0 }}>
-              No replies yet. Join the conversation below!
-            </p>
+          <div className="rounded-xl border border-border/80 bg-surface p-8 text-center">
+            <p className="font-sans text-xs text-text-muted">No replies yet. Be the first to join the conversation.</p>
           </div>
         ) : (
-          <div className="thread-conversation">
-            {posts.map((post, index) => {
-              const replyAuthor = `user_${post.user_id}`;
+          <div className="rounded-xl border border-border/80 bg-surface overflow-hidden divide-y divide-border/60">
+            {posts.map((post) => {
+              const replyAuthor = post.username || `user_${post.user_id}`;
               const isOP = post.user_id === thread.user_id;
 
               return (
-                <div key={post.id} className="reply-tree-item">
-                  {/* Visual tree connector line */}
-                  <div className="reply-tree-line" />
-
-                  <div className="reply-card">
-                    {/* Reply Author */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <Avatar username={replyAuthor} size={30} />
-                        <div>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <span style={{ fontWeight: 600, fontSize: "13.5px" }}>Listener #{post.user_id}</span>
-                            <span className="meta" style={{ fontSize: "11px" }}>@{replyAuthor}</span>
-                            {isOP && <span className="badge badge-mustard" style={{ fontSize: "9px", padding: "1px 5px" }}>OP</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <span className="meta" style={{ fontSize: "11px" }}>{formatTimeAgo(post.created_at)}</span>
+                <div key={post.id} className="p-3.5 flex gap-3 text-left hover:bg-surface-raised/30 transition-colors">
+                  <div className="flex-shrink-0 pt-0.5">
+                    <Avatar username={replyAuthor} size={32} />
+                  </div>
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      <span className="font-sans font-semibold text-xs text-text">{replyAuthor}</span>
+                      <span className="font-mono text-2xs text-text-dim">@{replyAuthor.toLowerCase()}</span>
+                      {isOP && (
+                        <span className="font-mono text-[9px] uppercase px-1 py-0.2 rounded bg-accent/15 text-accent border border-accent/25">
+                          OP
+                        </span>
+                      )}
+                      <span className="text-text-dim text-xs">&middot;</span>
+                      <span className="font-mono text-2xs text-text-dim">{formatTimeAgo(post.created_at)}</span>
                     </div>
 
-                    {/* Reply Content */}
-                    <p style={{ margin: "0 0 10px", color: "var(--cream-text)", fontSize: "14px", lineHeight: "1.5" }}>
+                    <p className="font-sans text-xs sm:text-sm text-text/90 leading-relaxed whitespace-pre-line m-0">
                       {post.body}
                     </p>
 
-                    {/* Micro action bar */}
-                    <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                    <div className="pt-1">
                       <button
-                        className="social-action-btn"
-                        style={{ padding: "2px 4px", fontSize: "11px" }}
-                        onClick={() => addToast("Liked reply!")}
+                        type="button"
+                        className="inline-flex items-center gap-1 text-2xs font-mono text-text-dim hover:text-rose-400 transition-colors cursor-pointer"
+                        onClick={() => addToast("Liked reply")}
                       >
-                        <span>🤍</span>
-                        <span>{(index * 2 + 1) % 5}</span>
-                      </button>
-                      <button
-                        className="social-action-btn"
-                        style={{ padding: "2px 4px", fontSize: "11px" }}
-                        onClick={() => setReply(`@${replyAuthor} `)}
-                      >
-                        <span>↩ Reply</span>
+                        <Heart className="w-3 h-3" />
+                        <span>Like</span>
                       </button>
                     </div>
                   </div>
@@ -194,43 +215,6 @@ export default function ThreadView({ thread, onBack, user }) {
           </div>
         )}
       </div>
-
-      {/* Rich Reply Composer Box */}
-      <form
-        onSubmit={handleReply}
-        className="card"
-        style={{
-          padding: "20px",
-          border: "1px solid var(--border-strong)",
-          background: "var(--bg-raised)",
-          boxShadow: "var(--shadow-md)",
-        }}
-      >
-        <div style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: "12px" }}>
-          <Avatar username={user?.username || "me"} size={32} />
-          <span style={{ fontWeight: 600, fontSize: "13px", color: "var(--cream-text)" }}>
-            Replying as <span style={{ color: "var(--mustard)" }}>@{user?.username || "you"}</span>
-          </span>
-        </div>
-
-        <textarea
-          placeholder="Add to the discussion... What did you think? (Press Ctrl+Enter to post)"
-          value={reply}
-          onChange={(e) => setReply(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={{ minHeight: "90px", marginBottom: "12px" }}
-          required
-        />
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span className="meta" style={{ fontSize: "11px" }}>
-            Press <kbd style={{ background: "var(--bg-card)", padding: "2px 5px", borderRadius: "3px" }}>Ctrl</kbd> + <kbd style={{ background: "var(--bg-card)", padding: "2px 5px", borderRadius: "3px" }}>Enter</kbd> to post
-          </span>
-          <button type="submit" className="btn-primary" disabled={submitting || !reply.trim()}>
-            {submitting ? "Posting..." : "Post Reply →"}
-          </button>
-        </div>
-      </form>
     </div>
   );
 }

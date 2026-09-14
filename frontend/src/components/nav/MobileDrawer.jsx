@@ -1,32 +1,38 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { X, MessageSquare, LayoutGrid, LogOut } from "lucide-react";
 import Avatar from "../Avatar";
 import { cn } from "../../lib/cn";
 
 export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerRef }) {
   const location = useLocation();
   const drawerRef = useRef(null);
+  const [dragOffset, setDragOffset] = useState(0);
   const touchStartX = useRef(0);
   const touchCurrentX = useRef(0);
   const touchStartTime = useRef(0);
-  const [dragOffset, setDragOffset] = useState(0);
 
-  // Close drawer automatically on route change
+  // Close on route change
   useEffect(() => {
     if (isOpen) onClose();
-  }, [location.pathname]);
+  }, [location.pathname, isOpen, onClose]);
 
   // Focus trap & Escape key listener
   useEffect(() => {
     if (!isOpen) return;
 
-    // Save previous focus & focus first focusable in drawer
     const previouslyFocused = document.activeElement;
-    const focusables = drawerRef.current?.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
+    const drawerElement = drawerRef.current;
 
-    if (focusables && focusables.length > 0) {
+    const getFocusables = () => {
+      if (!drawerElement) return [];
+      return drawerElement.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input[type="text"]:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+    };
+
+    const focusables = getFocusables();
+    if (focusables.length > 0) {
       focusables[0].focus();
     }
 
@@ -65,9 +71,9 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
         previouslyFocused.focus();
       }
     };
-  }, [isOpen]);
+  }, [isOpen, onClose, triggerRef]);
 
-  // Touch gesture swipe dismissal
+  // Touch Swipe Gesture Dismissal
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
     touchCurrentX.current = e.touches[0].clientX;
@@ -77,7 +83,6 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
   const handleTouchMove = (e) => {
     touchCurrentX.current = e.touches[0].clientX;
     const diff = touchCurrentX.current - touchStartX.current;
-    // Only allow dragging to the left (negative diff) to close
     if (diff < 0) {
       setDragOffset(diff);
     }
@@ -88,7 +93,6 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
     const duration = Date.now() - touchStartTime.current;
     const velocity = Math.abs(distance) / (duration || 1);
 
-    // Dismiss if dragged more than 80px or velocity exceeds threshold
     if (distance < -80 || (distance < -30 && velocity > 0.35)) {
       onClose();
     }
@@ -98,14 +102,11 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
   if (!isOpen && dragOffset === 0) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[300] md:hidden"
-      aria-hidden={!isOpen}
-    >
-      {/* Backdrop Scrim */}
+    <div className="fixed inset-0 z-[300] md:hidden" aria-hidden={!isOpen}>
+      {/* Backdrop */}
       <div
         className={cn(
-          "fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-200",
+          "fixed inset-0 bg-black/65 backdrop-blur-sm transition-opacity duration-200",
           isOpen ? "opacity-100" : "opacity-0"
         )}
         onClick={onClose}
@@ -131,11 +132,10 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
         )}
       >
         <div>
-          {/* Header with Close Button */}
+          {/* Header */}
           <div className="flex items-center justify-between pb-4 mb-5 border-b border-border">
             <Link to="/" onClick={onClose} className="flex items-center gap-2">
-              <div className="vinyl-disc animate-spin-slow w-6 h-6" aria-hidden="true" />
-              <span className="font-graffiti text-xl tracking-wide text-text">
+              <span className="font-heading font-extrabold text-xl tracking-tight text-text">
                 NOX<span className="text-accent">.</span>
               </span>
             </Link>
@@ -143,26 +143,26 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close navigation drawer"
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-text hover:bg-surface transition-colors"
+              aria-label="Close menu"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-text hover:bg-surface transition-colors"
             >
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Navigation Links (44px min touch targets) */}
+          {/* Navigation Links */}
           <div className="flex flex-col gap-1.5">
             <DrawerLink
               to="/"
-              label="Discussions & Feed"
-              icon="💬"
+              label="Feed"
+              icon={<MessageSquare className="w-4 h-4 stroke-[1.75]" />}
               active={location.pathname === "/"}
               onClick={onClose}
             />
             <DrawerLink
               to="/profile"
-              label="Profile & Quilts"
-              icon="💽"
+              label="Topsters & Quilts"
+              icon={<LayoutGrid className="w-4 h-4 stroke-[1.75]" />}
               active={location.pathname === "/profile"}
               onClick={onClose}
             />
@@ -173,12 +173,12 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
         {user && (
           <div className="pt-4 border-t border-border flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <Avatar username={user.username} size={36} />
+              <Avatar username={user.username} size={34} />
               <div className="min-w-0">
-                <div className="text-sm font-semibold text-text truncate">
+                <div className="text-xs font-semibold text-text truncate">
                   {user.username}
                 </div>
-                <div className="text-2xs font-mono text-text-muted">
+                <div className="font-mono text-2xs text-text-dim truncate">
                   @{user.username.toLowerCase()}
                 </div>
               </div>
@@ -187,15 +187,12 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
             {onLogout && (
               <button
                 type="button"
-                onClick={() => {
-                  onClose();
-                  onLogout();
-                }}
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 text-danger hover:bg-danger/10 rounded-md transition-colors"
-                title="Sign Out"
+                onClick={onLogout}
+                className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+                title="Sign out"
                 aria-label="Sign out"
               >
-                🚪
+                <LogOut className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -211,13 +208,13 @@ function DrawerLink({ to, label, icon, active, onClick }) {
       to={to}
       onClick={onClick}
       className={cn(
-        "min-h-[44px] px-3.5 flex items-center gap-3 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2",
+        "h-10 px-3 flex items-center gap-3 rounded-lg text-xs font-semibold transition-colors",
         active
-          ? "bg-accent/15 text-accent border border-accent/30 font-semibold"
+          ? "bg-accent/15 text-accent border border-accent/25"
           : "text-text-muted hover:text-text hover:bg-surface"
       )}
     >
-      <span className="text-base" aria-hidden="true">{icon}</span>
+      <span aria-hidden="true">{icon}</span>
       <span>{label}</span>
     </Link>
   );

@@ -62,7 +62,7 @@ export default function TopArtists({ onSelectTag }) {
         <div>
           <h2>Top Artists</h2>
           <p className="meta" style={{ margin: 0 }}>
-            Click on any artist to explore photography, discography, and song audio previews.
+            Top listened artists from your Last.fm history.
           </p>
         </div>
 
@@ -76,7 +76,7 @@ export default function TopArtists({ onSelectTag }) {
               style={{ padding: "4px 10px", fontSize: "12px", borderRadius: "4px" }}
               title="Grid View"
             >
-              ⊞ Grid
+              Grid
             </button>
             <button
               type="button"
@@ -85,7 +85,7 @@ export default function TopArtists({ onSelectTag }) {
               style={{ padding: "4px 10px", fontSize: "12px", borderRadius: "4px" }}
               title="List View"
             >
-              ☰ List
+              List
             </button>
           </div>
 
@@ -115,9 +115,9 @@ export default function TopArtists({ onSelectTag }) {
           {error}
         </div>
       ) : loading ? (
-        <div style={{ textAlign: "center", padding: "40px", color: "var(--cream-text-muted)" }}>
-          <span className="spin" style={{ display: "inline-block", fontSize: "28px" }}>💿</span>
-          <p className="meta" style={{ marginTop: "10px" }}>Tuning artist frequencies...</p>
+        <div style={{ textAlign: "center", padding: "40px", color: "var(--color-text-muted)" }}>
+          <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mx-auto" />
+          <p className="font-mono text-xs text-text-dim" style={{ marginTop: "10px" }}>Loading artists...</p>
         </div>
       ) : artists.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: "30px" }}>
@@ -152,11 +152,11 @@ export default function TopArtists({ onSelectTag }) {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        background: "linear-gradient(135deg, #181512 0%, #0d0c0a 100%)",
-                        fontSize: "36px",
+                        background: "var(--color-surface-sunken)",
+                        color: "var(--color-text-dim)",
                       }}
                     >
-                      🎙️
+                      <span className="font-mono text-xs">No Photo</span>
                     </div>
                   )}
                 </div>
@@ -222,8 +222,8 @@ export default function TopArtists({ onSelectTag }) {
                       style={{ width: "38px", height: "38px", borderRadius: "50%", objectFit: "cover", flexShrink: 0, border: "1px solid var(--border-strong)" }}
                     />
                   ) : (
-                    <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "var(--bg-subtle)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0 }}>
-                      🎙️
+                    <div style={{ width: "38px", height: "38px", borderRadius: "50%", background: "var(--color-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: 700, color: "var(--color-text-dim)", flexShrink: 0 }}>
+                      {artist.name[0] || "A"}
                     </div>
                   )}
 

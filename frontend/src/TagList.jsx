@@ -63,7 +63,7 @@ export default function TagList({ onSelectTag }) {
         <div style={{ position: "relative", flex: "1 1 240px" }}>
           <input
             type="text"
-            placeholder="🔍 Search communities or artists..."
+            placeholder="Search tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ width: "100%", paddingLeft: "14px" }}
@@ -94,7 +94,7 @@ export default function TagList({ onSelectTag }) {
             }}
             onClick={() => setActiveFilter("artist")}
           >
-            🎙️ Artists
+            Artists
           </button>
           <button
             className={`btn-ghost ${activeFilter === "genre" ? "badge-mustard" : ""}`}
@@ -106,7 +106,7 @@ export default function TagList({ onSelectTag }) {
             }}
             onClick={() => setActiveFilter("genre")}
           >
-            🎸 Genres
+            Genres
           </button>
         </div>
       </div>
@@ -115,8 +115,8 @@ export default function TagList({ onSelectTag }) {
       <div style={{ marginBottom: "36px" }}>
         {loading ? (
           <div style={{ textAlign: "center", padding: "40px" }}>
-            <span className="spin" style={{ display: "inline-block", fontSize: "28px" }}>💿</span>
-            <p className="meta" style={{ marginTop: "8px" }}>Scanning frequencies...</p>
+            <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin mx-auto" />
+            <p className="font-mono text-xs text-text-dim" style={{ marginTop: "8px" }}>Loading tags...</p>
           </div>
         ) : filteredTags.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "32px 20px" }}>
@@ -136,11 +136,8 @@ export default function TagList({ onSelectTag }) {
                 <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                   <span className="track-number">{String(i + 1).padStart(2, "0")}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "16px" }}>
-                      {tag.type === "artist" ? "🎙️" : tag.type === "genre" ? "🎸" : "🏷️"}
-                    </span>
                     <span style={{ fontWeight: 600, fontSize: "15px", color: "var(--cream-text)" }}>
-                      {tag.name}
+                      #{tag.name}
                     </span>
                   </div>
                 </div>
@@ -149,7 +146,7 @@ export default function TagList({ onSelectTag }) {
                   <span className={`badge ${tag.type === "artist" ? "badge-mustard" : "badge-teal"}`}>
                     {tag.type}
                   </span>
-                  <span style={{ color: "var(--cream-text-muted)", fontSize: "16px" }}>→</span>
+                  <span style={{ color: "var(--cream-text-muted)", fontSize: "14px" }}>&rarr;</span>
                 </div>
               </div>
             ))}

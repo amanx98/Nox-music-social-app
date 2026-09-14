@@ -1,91 +1,73 @@
 import { useState, useEffect } from "react";
-import { useOutletContext } from "react-router-dom";
-import { apiRequest } from "../api/client";
-import { useToast } from "../components/Toast";
-import Avatar from "../components/Avatar";
+import {
+  Layers,
+  BarChart2,
+  Palette,
+  Settings,
+  Edit2,
+  Check,
+  Zap,
+  CheckCircle2,
+  XCircle,
+  X,
+} from "lucide-react";
+import QuiltGallery from "../QuiltGallery";
 import TopAlbums from "../TopAlbums";
 import TopArtists from "../TopArtists";
-import QuiltGallery from "../QuiltGallery";
 import ThemeSelector from "../components/ThemeSelector";
+import Avatar from "../components/Avatar";
+import { useToast } from "../components/Toast";
+import Button from "../components/ui/Button";
 
-const MUSIC_ICONS = ["💽", "📻", "🎧", "🎹", "🎸", "🎙️", "🎷", "🔊", "🥁", "🎺"];
-
-export default function ProfilePage() {
-  const context = useOutletContext();
-  const user = context?.user || { username: "musicfan", id: 1, email: "fan@nox.fm" };
-  const onLogout = context?.onLogout || (() => {});
+export default function ProfilePage({ user }) {
   const { addToast } = useToast();
-
   const [activeTab, setActiveTab] = useState("quilts");
-  const [lastfmConnected, setLastfmConnected] = useState(false);
-  const [customAvatar, setCustomAvatar] = useState(() => {
-    return localStorage.getItem(`nox_avatar_${user.id}`) || null;
-  });
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
-
-  // Bio state
   const [bio, setBio] = useState(() => {
-    return (
-      localStorage.getItem(`nox_bio_${user.id}`) ||
-      "Crate digger, sound curator, and album archivist. Constantly rotating vinyl."
-    );
+    return localStorage.getItem(`nox_bio_${user.id}`) || "Crate digger & vinyl enthusiast exploring soundscapes on Nox.";
   });
   const [isEditingBio, setIsEditingBio] = useState(false);
   const [bioInput, setBioInput] = useState(bio);
 
-  // Music tags
   const [tags, setTags] = useState(() => {
     const saved = localStorage.getItem(`nox_tags_${user.id}`);
-    return saved ? JSON.parse(saved) : ["#VinylJunkie", "#IndieRock", "#Ambient", "#JazzFusion"];
+    return saved ? JSON.parse(saved) : ["Shoegaze", "Post-Punk", "Ambient", "Jazz Fusion"];
   });
   const [newTag, setNewTag] = useState("");
 
-  useEffect(() => {
-    // Check if Last.fm profile is connected
-    async function checkLastfm() {
-      try {
-        const profile = await apiRequest("/lastfm/top-albums?period=7day");
-        if (profile && !profile.detail) setLastfmConnected(true);
-      } catch {
-        setLastfmConnected(false);
-      }
-    }
-    checkLastfm();
-  }, []);
+  const [customAvatar, setCustomAvatar] = useState(() => {
+    return localStorage.getItem(`nox_avatar_${user.id}`) || "";
+  });
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
-  async function connectLastfm() {
-    try {
-      const data = await apiRequest("/lastfm/login");
-      window.location.href = data.login_url;
-    } catch (err) {
-      addToast(err.message || "Failed to start Last.fm login");
+  const [lastfmConnected, setLastfmConnected] = useState(() => {
+    return localStorage.getItem("lastfm_connected") === "true";
+  });
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("lastfm_success") === "true") {
+      setLastfmConnected(true);
+      localStorage.setItem("lastfm_connected", "true");
+      addToast("Last.fm account connected");
+      window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }
+  }, [addToast]);
 
   function handleSaveBio() {
     setBio(bioInput);
     localStorage.setItem(`nox_bio_${user.id}`, bioInput);
     setIsEditingBio(false);
-    addToast("Profile bio updated");
-  }
-
-  function handleSelectAvatar(icon) {
-    setCustomAvatar(icon);
-    localStorage.setItem(`nox_avatar_${user.id}`, icon);
-    setShowAvatarPicker(false);
-    addToast("Avatar icon updated!");
+    addToast("Bio updated");
   }
 
   function handleAddTag(e) {
     e.preventDefault();
-    if (!newTag.trim()) return;
-    const formatted = newTag.startsWith("#") ? newTag.trim() : `#${newTag.trim()}`;
-    if (!tags.includes(formatted)) {
-      const updated = [...tags, formatted];
+    const trimmed = newTag.trim();
+    if (trimmed && !tags.includes(trimmed)) {
+      const updated = [...tags, trimmed];
       setTags(updated);
       localStorage.setItem(`nox_tags_${user.id}`, JSON.stringify(updated));
       setNewTag("");
-      addToast(`Added genre tag ${formatted}`);
     }
   }
 
@@ -95,151 +77,187 @@ export default function ProfilePage() {
     localStorage.setItem(`nox_tags_${user.id}`, JSON.stringify(updated));
   }
 
+  function handleSelectAvatar(char) {
+    setCustomAvatar(char);
+    localStorage.setItem(`nox_avatar_${user.id}`, char);
+    setShowAvatarPicker(false);
+    addToast("Avatar icon updated");
+  }
+
+  function connectLastfm() {
+    window.location.href = "http://localhost:8000/lastfm/login";
+  }
+
   return (
-    <div>
+    <div className="space-y-6 max-w-[960px] mx-auto w-full">
       {/* Profile Banner */}
-      <div className="profile-banner" />
+      <div className="profile-banner rounded-2xl" />
 
       {/* Profile Header Card */}
-      <div className="profile-header-card">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
-          {/* Avatar and User Identification */}
-          <div style={{ display: "flex", gap: "20px", alignItems: "flex-end" }}>
-            <div style={{ position: "relative" }}>
+      <div className="profile-header-card rounded-2xl border border-border bg-surface-raised p-5 sm:p-6 shadow-2">
+        <div className="flex justify-between items-start flex-wrap gap-4">
+          {/* Avatar and User Info */}
+          <div className="flex gap-4 items-end">
+            <div className="relative">
               <Avatar
                 username={user.username}
                 size={84}
                 customIcon={customAvatar}
                 onClick={() => setShowAvatarPicker(true)}
-                className="quilt-frame"
+                className="cursor-pointer border-2 border-accent"
               />
               <button
+                type="button"
                 onClick={() => setShowAvatarPicker(true)}
-                style={{
-                  position: "absolute",
-                  bottom: "-4px",
-                  right: "-4px",
-                  borderRadius: "50%",
-                  width: "26px",
-                  height: "26px",
-                  padding: 0,
-                  fontSize: "12px",
-                  background: "var(--mustard)",
-                  color: "var(--ink)",
-                }}
-                title="Change Avatar Icon"
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-surface flex items-center justify-center shadow-2 border border-surface cursor-pointer"
+                title="Change avatar symbol"
+                aria-label="Change avatar"
               >
-                ✎
+                <Edit2 className="w-3.5 h-3.5" />
               </button>
             </div>
 
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <h1 style={{ margin: 0, fontSize: "30px" }}>{user.username}</h1>
-                <span className="badge badge-mustard">PRO ARCHIVIST</span>
+              <div className="flex items-center gap-2">
+                <h1 className="font-heading font-black text-2xl text-text m-0">{user.username}</h1>
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-accent/15 text-accent border border-accent/30">
+                  Archivist
+                </span>
               </div>
-              <div className="meta" style={{ marginTop: "2px" }}>
-                @{user.username?.toLowerCase()} &middot; Joined 2024
+              <div className="font-mono text-xs text-text-dim mt-0.5">
+                @{user.username?.toLowerCase()}
               </div>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <button
+          <div className="flex gap-2 items-center flex-wrap">
+            <Button
+              variant={lastfmConnected ? "outline" : "primary"}
+              size="sm"
               onClick={connectLastfm}
-              className={lastfmConnected ? "btn-secondary" : "btn-primary"}
-              style={{ padding: "8px 14px", fontSize: "12px" }}
             >
-              {lastfmConnected ? "✓ Last.fm Synced" : "⚡ Connect Last.fm"}
-            </button>
-            <button
+              {lastfmConnected ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-secondary" />
+                  <span>Last.fm Synced</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Connect Last.fm</span>
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setIsEditingBio(!isEditingBio)}
-              className="btn-outline"
-              style={{ padding: "8px 14px", fontSize: "12px" }}
             >
-              ✎ Edit Bio
-            </button>
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Edit Bio</span>
+            </Button>
           </div>
         </div>
 
         {/* Bio Section */}
-        <div style={{ marginTop: "20px", maxWidth: "680px" }}>
+        <div className="mt-4 max-w-xl">
           {isEditingBio ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="space-y-2">
               <textarea
                 value={bioInput}
                 onChange={(e) => setBioInput(e.target.value)}
                 placeholder="Share your taste, favourite music eras, or audio gear..."
+                rows={3}
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent"
               />
-              <div style={{ display: "flex", gap: "8px" }}>
-                <button onClick={handleSaveBio} className="btn-primary" style={{ padding: "6px 14px" }}>
+              <div className="flex gap-2">
+                <Button variant="primary" size="sm" onClick={handleSaveBio}>
                   Save
-                </button>
-                <button onClick={() => setIsEditingBio(false)} className="btn-secondary" style={{ padding: "6px 14px" }}>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setIsEditingBio(false)}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
-            <p style={{ margin: 0, fontSize: "15px", color: "var(--cream-text-dim)", lineHeight: "1.6" }}>
+            <p className="font-sans text-sm text-text-muted leading-relaxed m-0">
               {bio}
             </p>
           )}
         </div>
 
-        {/* Music Tags & Badges */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "16px" }}>
+        {/* Music Tags */}
+        <div className="flex items-center gap-1.5 flex-wrap mt-4 pt-3 border-t border-border/60">
           {tags.map((t) => (
-            <span key={t} className="badge badge-teal" style={{ cursor: "pointer" }} onClick={() => handleRemoveTag(t)} title="Click to remove">
-              {t} <span style={{ opacity: 0.6, marginLeft: "2px" }}>×</span>
+            <span
+              key={t}
+              className="inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-wider px-2 py-0.5 rounded-full border border-border bg-surface-sunken text-text-muted cursor-pointer hover:border-danger hover:text-danger transition-colors"
+              onClick={() => handleRemoveTag(t)}
+              title="Click to remove"
+            >
+              <span>{t}</span>
+              <X className="w-2.5 h-2.5 opacity-60" />
             </span>
           ))}
 
-          <form onSubmit={handleAddTag} style={{ display: "inline-flex" }}>
+          <form onSubmit={handleAddTag} className="inline-flex">
             <input
               type="text"
-              placeholder="+ add genre tag"
+              placeholder="+ add tag"
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
-              style={{
-                background: "transparent",
-                border: "1px dashed var(--border-strong)",
-                padding: "3px 8px",
-                fontSize: "11px",
-                borderRadius: "4px",
-                width: "120px",
-              }}
+              className="h-6 px-2 rounded-full border border-dashed border-border bg-transparent font-mono text-2xs text-text placeholder:text-text-dim outline-none focus:border-accent"
             />
           </form>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="profile-tabs">
+      {/* Tabs Navigation */}
+      <div className="profile-tabs border-b border-border flex gap-1">
         <button
-          className={`profile-tab ${activeTab === "quilts" ? "active" : ""}`}
+          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "quilts"
+              ? "border-accent text-accent"
+              : "border-transparent text-text-muted hover:text-text"
+          }`}
           onClick={() => setActiveTab("quilts")}
         >
-          💽 Quilts &amp; Crates
+          <Layers className="w-3.5 h-3.5" />
+          <span>Quilts</span>
         </button>
         <button
-          className={`profile-tab ${activeTab === "stats" ? "active" : ""}`}
+          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "stats"
+              ? "border-accent text-accent"
+              : "border-transparent text-text-muted hover:text-text"
+          }`}
           onClick={() => setActiveTab("stats")}
         >
-          📊 Listening Stats
+          <BarChart2 className="w-3.5 h-3.5" />
+          <span>Stats</span>
         </button>
         <button
-          className={`profile-tab ${activeTab === "themes" ? "active" : ""}`}
+          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "themes"
+              ? "border-accent text-accent"
+              : "border-transparent text-text-muted hover:text-text"
+          }`}
           onClick={() => setActiveTab("themes")}
         >
-          🎨 Theme &amp; Atmosphere
+          <Palette className="w-3.5 h-3.5" />
+          <span>Themes</span>
         </button>
         <button
-          className={`profile-tab ${activeTab === "settings" ? "active" : ""}`}
+          className={`profile-tab flex items-center gap-1.5 font-semibold text-xs py-2.5 px-3.5 border-b-2 transition-colors cursor-pointer ${
+            activeTab === "settings"
+              ? "border-accent text-accent"
+              : "border-transparent text-text-muted hover:text-text"
+          }`}
           onClick={() => setActiveTab("settings")}
         >
-          ⚙️ Account &amp; Integrations
+          <Settings className="w-3.5 h-3.5" />
+          <span>Settings</span>
         </button>
       </div>
 
@@ -247,18 +265,18 @@ export default function ProfilePage() {
       {activeTab === "quilts" && <QuiltGallery />}
 
       {activeTab === "stats" && (
-        <div>
+        <div className="space-y-6">
           <TopAlbums />
           <TopArtists />
         </div>
       )}
 
       {activeTab === "themes" && (
-        <div className="card" style={{ maxWidth: "800px" }}>
-          <div style={{ marginBottom: "16px" }}>
-            <h3 style={{ margin: "0 0 6px" }}>🎨 Color Themes & Atmosphere</h3>
-            <p className="meta" style={{ margin: 0 }}>
-              Customize Nox with ultra-deep OLED blacks, subtle ambient glows, and rich gradient palettes.
+        <div className="p-5 rounded-2xl border border-border bg-surface-raised max-w-2xl">
+          <div className="mb-4">
+            <h2 className="font-heading font-bold text-base text-text">Color Themes</h2>
+            <p className="font-sans text-xs text-text-muted mt-0.5">
+              Select an ambient color palette tailored for your listening session.
             </p>
           </div>
           <ThemeSelector />
@@ -266,70 +284,81 @@ export default function ProfilePage() {
       )}
 
       {activeTab === "settings" && (
-        <div className="card" style={{ maxWidth: "600px" }}>
-          <h3 style={{ marginBottom: "16px" }}>Account Preferences</h3>
+        <div className="p-5 rounded-2xl border border-border bg-surface-raised max-w-xl space-y-4">
+          <h2 className="font-heading font-bold text-base text-text">Account Settings</h2>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-            <div style={{ paddingBottom: "14px", borderBottom: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 600, marginBottom: "4px" }}>Last.fm Integration</div>
-              <p className="meta" style={{ margin: "0 0 10px" }}>
-                Status: {lastfmConnected ? "🟢 Connected & Syncing" : "⚪ Not Connected"}
-              </p>
-              <button onClick={connectLastfm} className="btn-secondary">
-                {lastfmConnected ? "Re-authorize Last.fm" : "Connect Last.fm Account"}
-              </button>
+          <div className="pt-2 border-t border-border space-y-3">
+            <div>
+              <div className="font-semibold text-xs text-text">Last.fm Integration</div>
+              <div className="flex items-center gap-1.5 font-mono text-xs text-text-dim mt-1">
+                {lastfmConnected ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Connected &amp; Syncing</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-3.5 h-3.5 text-text-dim" />
+                    <span>Not Connected</span>
+                  </>
+                )}
+              </div>
             </div>
 
-            <div style={{ paddingBottom: "14px", borderBottom: "1px solid var(--border)" }}>
-              <div style={{ fontWeight: 600, marginBottom: "4px" }}>Spotify Connect</div>
-              <p className="meta" style={{ margin: "0 0 8px" }}>
-                Spotify Web API sync is coming in the next release.
-              </p>
-              <button disabled className="btn-outline">
-                Connect Spotify (Coming Soon)
-              </button>
-            </div>
-
-            <div style={{ paddingTop: "6px" }}>
-              <div style={{ fontWeight: 600, marginBottom: "4px", color: "var(--coral)" }}>Session</div>
-              <p className="meta" style={{ margin: "0 0 10px" }}>
-                Signed in as <strong>{user.email || user.username}</strong>
-              </p>
-              <button onClick={onLogout} className="btn-danger">
-                Sign Out of Nox
-              </button>
-            </div>
+            <Button variant="secondary" size="sm" onClick={connectLastfm}>
+              {lastfmConnected ? "Re-authorize Last.fm" : "Connect Last.fm Account"}
+            </Button>
           </div>
         </div>
       )}
 
       {/* Avatar Picker Modal */}
       {showAvatarPicker && (
-        <div className="modal-overlay" onClick={() => setShowAvatarPicker(false)}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "420px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0 }}>Choose Avatar Music Icon</h3>
-              <button className="btn-ghost" onClick={() => setShowAvatarPicker(false)}>✕</button>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+          onClick={() => setShowAvatarPicker(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-xl border border-border bg-surface-raised p-5 shadow-5 text-left space-y-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center pb-2 border-b border-border">
+              <h3 className="font-heading font-bold text-sm text-text">Choose Symbol</h3>
+              <button
+                type="button"
+                className="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text"
+                onClick={() => setShowAvatarPicker(false)}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "12px", margin: "16px 0" }}>
-              {MUSIC_ICONS.map((icon) => (
+            <div className="grid grid-cols-4 gap-2 py-2">
+              {["✦", "★", "▲", "◆", "●", "■", "✶", "❖"].map((char) => (
                 <button
-                  key={icon}
+                  key={char}
                   type="button"
-                  onClick={() => handleSelectAvatar(icon)}
-                  style={{
-                    fontSize: "26px",
-                    padding: "14px 8px",
-                    background: "var(--bg-subtle)",
-                    borderRadius: "8px",
-                    border: customAvatar === icon ? "2px solid var(--mustard)" : "1px solid var(--border)",
-                  }}
+                  onClick={() => handleSelectAvatar(char)}
+                  className="h-10 rounded-lg border border-border hover:border-accent hover:bg-surface text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer"
                 >
-                  {icon}
+                  {char}
                 </button>
               ))}
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              full
+              onClick={() => {
+                setCustomAvatar("");
+                localStorage.removeItem(`nox_avatar_${user.id}`);
+                setShowAvatarPicker(false);
+                addToast("Avatar reset to initial");
+              }}
+            >
+              Reset to Monogram
+            </Button>
           </div>
         </div>
       )}

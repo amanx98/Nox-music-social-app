@@ -66,9 +66,9 @@ export default function TopAlbums() {
           {error}
         </div>
       ) : loading ? (
-        <div style={{ textAlign: "center", padding: "30px", color: "var(--cream-text-muted)" }}>
-          <span className="spin" style={{ display: "inline-block", fontSize: "24px" }}>💿</span>
-          <p className="meta" style={{ marginTop: "8px" }}>Fetching album scrobbles...</p>
+        <div style={{ textAlign: "center", padding: "30px", color: "var(--color-text-muted)" }}>
+          <div className="w-7 h-7 rounded-full border-2 border-accent border-t-transparent animate-spin mx-auto" />
+          <p className="font-mono text-xs text-text-dim" style={{ marginTop: "8px" }}>Loading albums...</p>
         </div>
       ) : albums.length === 0 ? (
         <div className="card" style={{ textAlign: "center", padding: "30px" }}>
@@ -81,8 +81,8 @@ export default function TopAlbums() {
               {album.image_url ? (
                 <img src={album.image_url} alt={album.name} />
               ) : (
-                <div style={{ aspectRatio: "1/1", background: "#25221c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px" }}>
-                  🎵
+                <div style={{ aspectRatio: "1/1", background: "var(--color-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-dim)" }}>
+                  <span className="font-mono text-xs">No Cover</span>
                 </div>
               )}
               <div style={{ paddingTop: "10px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>

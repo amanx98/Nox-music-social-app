@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { MessageSquare, LayoutGrid, LogOut, Menu } from "lucide-react";
 import Avatar from "../Avatar";
 import { cn } from "../../lib/cn";
 
@@ -7,6 +8,7 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const location = useLocation();
 
   useEffect(() => {
     let ticking = false;
@@ -41,87 +43,77 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
       className={cn(
         "sticky top-0 z-[100] w-full transition-all duration-200 ease-out border-b",
         isScrolled
-          ? "h-14 bg-surface/85 backdrop-blur-md border-border shadow-1"
-          : "h-16 bg-surface/50 backdrop-blur-sm border-border/50",
+          ? "h-14 bg-surface/90 backdrop-blur-md border-border shadow-1"
+          : "h-14 bg-surface/75 backdrop-blur-sm border-border/50",
         isHidden ? "-translate-y-full" : "translate-y-0"
       )}
     >
       <div className="max-w-[1240px] h-full mx-auto px-4 flex items-center justify-between gap-4">
         {/* Left: Mobile Burger Trigger & Brand */}
         <div className="flex items-center gap-3">
-          {/* 44px Accessible Mobile Menu Trigger */}
           <button
             type="button"
             onClick={onOpenDrawer}
             aria-expanded={isDrawerOpen}
             aria-controls="mobile-drawer"
-            aria-label={isDrawerOpen ? "Close navigation drawer" : "Open navigation drawer"}
-            className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+            aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
+            className="md:hidden min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            <Menu className="w-5 h-5 stroke-[1.75]" />
           </button>
 
-          {/* Brand Logo with Graffiti Script */}
+          {/* Brand Logo with Syne Heading */}
           <Link
             to="/"
-            className="flex items-center gap-2.5 group focus-visible:outline-2 focus-visible:outline-offset-2 rounded-sm"
+            className="flex items-center gap-2 group focus-visible:outline-2 rounded-sm"
           >
-            <div className="vinyl-disc animate-spin-slow w-7 h-7 flex-shrink-0" aria-hidden="true" />
-            <div className="flex items-baseline gap-1">
-              <span className="font-graffiti text-2xl tracking-wide text-text group-hover:text-accent transition-colors">
-                NOX<span className="text-accent">.</span>
-              </span>
-              <span className="hidden sm:inline-block font-mono text-2xs uppercase tracking-widest text-text-dim">
-                SOUND ARCHIVES
-              </span>
-            </div>
+            <span className="font-heading font-extrabold text-xl tracking-tight text-text group-hover:text-accent transition-colors">
+              NOX<span className="text-accent">.</span>
+            </span>
           </Link>
         </div>
 
-        {/* Center: Desktop Navigation Links */}
+        {/* Center: Desktop Navigation Tabs */}
         <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1">
-          <NavLinkItem to="/" label="Discussions & Feed" icon="💬" />
-          <NavLinkItem to="/profile" label="Profile & Quilts" icon="💽" />
+          <NavLinkItem
+            to="/"
+            label="Feed"
+            icon={<MessageSquare className="w-4 h-4 stroke-[1.75]" />}
+            active={location.pathname === "/"}
+          />
+          <NavLinkItem
+            to="/profile"
+            label="Topsters & Quilts"
+            icon={<LayoutGrid className="w-4 h-4 stroke-[1.75]" />}
+            active={location.pathname === "/profile"}
+          />
         </nav>
 
         {/* Right: User Avatar & Quick Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {user && (
             <Link
               to="/profile"
-              className="flex items-center gap-2.5 p-1 pr-2 rounded-full hover:bg-surface-raised transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+              className="flex items-center gap-2 py-1 px-2 rounded-full hover:bg-surface-raised border border-transparent hover:border-border transition-colors focus-visible:outline-2"
               title="Open profile"
             >
-              <Avatar username={user.username} size={30} />
-              <span className="hidden sm:inline-block text-xs font-medium text-text max-w-[120px] truncate">
+              <Avatar username={user.username} size={28} />
+              <span className="hidden sm:inline-block font-sans text-xs font-semibold text-text max-w-[110px] truncate">
                 {user.username}
               </span>
             </Link>
           )}
 
-          {/* Quick Logout Button */}
+          {/* Sign Out Button */}
           {onLogout && (
             <button
               type="button"
               onClick={onLogout}
-              className="min-h-[44px] min-w-[44px] md:min-h-[36px] md:min-w-[36px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
-              title="Sign Out"
-              aria-label="Sign out of Nox"
+              className="w-9 h-9 flex items-center justify-center rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors focus-visible:outline-2 cursor-pointer"
+              title="Sign out"
+              aria-label="Sign out"
             >
-              🚪
+              <LogOut className="w-4 h-4 stroke-[1.75]" />
             </button>
           )}
         </div>
@@ -130,11 +122,16 @@ export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
   );
 }
 
-function NavLinkItem({ to, label, icon }) {
+function NavLinkItem({ to, label, icon, active }) {
   return (
     <Link
       to={to}
-      className="min-h-[44px] md:min-h-[36px] px-3 flex items-center gap-2 rounded-md text-sm font-medium text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+      className={cn(
+        "h-9 px-3.5 flex items-center gap-2 rounded-lg text-xs font-semibold transition-colors focus-visible:outline-2",
+        active
+          ? "bg-surface-raised text-accent border border-border/80 shadow-1"
+          : "text-text-muted hover:text-text hover:bg-surface-raised/60"
+      )}
     >
       <span aria-hidden="true">{icon}</span>
       <span>{label}</span>

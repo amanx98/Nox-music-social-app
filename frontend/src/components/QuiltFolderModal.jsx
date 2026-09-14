@@ -1,5 +1,8 @@
 import { useState } from "react";
+import { X, Folder, Plus, Trash2 } from "lucide-react";
 import { useToast } from "./Toast";
+import Button from "./ui/Button";
+import { Input } from "./ui/Input";
 
 export default function QuiltFolderModal({
   folders = [],
@@ -15,7 +18,7 @@ export default function QuiltFolderModal({
     const trimmed = folderName.trim();
     if (!trimmed) return;
     if (folders.includes(trimmed)) {
-      addToast("A folder with this name already exists");
+      addToast("A folder with this name already exists", "error");
       return;
     }
     onCreateFolder(trimmed);
@@ -24,65 +27,66 @@ export default function QuiltFolderModal({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
-          <h2 style={{ margin: 0 }}>Manage Quilt Crates</h2>
-          <button className="btn-ghost" onClick={onClose} style={{ fontSize: "20px", padding: "4px 8px" }}>
-            ✕
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-xl border border-border bg-surface-raised p-5 shadow-5 text-left animate-slide-up"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center pb-3 border-b border-border mb-4">
+          <h2 className="font-heading font-bold text-base text-text">Manage Folders</h2>
+          <button
+            type="button"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-text-muted hover:text-text hover:bg-surface transition-colors"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <p style={{ fontSize: "14px", color: "var(--cream-text-dim)", marginBottom: "20px" }}>
-          Organize your album and track quilts into custom collections or listening eras.
-        </p>
-
         {/* Create new folder form */}
-        <form onSubmit={handleSubmit} style={{ display: "flex", gap: "8px", marginBottom: "24px" }}>
-          <input
+        <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+          <Input
             type="text"
-            placeholder="New crate name (e.g. 2024 Heavy Rotation)"
+            placeholder="New folder name..."
             value={folderName}
             onChange={(e) => setFolderName(e.target.value)}
-            style={{ flex: 1 }}
+            className="flex-1 text-xs"
           />
-          <button type="submit" className="btn-primary">
-            + Add Crate
-          </button>
+          <Button type="submit" variant="primary" size="sm">
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add</span>
+          </Button>
         </form>
 
         {/* List of existing folders */}
-        <div style={{ maxHeight: "240px", overflowY: "auto" }}>
+        <div className="max-h-60 overflow-y-auto space-y-1.5 divide-y divide-border/40">
           {folders.length === 0 ? (
-            <p className="meta" style={{ textAlign: "center", padding: "20px 0" }}>
-              No custom crates created yet.
+            <p className="font-mono text-xs text-text-dim text-center py-6">
+              No custom folders created yet.
             </p>
           ) : (
             folders.map((folder) => (
               <div
                 key={folder}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "10px 14px",
-                  background: "var(--bg-subtle)",
-                  borderRadius: "6px",
-                  marginBottom: "8px",
-                }}
+                className="flex justify-between items-center py-2 px-1 text-xs"
               >
-                <span style={{ fontWeight: 600, fontSize: "14px" }}>📁 {folder}</span>
+                <span className="font-medium text-text flex items-center gap-2">
+                  <Folder className="w-3.5 h-3.5 text-text-dim" />
+                  <span>{folder}</span>
+                </span>
                 <button
-                  className="btn-danger"
-                  style={{ padding: "4px 10px", fontSize: "11px" }}
+                  type="button"
+                  className="w-7 h-7 rounded flex items-center justify-center text-text-dim hover:text-danger hover:bg-danger/10 transition-colors"
                   onClick={() => {
-                    if (window.confirm(`Delete crate "${folder}"? (Quilts inside won't be deleted)`)) {
+                    if (window.confirm(`Delete folder "${folder}"?`)) {
                       onDeleteFolder(folder);
-                      addToast(`Deleted crate "${folder}"`);
+                      addToast(`Deleted folder "${folder}"`);
                     }
                   }}
+                  title="Delete folder"
                 >
-                  Delete
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
             ))

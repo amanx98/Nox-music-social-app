@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import { X, Play, Pause, MessageSquare, Disc, Users } from "lucide-react";
 import { getArtistDetails } from "../api/client";
 import { useToast } from "./Toast";
+import Button from "./ui/Button";
 
 export default function ArtistModal({ artist, onClose, onSelectTag }) {
   const { addToast } = useToast();
@@ -11,26 +13,34 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
   const audioRef = useRef(null);
 
   useEffect(() => {
-    let isMounted = true;
-    async function loadDetails() {
-      setLoading(true);
-      try {
-        const data = await getArtistDetails(artist.name);
-        if (isMounted) setDetails(data);
-      } catch {
-        if (isMounted) {
-          setDetails({
-            name: artist.name,
-            image: null,
-            images: [],
-            top_tracks: [],
-          });
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
+    function handleKeyDown(e) {
+      if (e.key === "Escape") onClose();
     }
-    loadDetails();
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!artist?.name) return;
+
+    let isMounted = true;
+    setLoading(true);
+
+    getArtistDetails(artist.name)
+      .then((data) => {
+        if (isMounted) {
+          setDetails(data);
+          setActivePhotoIndex(0);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setDetails(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
     return () => {
       isMounted = false;
@@ -38,30 +48,42 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
         audioRef.current.pause();
       }
     };
-  }, [artist.name]);
+  }, [artist]);
 
   function handlePlayPreview(track) {
     if (!track.preview) {
-      addToast(`Preview not available for "${track.title}"`);
+      addToast("No audio preview available for this track", "error");
       return;
     }
 
     if (playingTrackId === track.id) {
-      audioRef.current?.pause();
-      setPlayingTrackId(null);
-    } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      audioRef.current = new Audio(track.preview);
-      audioRef.current.play().catch(() => {
-        addToast("Unable to play audio stream in this browser");
-      });
-      audioRef.current.onended = () => setPlayingTrackId(null);
-      setPlayingTrackId(track.id);
-      addToast(`Playing preview: ${track.title}`);
+      setPlayingTrackId(null);
+      return;
     }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    const audio = new Audio(track.preview);
+    audioRef.current = audio;
+    audio.play();
+    setPlayingTrackId(track.id);
+
+    audio.onended = () => {
+      setPlayingTrackId(null);
+    };
+
+    audio.onerror = () => {
+      addToast("Failed to stream audio preview", "error");
+      setPlayingTrackId(null);
+    };
   }
+
+  if (!artist) return null;
 
   const photos = details?.images && details.images.length > 0
     ? details.images
@@ -69,209 +91,198 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
     ? [details.image]
     : [];
 
+  const currentPhoto = photos[activePhotoIndex];
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="artist-modal-title"
+    >
       <div
-        className="modal-card"
-        style={{
-          maxWidth: "740px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          padding: "0",
-          background: "var(--bg-card)",
-          border: "1px solid var(--border-strong)",
-        }}
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-border bg-surface-raised shadow-5 text-left flex flex-col animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Banner with Artist Photo */}
-        <div
-          style={{
-            position: "relative",
-            height: "220px",
-            background: photos.length > 0 ? `url(${photos[activePhotoIndex]}) center/cover no-repeat` : "var(--bg-subtle)",
-            borderBottom: "1px solid var(--border)",
-            display: "flex",
-            alignItems: "flex-end",
-            padding: "20px 24px",
-          }}
-        >
-          {/* Ambient Dark Gradient Overlay */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "linear-gradient(to top, var(--bg-card) 0%, rgba(6, 6, 7, 0.5) 60%, rgba(6, 6, 7, 0.85) 100%)",
-            }}
-          />
+        {/* ====================================================================
+            Hero Header: Ambient Blurred Layer + Properly Framed Artist Photo
+            (Fixes harsh cropping and decapitation!)
+           ==================================================================== */}
+        <div className="relative h-64 sm:h-72 overflow-hidden border-b border-border bg-surface-sunken flex items-end p-5 sm:p-6">
+          {/* Layer 1: Ambient Blurred Backdrop for rich color mood */}
+          {currentPhoto && (
+            <div
+              className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-35"
+              style={{ backgroundImage: `url(${currentPhoto})` }}
+              aria-hidden="true"
+            />
+          )}
 
-          {/* Close button */}
+          {/* Layer 2: Main Focused Artist Photo with Top-Center Alignment */}
+          {currentPhoto ? (
+            <img
+              src={currentPhoto}
+              alt={artist.name}
+              className="absolute inset-0 w-full h-full object-cover object-[center_25%]"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-text-dim">
+              <Disc className="w-16 h-16 stroke-[1]" />
+            </div>
+          )}
+
+          {/* Layer 3: Smooth bottom dark gradient vignette */}
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-raised via-surface-raised/60 to-black/40" />
+
+          {/* Close Button */}
           <button
-            className="btn-ghost"
+            type="button"
             onClick={onClose}
-            style={{
-              position: "absolute",
-              top: "14px",
-              right: "14px",
-              fontSize: "16px",
-              padding: "5px 10px",
-              borderRadius: "50%",
-              background: "rgba(0,0,0,0.6)",
-              color: "#fff",
-              zIndex: 10,
-            }}
+            aria-label="Close"
+            className="absolute top-3.5 right-3.5 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black/85 text-white flex items-center justify-center transition-colors cursor-pointer"
           >
-            ✕
+            <X className="w-4 h-4" />
           </button>
 
           {/* Artist Headline Info */}
-          <div style={{ position: "relative", zIndex: 2, width: "100%" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "4px" }}>
-              <span className="badge badge-mustard" style={{ fontSize: "10.5px" }}>
-                ARTIST SPOTLIGHT
+          <div className="relative z-10 w-full">
+            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span className="font-mono text-2xs uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-accent/20 text-accent border border-accent/30">
+                Artist Spotlight
               </span>
               {artist.playcount && (
-                <span className="badge badge-teal" style={{ fontSize: "10.5px" }}>
-                  {artist.playcount} Plays in your history
+                <span className="font-mono text-2xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-secondary/20 text-secondary border border-secondary/30">
+                  {Number(artist.playcount).toLocaleString()} plays
                 </span>
               )}
             </div>
 
-            <h1 style={{ margin: "4px 0", fontSize: "24px", color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,0.8)" }}>
+            <h1
+              id="artist-modal-title"
+              className="font-heading font-black text-2xl sm:text-3xl text-white tracking-tight"
+            >
               {artist.name}
             </h1>
 
             {details?.fans && (
-              <div className="meta" style={{ color: "var(--cream-text-dim)", fontSize: "12px" }}>
-                {details.fans.toLocaleString()} global fans &middot; Verified Artist
+              <div className="font-mono text-xs text-white/70 mt-1 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" />
+                <span>{details.fans.toLocaleString()} fans</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Modal Body Content */}
-        <div style={{ padding: "24px" }}>
+        {/* Modal Body */}
+        <div className="p-5 sm:p-6 space-y-5">
           {loading ? (
-            <div style={{ textAlign: "center", padding: "40px" }}>
-              <span className="spin" style={{ display: "inline-block", fontSize: "32px" }}>💿</span>
-              <p className="meta" style={{ marginTop: "12px" }}>Gathering discography &amp; portraits...</p>
+            <div className="py-12 text-center flex flex-col items-center">
+              <Disc className="w-8 h-8 text-accent animate-spin" />
+              <p className="font-mono text-xs text-text-muted mt-3">Loading artist profile...</p>
             </div>
           ) : (
-            <div>
-              {/* Photo Gallery Carousel Thumbnails */}
+            <>
+              {/* Photo Gallery Thumbnails */}
               {photos.length > 1 && (
-                <div style={{ marginBottom: "24px" }}>
-                  <div className="meta" style={{ marginBottom: "10px", fontSize: "11.5px", color: "var(--cream-text)" }}>
-                    ARTIST GALLERY ({photos.length} PHOTOS)
-                  </div>
-                  <div style={{ display: "flex", gap: "10px", overflowX: "auto", paddingBottom: "6px" }}>
+                <div className="space-y-2">
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-text-dim block">
+                    Gallery ({photos.length})
+                  </span>
+                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                     {photos.map((imgUrl, idx) => (
-                      <img
+                      <button
                         key={idx}
-                        src={imgUrl}
-                        alt={`${artist.name} photo ${idx + 1}`}
+                        type="button"
                         onClick={() => setActivePhotoIndex(idx)}
-                        style={{
-                          width: "80px",
-                          height: "80px",
-                          borderRadius: "var(--radius)",
-                          objectFit: "cover",
-                          cursor: "pointer",
-                          border: activePhotoIndex === idx ? "2px solid var(--mustard)" : "1px solid var(--border)",
-                          opacity: activePhotoIndex === idx ? 1 : 0.65,
-                          transition: "all 0.15s ease",
-                        }}
-                      />
+                        className={`w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0 transition-all cursor-pointer ${
+                          activePhotoIndex === idx
+                            ? "border-accent ring-2 ring-accent/30 scale-102"
+                            : "border-border opacity-60 hover:opacity-100"
+                        }`}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`${artist.name} ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Top Songs by this Artist */}
-              <div style={{ marginBottom: "24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <h3 style={{ margin: 0, fontSize: "18px" }}>
-                    Top Songs by {artist.name}
+              {/* Top Tracks */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading font-bold text-sm sm:text-base text-text">
+                    Top Tracks
                   </h3>
-                  <span className="meta" style={{ fontSize: "11px" }}>
-                    {details?.top_tracks?.length || 0} Tracks Available
+                  <span className="font-mono text-2xs text-text-dim">
+                    {details?.top_tracks?.length || 0} tracks
                   </span>
                 </div>
 
                 {!details?.top_tracks || details.top_tracks.length === 0 ? (
-                  <div className="card" style={{ padding: "20px", textAlign: "center" }}>
-                    <p className="meta" style={{ margin: 0 }}>No song previews found for this artist.</p>
+                  <div className="rounded-xl border border-border bg-surface-sunken p-5 text-center text-text-muted text-xs">
+                    No preview tracks available for this artist.
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div className="rounded-xl border border-border bg-surface overflow-hidden divide-y divide-border/60">
                     {details.top_tracks.map((track, i) => {
                       const isPlaying = playingTrackId === track.id;
 
                       return (
-                        <div key={track.id || i} className="track-preview-row">
-                          <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 }}>
-                            {/* Play / Pause button */}
+                        <div
+                          key={track.id || i}
+                          className="p-2.5 sm:px-3.5 flex items-center justify-between gap-3 hover:bg-surface-raised/40 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* Play button */}
                             {track.preview ? (
                               <button
                                 type="button"
-                                className="play-audio-btn"
                                 onClick={() => handlePlayPreview(track)}
-                                title={isPlaying ? "Pause Preview" : "Play 30s Preview"}
+                                aria-label={isPlaying ? "Pause preview" : "Play preview"}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                                  isPlaying
+                                    ? "bg-accent text-surface"
+                                    : "bg-surface-raised text-text hover:bg-accent hover:text-surface border border-border"
+                                }`}
                               >
-                                {isPlaying ? "⏸" : "▶"}
+                                {isPlaying ? (
+                                  <Pause className="w-3.5 h-3.5 fill-current" />
+                                ) : (
+                                  <Play className="w-3.5 h-3.5 fill-current translate-x-0.5" />
+                                )}
                               </button>
                             ) : (
-                              <span className="track-number" style={{ width: "32px", textAlign: "center" }}>
-                                {String(i + 1).padStart(2, "0")}
-                              </span>
+                              <div className="w-8 h-8 rounded-full bg-surface-sunken border border-border flex items-center justify-center text-text-dim font-mono text-xs">
+                                {i + 1}
+                              </div>
                             )}
 
-                            {/* Album Artwork if available */}
-                            {track.album_cover && (
+                            {/* Album art & info */}
+                            {track.album?.cover_medium && (
                               <img
-                                src={track.album_cover}
+                                src={track.album.cover_medium}
                                 alt={track.title}
-                                style={{ width: "36px", height: "36px", borderRadius: "4px", objectFit: "cover" }}
+                                className="w-9 h-9 rounded object-cover border border-border flex-shrink-0"
                               />
                             )}
 
-                            {/* Track Details */}
-                            <div style={{ minWidth: 0 }}>
-                              <div
-                                style={{
-                                  fontWeight: 600,
-                                  fontSize: "14px",
-                                  color: isPlaying ? "var(--mustard)" : "var(--cream-text)",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                }}
-                              >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-sans font-semibold text-xs sm:text-sm text-text truncate">
                                 {track.title}
                               </div>
-                              {track.album_title && (
-                                <div className="meta" style={{ fontSize: "11px", color: "var(--cream-text-muted)" }}>
-                                  {track.album_title}
-                                </div>
-                              )}
+                              <div className="font-mono text-2xs text-text-dim truncate">
+                                {track.album?.title || artist.name}
+                              </div>
                             </div>
                           </div>
 
-                          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-                            {isPlaying && (
-                              <span className="badge badge-mustard" style={{ fontSize: "10px" }}>
-                                🎵 Playing Preview
-                              </span>
-                            )}
-                            {track.duration && (
-                              <span className="meta" style={{ fontSize: "11.5px" }}>
-                                {Math.floor(track.duration / 60)}:{(track.duration % 60).toString().padStart(2, "0")}
-                              </span>
-                            )}
-                            {track.playcount && (
-                              <span className="badge badge-teal" style={{ fontSize: "11px" }}>
-                                {track.playcount} plays
-                              </span>
-                            )}
+                          <div className="font-mono text-2xs text-text-dim flex-shrink-0">
+                            {track.duration ? `${Math.floor(track.duration / 60)}:${String(track.duration % 60).padStart(2, "0")}` : ""}
                           </div>
                         </div>
                       );
@@ -280,26 +291,27 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                 )}
               </div>
 
-              {/* Bottom Quick Community Link */}
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span className="meta" style={{ fontSize: "12px" }}>
-                  Want to discuss {artist.name} with other fans?
-                </span>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => {
-                    onClose();
-                    if (onSelectTag) {
-                      onSelectTag({ id: 999, name: artist.name, type: "artist" });
-                    }
-                  }}
-                  style={{ padding: "8px 16px", fontSize: "12px" }}
-                >
-                  💬 Open #{artist.name} Community
-                </button>
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center justify-between gap-2">
+                {onSelectTag && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onSelectTag({ name: artist.name, type: "artist" });
+                      onClose();
+                    }}
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>View #{artist.name} Discussions</span>
+                  </Button>
+                )}
+
+                <Button variant="ghost" size="sm" onClick={onClose} className="ml-auto">
+                  Close
+                </Button>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>

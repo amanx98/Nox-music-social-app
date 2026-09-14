@@ -1,43 +1,50 @@
 import { useState, useEffect } from "react";
-import { getThreads, createThread, createTag } from "./api/client";
+import { Plus, X, Search, MessageSquare, Mic, Hash, Radio } from "lucide-react";
+import { getThreads, createThread, getTags } from "./api/client";
 import { useToast } from "./components/Toast";
 import ThreadCard from "./components/feed/ThreadCard";
 import Avatar from "./components/Avatar";
 import { Button } from "./components/ui/Button";
 import { Input } from "./components/ui/Input";
 
-const FLAIRS = ["Discussion", "Hot Take", "Album Review", "Recommendation", "Question"];
+const FLAIRS = [
+  { id: "discussion", label: "Discussion" },
+  { id: "review", label: "Review" },
+  { id: "quilt", label: "Quilt" },
+  { id: "recommendation", label: "Recs" },
+];
 
-export default function ThreadList({ tag, tags = [], onSelectTag, onSelectThread, user }) {
+export default function ThreadList({ tag, onSelectThread, onSelectTag, user }) {
   const { addToast } = useToast();
   const [threads, setThreads] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isComposing, setIsComposing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Composer fields
+  // Composer Form state
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [selectedFlair, setSelectedFlair] = useState("Discussion");
-  const [composerTagId, setComposerTagId] = useState(tag?.id || "");
-  const [customTagName, setCustomTagName] = useState("");
+  const [selectedTagId, setSelectedTagId] = useState(tag?.id || "");
+  const [selectedFlair, setSelectedFlair] = useState("discussion");
+  const [availableTags, setAvailableTags] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     loadThreads();
-  }, [tag]);
-
-  useEffect(() => {
-    if (tag) setComposerTagId(tag.id);
+    if (!tag) {
+      getTags()
+        .then((tags) => setAvailableTags(tags || []))
+        .catch(() => setAvailableTags([]));
+    }
   }, [tag]);
 
   async function loadThreads() {
     setLoading(true);
     try {
       const data = await getThreads(tag ? tag.id : null);
-      setThreads(data || []);
-    } catch (err) {
-      addToast(err.message || "Failed to load discussions");
+      setThreads(Array.isArray(data) ? data : []);
+    } catch {
+      setThreads([]);
     } finally {
       setLoading(false);
     }
@@ -45,34 +52,24 @@ export default function ThreadList({ tag, tags = [], onSelectTag, onSelectThread
 
   async function handleCreateThread(e) {
     e.preventDefault();
-    if (!title.trim() || submitting) return;
+    if (!title.trim() || !body.trim()) {
+      addToast("Title and content are required", "error");
+      return;
+    }
 
-    let targetTagId = composerTagId || tag?.id;
+    const tagIdToUse = tag?.id || selectedTagId || (availableTags[0]?.id ?? 1);
+    const formattedBody = selectedFlair ? `[${selectedFlair.toUpperCase()}] ${body.trim()}` : body.trim();
 
     setSubmitting(true);
     try {
-      // If user typed a custom tag that isn't in the list
-      if (!targetTagId && customTagName.trim()) {
-        const newTag = await createTag(customTagName.trim(), "genre");
-        targetTagId = newTag.id;
-      }
-
-      if (!targetTagId) {
-        // Default to first tag or fallback 1
-        targetTagId = tags[0]?.id || 1;
-      }
-
-      const postBody = selectedFlair ? `[${selectedFlair}] ${body.trim()}` : body.trim();
-      await createThread(targetTagId, title.trim(), postBody);
-
+      await createThread(tagIdToUse, title.trim(), formattedBody);
       setTitle("");
       setBody("");
-      setCustomTagName("");
       setIsComposing(false);
-      addToast("Discussion started!");
-      loadThreads();
+      addToast("Post published");
+      await loadThreads();
     } catch (err) {
-      addToast(err.message || "Failed to post discussion");
+      addToast(err.message || "Failed to publish post", "error");
     } finally {
       setSubmitting(false);
     }
@@ -82,242 +79,216 @@ export default function ThreadList({ tag, tags = [], onSelectTag, onSelectThread
   const filteredThreads = threads.filter((t) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      t.title?.toLowerCase().includes(q) ||
-      t.body?.toLowerCase().includes(q) ||
-      t.author_name?.toLowerCase().includes(q)
-    );
+    const matchesTitle = t.title?.toLowerCase().includes(q);
+    const matchesBody = t.body?.toLowerCase().includes(q);
+    const matchesAuthor = (t.author_name || t.username || "").toLowerCase().includes(q);
+    return matchesTitle || matchesBody || matchesAuthor;
   });
 
   return (
-    <div className="flex flex-col gap-6 max-w-[840px] mx-auto w-full">
-      {/* Community / Feed Banner */}
-      <div className="bg-surface-raised border border-border rounded-md p-6 flex items-start justify-between gap-4 flex-wrap shadow-1">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl" aria-hidden="true">
-              {tag ? (tag.type === "artist" ? "🎙️" : "🏷️") : "📻"}
-            </span>
-            <div>
-              <h1 className="text-xl font-bold text-text m-0">
-                {tag ? `#${tag.name}` : "Live Music Feed"}
-              </h1>
-              <p className="text-xs font-mono text-text-muted m-0">
-                {tag
-                  ? `${threads.length} topic${threads.length === 1 ? "" : "s"} &middot; Dedicated community for ${tag.name}`
-                  : `${threads.length} total discussion${threads.length === 1 ? "" : "s"} across all vinyl & scrobble frequencies`}
-              </p>
-            </div>
+    <div className="flex flex-col gap-4 max-w-[760px] mx-auto w-full">
+      {/* Top Feed Bar: Clean Header & Actions */}
+      <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-surface-raised border border-border flex items-center justify-center text-text">
+            {tag ? (
+              tag.type === "artist" ? <Mic className="w-4 h-4 text-accent" /> : <Hash className="w-4 h-4 text-secondary" />
+            ) : (
+              <Radio className="w-4 h-4 text-accent" />
+            )}
+          </div>
+          <div>
+            <h1 className="font-heading font-bold text-lg text-text leading-none">
+              {tag ? `#${tag.name}` : "Feed"}
+            </h1>
+            <p className="font-mono text-2xs text-text-dim mt-1">
+              {threads.length} {threads.length === 1 ? "post" : "posts"}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {tag && (
+            <button
+              type="button"
+              onClick={() => onSelectTag(null)}
+              className="inline-flex items-center gap-1 font-mono text-xs text-text-muted hover:text-text px-2.5 py-1 rounded-md border border-border hover:bg-surface-raised transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Clear filter</span>
+            </button>
+          )}
+
           <Button
             variant="primary"
-            size="md"
+            size="sm"
             onClick={() => setIsComposing((prev) => !prev)}
             aria-expanded={isComposing}
           >
-            {isComposing ? "✕ Close" : "✎ Start Discussion"}
+            {isComposing ? (
+              <>
+                <X className="w-3.5 h-3.5" />
+                <span>Cancel</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Post</span>
+              </>
+            )}
           </Button>
         </div>
       </div>
 
-      {/* Real-time Filter & Search Bar */}
-      <div className="flex items-center gap-3">
-        <Input
-          type="search"
-          placeholder="Search discussions by keyword, album, or artist..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1"
-        />
-        {tag && (
-          <Button
-            variant="outline"
-            size="md"
-            onClick={() => onSelectTag(null)}
-            title="Clear filter to view all discussions"
-          >
-            ✕ Clear #{tag.name}
-          </Button>
-        )}
-      </div>
-
-      {/* Expandable Discussion Composer Surface */}
+      {/* Expandable Inline Post Composer */}
       {isComposing && (
         <form
           onSubmit={handleCreateThread}
-          className="bg-surface-raised border border-accent/40 rounded-md p-6 flex flex-col gap-4 shadow-3 animate-in fade-in duration-200"
+          className="rounded-xl border border-accent/40 bg-surface-raised p-4 flex flex-col gap-3 shadow-3 animate-slide-up"
         >
-          <div className="flex items-center gap-3 pb-3 border-b border-border">
-            <Avatar username={user?.username || "me"} size={36} />
-            <div className="text-sm font-semibold text-text">
-              Create Discussion as <span className="text-accent">@{user?.username || "you"}</span>
-            </div>
-          </div>
-
-          {/* Title Input */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
-              Discussion Topic / Headline
-            </label>
-            <Input
-              type="text"
-              placeholder="e.g. Is OK Computer the defining record of the late 90s?"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              className="text-base font-semibold"
-            />
-          </div>
-
-          {/* Flair & Tag Selection */}
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
-              Category Flair
-            </label>
-            <div className="flex items-center gap-2 flex-wrap">
-              {FLAIRS.map((flair) => (
-                <button
-                  key={flair}
-                  type="button"
-                  onClick={() => setSelectedFlair(selectedFlair === flair ? "" : flair)}
-                  className={`min-h-[32px] px-3 rounded-full text-xs font-mono transition-colors border cursor-pointer ${
-                    selectedFlair === flair
-                      ? "bg-accent text-accent-text font-semibold border-accent"
-                      : "bg-surface-sunken text-text-muted border-border hover:text-text"
-                  }`}
-                >
-                  #{flair}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Topic / Tag Assignment if on All Frequencies */}
-          {!tag && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
-                Community Tag
-              </label>
-              <select
-                value={composerTagId}
-                onChange={(e) => setComposerTagId(e.target.value)}
-                className="bg-surface-sunken border border-border rounded-md px-3 py-2 text-sm text-text outline-none focus-visible:border-accent"
-              >
-                <option value="">Select a community tag...</option>
-                {tags.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    #{t.name} ({t.type})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Body Textarea */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-mono text-text-muted uppercase tracking-wider">
-              Discussion Content
-            </label>
-            <textarea
-              placeholder="Share your thoughts, favorite song moments, production details, or vinyl impressions..."
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={4}
-              className="bg-surface-sunken border border-border rounded-md p-3 text-sm text-text outline-none focus-visible:border-accent resize-y min-h-[100px]"
-            />
-          </div>
-
-          {/* Submit Row */}
-          <div className="flex items-center justify-between pt-2 border-t border-border">
-            <span className="text-2xs font-mono text-text-dim">
-              Press Enter or click publish to broadcast
+          <div className="flex items-center gap-2.5 pb-2.5 border-b border-border">
+            <Avatar username={user?.username || "me"} size={32} />
+            <span className="font-mono text-xs text-text-muted">
+              Posting as <span className="text-accent font-medium">@{user?.username || "you"}</span>
             </span>
-            <div className="flex items-center gap-2">
+          </div>
+
+          <Input
+            placeholder="Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            disabled={submitting}
+            required
+            className="font-heading text-base font-bold bg-surface"
+          />
+
+          <textarea
+            placeholder="What's on your mind? Share thoughts, reviews, or tracks..."
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            disabled={submitting}
+            required
+            rows={3}
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-dim outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors resize-y min-h-[80px]"
+          />
+
+          {/* Tag & Flair Selectors */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              {!tag && availableTags.length > 0 && (
+                <select
+                  value={selectedTagId}
+                  onChange={(e) => setSelectedTagId(Number(e.target.value))}
+                  className="px-2.5 py-1 rounded-md bg-surface border border-border font-mono text-2xs text-text focus:outline-none focus:border-accent"
+                >
+                  {availableTags.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      #{t.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+
+              <div className="flex items-center gap-1">
+                {FLAIRS.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => setSelectedFlair(f.id)}
+                    className={`font-mono text-2xs px-2 py-0.5 rounded transition-colors ${
+                      selectedFlair === f.id
+                        ? "bg-accent text-surface font-semibold"
+                        : "bg-surface text-text-muted hover:text-text border border-border"
+                    }`}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 ml-auto">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsComposing(false)}
+                disabled={submitting}
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="sm"
-                disabled={submitting || !title.trim()}
-              >
-                {submitting ? "Publishing..." : "Publish Topic →"}
+              <Button type="submit" variant="primary" size="sm" disabled={submitting}>
+                {submitting ? "Publishing..." : "Publish"}
               </Button>
             </div>
           </div>
         </form>
       )}
 
-      {/* Thread Stream */}
-      {loading ? (
-        /* Skeleton Loading Cards Matched to Content Shape */
-        <div className="flex flex-col gap-4" aria-busy="true" aria-label="Loading discussions">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="bg-surface-raised border border-border rounded-md p-5 flex flex-col gap-3 animate-pulse"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-surface-sunken" />
-                <div className="flex flex-col gap-1.5 flex-1">
-                  <div className="w-28 h-3.5 bg-surface-sunken rounded-xs" />
-                  <div className="w-20 h-2.5 bg-surface-sunken rounded-xs" />
-                </div>
-              </div>
-              <div className="w-3/4 h-5 bg-surface-sunken rounded-xs" />
-              <div className="w-full h-12 bg-surface-sunken rounded-xs" />
-            </div>
-          ))}
-        </div>
-      ) : filteredThreads.length === 0 ? (
-        /* Empty State with CTA */
-        <div className="bg-surface-raised border border-border rounded-md p-12 text-center flex flex-col items-center gap-3 shadow-1">
-          <span className="text-4xl" aria-hidden="true">📻</span>
-          <h2 className="text-lg font-semibold text-text m-0">
-            {searchQuery ? "No matching discussions found" : "No discussions recorded yet"}
-          </h2>
-          <p className="text-sm text-text-muted max-w-[45ch] m-0">
-            {searchQuery
-              ? `We couldn't find any threads matching "${searchQuery}". Try searching another keyword or clear the search.`
-              : `Be the first music obsessive to drop a needle in ${tag ? `#${tag.name}` : "this feed"} and spark a conversation.`}
-          </p>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={() => setIsComposing(true)}
-            className="mt-2"
-          >
-            Start the First Discussion
-          </Button>
-        </div>
-      ) : (
-        /* Thread Card List */
-        <div className="flex flex-col gap-4">
-          {filteredThreads.map((thread) => {
-            // Match thread tag if present
-            const threadTag = tags.find((t) => t.id === thread.tag_id) || tag;
+      {/* Search Input Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-dim" />
+        <Input
+          type="search"
+          placeholder="Search posts..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 bg-surface text-xs h-9"
+        />
+      </div>
 
-            return (
-              <ThreadCard
-                key={thread.id}
-                thread={thread}
-                tag={threadTag}
-                onSelect={() => onSelectThread(thread)}
-                onSelectTag={onSelectTag}
-              />
-            );
-          })}
-        </div>
-      )}
+      {/* Unified Feed Stream */}
+      <div className="rounded-xl border border-border/80 bg-surface overflow-hidden divide-y divide-border/60 shadow-1">
+        {loading ? (
+          // Content-matched loading skeleton
+          [1, 2, 3, 4].map((n) => (
+            <div key={n} className="px-4 py-3.5 flex gap-3 animate-pulse" aria-busy="true">
+              <div className="w-9 h-9 rounded-full bg-border flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3.5 bg-border rounded w-1/4" />
+                <div className="h-4 bg-border rounded w-3/4" />
+                <div className="h-3 bg-border rounded w-1/2" />
+              </div>
+            </div>
+          ))
+        ) : filteredThreads.length === 0 ? (
+          // Clean empty state
+          <div className="px-6 py-12 text-center flex flex-col items-center">
+            <div className="w-10 h-10 rounded-full bg-surface-raised border border-border flex items-center justify-center text-text-dim mb-3">
+              <MessageSquare className="w-5 h-5 stroke-[1.75]" />
+            </div>
+            <h3 className="font-heading font-bold text-base text-text">
+              {searchQuery ? "No matching posts" : "No posts yet"}
+            </h3>
+            <p className="font-sans text-xs text-text-muted max-w-xs mt-1">
+              {searchQuery
+                ? "Try searching for a different keyword or artist tag."
+                : "Be the first to start a conversation in this feed."}
+            </p>
+            {!searchQuery && (
+              <Button
+                variant="primary"
+                size="sm"
+                className="mt-4"
+                onClick={() => setIsComposing(true)}
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create post</span>
+              </Button>
+            )}
+          </div>
+        ) : (
+          filteredThreads.map((thread) => (
+            <ThreadCard
+              key={thread.id}
+              thread={thread}
+              tag={tag}
+              onSelect={() => onSelectThread(thread)}
+              onSelectTag={onSelectTag}
+            />
+          ))
+        )}
+      </div>
     </div>
   );
 }

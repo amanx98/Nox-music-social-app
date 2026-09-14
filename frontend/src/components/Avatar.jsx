@@ -1,15 +1,14 @@
 import React from "react";
+import { Disc, Headphones, Mic, Radio, Music, Volume2 } from "lucide-react";
 
-// Curated music avatar icons & colorways
-const AVATAR_STYLES = [
-  { icon: "💽", bg: "linear-gradient(135deg, #2d261e, #1a1713)", border: "#D9A441" },
-  { icon: "📻", bg: "linear-gradient(135deg, #1d2c2b, #131d1d)", border: "#2F6F6E" },
-  { icon: "🎧", bg: "linear-gradient(135deg, #38241e, #1f1411)", border: "#E06D53" },
-  { icon: "🎹", bg: "linear-gradient(135deg, #252422, #181716)", border: "#b8af9c" },
-  { icon: "🎸", bg: "linear-gradient(135deg, #2e1e2d, #1a111a)", border: "#d94194" },
-  { icon: "🎙️", bg: "linear-gradient(135deg, #1e2838, #111720)", border: "#4180d9" },
-  { icon: "🎷", bg: "linear-gradient(135deg, #332b1a, #1d180f)", border: "#e8b350" },
-  { icon: "🔊", bg: "linear-gradient(135deg, #232a1e, #141811)", border: "#6cb341" },
+// Curated avatar palettes with perceptual dark tones and subtle colored borders
+const AVATAR_PALETTES = [
+  { bg: "#1f1a14", border: "#d9a441", text: "#f4efe2", icon: Disc },
+  { bg: "#141f1f", border: "#2f6f6e", text: "#e2f4f3", icon: Radio },
+  { bg: "#241613", border: "#e06d53", text: "#fdeee9", icon: Headphones },
+  { bg: "#171a24", border: "#4180d9", text: "#eaf1fd", icon: Mic },
+  { bg: "#1f141f", border: "#d94194", text: "#fdeaf3", icon: Music },
+  { bg: "#161f14", border: "#58a339", text: "#edfbe7", icon: Volume2 },
 ];
 
 export function getAvatarForUser(username = "") {
@@ -17,13 +16,20 @@ export function getAvatarForUser(username = "") {
   for (let i = 0; i < username.length; i++) {
     hash = username.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const index = Math.abs(hash) % AVATAR_STYLES.length;
-  return AVATAR_STYLES[index];
+  const index = Math.abs(hash) % AVATAR_PALETTES.length;
+  return AVATAR_PALETTES[index];
 }
 
-export default function Avatar({ username = "user", size = 36, customIcon, onClick, className = "" }) {
-  const style = getAvatarForUser(username);
-  const icon = customIcon || style.icon;
+export default function Avatar({
+  username = "user",
+  size = 36,
+  customIcon,
+  onClick,
+  className = "",
+}) {
+  const palette = getAvatarForUser(username);
+  const initial = (username[0] || "U").toUpperCase();
+  const IconComponent = palette.icon;
 
   return (
     <div
@@ -35,19 +41,33 @@ export default function Avatar({ username = "user", size = 36, customIcon, onCli
         minWidth: `${size}px`,
         minHeight: `${size}px`,
         borderRadius: "50%",
-        background: style.bg,
-        border: `1.5px solid ${style.border}`,
+        background: palette.bg,
+        border: `1.5px solid ${palette.border}`,
+        color: palette.text,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: `${Math.round(size * 0.48)}px`,
         cursor: onClick ? "pointer" : "default",
         userSelect: "none",
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)",
+        flexShrink: 0,
       }}
-      title={`@${username}`}
+      title={username}
     >
-      {icon}
+      {customIcon ? (
+        <span style={{ fontSize: `${Math.round(size * 0.45)}px` }}>{customIcon}</span>
+      ) : size >= 38 ? (
+        <span
+          className="font-heading font-bold"
+          style={{ fontSize: `${Math.round(size * 0.42)}px`, lineHeight: 1 }}
+        >
+          {initial}
+        </span>
+      ) : (
+        <IconComponent
+          style={{ width: `${Math.round(size * 0.5)}px`, height: `${Math.round(size * 0.5)}px` }}
+          strokeWidth={2}
+        />
+      )}
     </div>
   );
 }
