@@ -10,6 +10,21 @@ const PERIOD_LABELS = {
   "12month": "Past Year",
 };
 
+function getItemName(obj) {
+  if (!obj) return "";
+  if (typeof obj.name === "string") return obj.name;
+  if (obj.name?.["#text"]) return obj.name["#text"];
+  return "Unknown";
+}
+
+function getItemArtist(obj) {
+  if (!obj) return "";
+  if (typeof obj.artist === "string") return obj.artist;
+  if (obj.artist?.name) return obj.artist.name;
+  if (obj.artist?.["#text"]) return obj.artist["#text"];
+  return typeof obj.name === "string" ? obj.name : "Unknown Artist";
+}
+
 export default function BentoTopsterGrid({
   items,
   albums = [],
@@ -131,10 +146,10 @@ export default function BentoTopsterGrid({
               {/* Bottom Information Vignette */}
               <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-3.5 sm:p-5 pt-12 flex flex-col justify-end">
                 <h3 className="font-heading text-sm sm:text-lg font-bold text-white tracking-tight line-clamp-1 group-hover:text-accent transition-colors">
-                  {featured.name}
+                  {getItemName(featured)}
                 </h3>
                 <p className="text-xs text-white/80 font-medium truncate mt-0.5">
-                  {isArtists ? (featured.fans ? `${Number(featured.fans).toLocaleString()} fans` : "Featured Artist") : featured.artist}
+                  {isArtists ? (featured.fans ? `${Number(featured.fans).toLocaleString()} fans` : "Featured Artist") : getItemArtist(featured)}
                 </p>
                 <div className="mt-1.5 flex items-center justify-between font-mono text-2xs text-white/60">
                   <span className="tabular-nums font-semibold text-accent">
@@ -164,6 +179,9 @@ export default function BentoTopsterGrid({
               );
             }
 
+            const sName = getItemName(item);
+            const sArtist = getItemArtist(item);
+
             return (
               <button
                 key={rank}
@@ -178,7 +196,7 @@ export default function BentoTopsterGrid({
                 {item.image_url ? (
                   <img
                     src={item.image_url}
-                    alt={isArtists ? item.name : `${item.name} by ${item.artist}`}
+                    alt={isArtists ? sName : `${sName} by ${sArtist}`}
                     loading="lazy"
                     decoding="async"
                     className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-105"
@@ -203,10 +221,10 @@ export default function BentoTopsterGrid({
                 {/* Bottom Information Vignette */}
                 <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/55 to-transparent p-2.5 pt-8 flex flex-col justify-end">
                   <h4 className="font-heading text-xs font-bold text-white truncate group-hover:text-accent transition-colors">
-                    {item.name}
+                    {sName}
                   </h4>
                   <p className="text-[11px] text-white/70 truncate mt-0.5">
-                    {isArtists ? "Artist" : item.artist}
+                    {isArtists ? "Artist" : sArtist}
                   </p>
                   <span className="font-mono text-[10px] text-white/50 tabular-nums mt-0.5">
                     {Number(item.playcount || 0).toLocaleString()} plays

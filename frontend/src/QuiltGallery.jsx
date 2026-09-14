@@ -72,12 +72,28 @@ export default function QuiltGallery() {
   // Folder state
   const [activeFolder, setActiveFolder] = useState("all");
   const [folders, setFolders] = useState(() => {
-    const saved = localStorage.getItem("nox_quilt_folders");
-    return saved ? JSON.parse(saved) : ["Heavy Rotation", "Favorites"];
+    try {
+      const saved = localStorage.getItem("nox_quilt_folders");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore corrupted data
+    }
+    return ["Heavy Rotation", "Favorites"];
   });
   const [quiltFolders, setQuiltFolders] = useState(() => {
-    const saved = localStorage.getItem("nox_quilt_assignments");
-    return saved ? JSON.parse(saved) : {};
+    try {
+      const saved = localStorage.getItem("nox_quilt_assignments");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore corrupted data
+    }
+    return {};
   });
 
   // Modal state

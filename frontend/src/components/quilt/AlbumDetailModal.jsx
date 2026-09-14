@@ -13,8 +13,10 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
 
   if (!album) return null;
 
-  const lastfmUrl = `https://www.last.fm/music/${encodeURIComponent(album.artist)}/${encodeURIComponent(album.name)}`;
-  const searchUrl = `https://open.spotify.com/search/${encodeURIComponent(album.name + " " + album.artist)}`;
+  const albumName = typeof album.name === "string" ? album.name : (album.name?.["#text"] || "Unknown Album");
+  const artistName = typeof album.artist === "string" ? album.artist : (album.artist?.name || album.artist?.["#text"] || "Unknown Artist");
+  const lastfmUrl = `https://www.last.fm/music/${encodeURIComponent(artistName)}/${encodeURIComponent(albumName)}`;
+  const searchUrl = `https://open.spotify.com/search/${encodeURIComponent(albumName + " " + artistName)}`;
 
   return (
     <div
@@ -52,7 +54,7 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
             {album.image_url ? (
               <img
                 src={album.image_url}
-                alt={`${album.name} cover`}
+                alt={`${albumName} cover`}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
             ) : (
@@ -70,10 +72,10 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
                 id="album-detail-title"
                 className="font-heading text-xl sm:text-2xl font-black text-text tracking-tight leading-tight"
               >
-                {album.name}
+                {albumName}
               </h2>
               <p className="font-sans text-sm sm:text-base font-semibold text-text-muted mt-1 truncate">
-                {album.artist}
+                {artistName}
               </p>
             </div>
 

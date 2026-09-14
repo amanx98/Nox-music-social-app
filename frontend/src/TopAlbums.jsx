@@ -25,81 +25,101 @@ export default function TopAlbums() {
     setError("");
     try {
       const data = await getTopAlbums(p);
-      setAlbums(data || []);
+      setAlbums(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message);
+      setAlbums([]);
+      setError(err.message || "Failed to load albums");
     } finally {
       setLoading(false);
     }
   }
 
+  const safeAlbums = Array.isArray(albums) ? albums : [];
+
   return (
-    <div style={{ marginBottom: "40px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "16px" }}>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2>Top Albums</h2>
-          <p className="meta" style={{ margin: 0 }}>Most played records pulled from your Last.fm scrobbles.</p>
+          <h3 className="font-heading font-bold text-base text-white m-0">Top Albums</h3>
+          <p className="font-sans text-xs text-text-muted mt-0.5 m-0">Most played records from your listening history.</p>
         </div>
 
         {/* Period Chips */}
-        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {PERIODS.map((p) => (
-            <button
-              key={p.value}
-              className={`btn-ghost ${period === p.value ? "badge-mustard" : ""}`}
-              style={{
-                fontSize: "12px",
-                padding: "4px 10px",
-                borderRadius: "var(--radius-full)",
-                border: period === p.value ? "1px solid var(--mustard)" : "1px solid var(--border)",
-              }}
-              onClick={() => setPeriod(p.value)}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {PERIODS.map((p) => {
+            const active = period === p.value;
+            return (
+              <button
+                key={p.value}
+                onClick={() => setPeriod(p.value)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  active
+                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
+                    : "text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {error ? (
-        <div className="card" style={{ color: "var(--coral)", padding: "20px" }}>
-          {error}
+        <div className="p-4 rounded-xl border border-border bg-surface text-center space-y-2">
+          <p className="font-sans text-xs text-text-muted m-0">{error}</p>
+          <a
+            href="http://localhost:8000/lastfm/login"
+            className="inline-flex items-center justify-center h-8 px-3.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition-colors"
+          >
+            Connect Last.fm
+          </a>
         </div>
       ) : loading ? (
-        <div style={{ textAlign: "center", padding: "30px", color: "var(--color-text-muted)" }}>
+        <div className="text-center py-8">
           <div className="w-7 h-7 rounded-full border-2 border-accent border-t-transparent animate-spin mx-auto" />
-          <p className="font-mono text-xs text-text-dim" style={{ marginTop: "8px" }}>Loading albums...</p>
+          <p className="font-mono text-xs text-text-muted mt-2">Loading rotation...</p>
         </div>
-      ) : albums.length === 0 ? (
-        <div className="card" style={{ textAlign: "center", padding: "30px" }}>
-          <p className="meta" style={{ margin: 0 }}>No albums recorded for this period.</p>
+      ) : safeAlbums.length === 0 ? (
+        <div className="p-6 rounded-xl border border-border bg-surface text-center">
+          <p className="font-sans text-xs text-text-muted m-0">No records found for this period.</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: "16px" }}>
-          {albums.map((album, i) => (
-            <div key={i} className="quilt-frame" style={{ display: "flex", flexDirection: "column" }}>
-              {album.image_url ? (
-                <img src={album.image_url} alt={album.name} />
-              ) : (
-                <div style={{ aspectRatio: "1/1", background: "var(--color-surface-sunken)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-dim)" }}>
-                  <span className="font-mono text-xs">No Cover</span>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          {safeAlbums.map((album, i) => {
+            const albumName = typeof album?.name === "string" ? album.name : (album?.name?.["#text"] || "Unknown Record");
+            const artistName = typeof album?.artist === "string" ? album.artist : (album?.artist?.name || album?.artist?.["#text"] || "Unknown Artist");
+            const playcount = Number(album?.playcount || 0).toLocaleString();
+
+            return (
+              <div key={i} className="rounded-xl border border-border bg-surface p-2.5 flex flex-col justify-between group hover:border-white/25 transition-all">
+                <div className="aspect-square rounded-lg overflow-hidden bg-surface-sunken mb-2 relative">
+                  {album?.image_url ? (
+                    <img src={album.image_url} alt={albumName} className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-text-muted font-mono text-2xs">
+                      No Cover
+                    </div>
+                  )}
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-black/70 text-white backdrop-blur-xs">
+                    #{i + 1}
+                  </span>
                 </div>
-              )}
-              <div style={{ paddingTop: "10px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ color: "var(--ink)", fontWeight: 700, fontSize: "13px", lineHeight: 1.25, marginBottom: "2px" }} title={album.name}>
-                    {album.name}
+
+                <div className="min-w-0">
+                  <div className="font-semibold text-xs text-white truncate" title={albumName}>
+                    {albumName}
                   </div>
-                  <div className="meta" style={{ fontSize: "11px", color: "var(--ink-soft)" }}>
-                    {album.artist}
+                  <div className="text-2xs text-text-muted truncate mt-0.5">
+                    {artistName}
                   </div>
-                </div>
-                <div className="meta" style={{ color: "var(--teal)", marginTop: "6px", fontWeight: 600 }}>
-                  {album.playcount} plays
+                  <div className="font-mono text-[11px] text-accent font-semibold mt-1">
+                    {playcount} plays
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

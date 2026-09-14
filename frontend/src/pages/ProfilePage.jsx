@@ -20,6 +20,7 @@ import ThemeSelector from "../components/ThemeSelector";
 import Avatar from "../components/Avatar";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { cn } from "../lib/cn";
 
 export default function ProfilePage({ user: propUser, initialTab = "overview" }) {
@@ -31,17 +32,21 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(tabParam || initialTab || "overview");
+  const [activeTab, setActiveTab] = useState(() => tabParam || initialTab || "overview");
 
   useEffect(() => {
-    if (tabParam && tabParam !== activeTab) {
-      setActiveTab(tabParam);
-    }
-  }, [tabParam, activeTab]);
+    setActiveTab(tabParam || initialTab || "overview");
+  }, [tabParam, initialTab]);
 
   function handleTabChange(tabKey) {
     setActiveTab(tabKey);
-    setSearchParams({ tab: tabKey }, { replace: true });
+    if (tabKey === "overview") {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete("tab");
+      setSearchParams(nextParams, { replace: true });
+    } else {
+      setSearchParams({ tab: tabKey }, { replace: true });
+    }
   }
 
   const [bio, setBio] = useState(() => {
@@ -51,8 +56,16 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
   const [bioInput, setBioInput] = useState(bio);
 
   const [tags, setTags] = useState(() => {
-    const saved = localStorage.getItem(`nox_tags_${userId}`);
-    return saved ? JSON.parse(saved) : ["Shoegaze", "Post-Punk", "Ambient", "Jazz Fusion"];
+    try {
+      const saved = localStorage.getItem(`nox_tags_${userId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore corrupted data
+    }
+    return ["Shoegaze", "Post-Punk", "Ambient", "Jazz Fusion"];
   });
   const [newTag, setNewTag] = useState("");
 
@@ -377,19 +390,29 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
                 <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
-            <TopAlbums />
+            <ErrorBoundary fallback={<div className="p-4 rounded-xl border border-border bg-surface text-center text-xs text-text-muted">Unable to load top rotation at this time.</div>}>
+              <TopAlbums />
+            </ErrorBoundary>
           </div>
         </div>
       )}
 
       {/* Tab 2: Quilts & Topster Gallery */}
-      {activeTab === "quilts" && <QuiltGallery />}
+      {activeTab === "quilts" && (
+        <ErrorBoundary>
+          <QuiltGallery />
+        </ErrorBoundary>
+      )}
 
       {/* Tab 3: Stats */}
       {activeTab === "stats" && (
         <div className="space-y-6">
-          <TopAlbums />
-          <TopArtists />
+          <ErrorBoundary>
+            <TopAlbums />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <TopArtists />
+          </ErrorBoundary>
         </div>
       )}
 

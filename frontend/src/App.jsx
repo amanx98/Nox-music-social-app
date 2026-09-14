@@ -8,6 +8,8 @@ import Register from "./Register";
 import Layout from "./Layout";
 import FeedPage from "./pages/FeedPage";
 import ProfilePage from "./pages/ProfilePage";
+import TopstersPage from "./pages/TopstersPage";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -69,14 +71,16 @@ function App() {
         </div>
       ) : (
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
-              <Route index element={<FeedPage user={user} />} />
-              <Route path="topsters" element={<ProfilePage user={user} initialTab="quilts" onLogout={handleLogout} />} />
-              <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
+                <Route index element={<FeedPage user={user} />} />
+                <Route path="topsters" element={<TopstersPage />} />
+                <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Route>
+            </Routes>
+          </ErrorBoundary>
         </BrowserRouter>
       )}
     </ToastProvider>

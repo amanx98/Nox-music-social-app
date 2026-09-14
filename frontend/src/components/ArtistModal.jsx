@@ -28,12 +28,16 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
   }, [showPhotoLightbox, onClose]);
 
   useEffect(() => {
-    if (!artist?.name) return;
+    if (!artist) return;
+    const targetName = typeof artist?.name === "string"
+      ? artist.name
+      : (artist?.name?.["#text"] || (typeof artist === "string" ? artist : null));
+    if (!targetName) return;
 
     let isMounted = true;
     setLoading(true);
 
-    getArtistDetails(artist.name)
+    getArtistDetails(targetName)
       .then((data) => {
         if (isMounted) {
           setDetails(data);
@@ -92,6 +96,10 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
 
   if (!artist) return null;
 
+  const artistName = typeof artist?.name === "string"
+    ? artist.name
+    : (artist?.name?.["#text"] || (typeof artist === "string" ? artist : "Unknown Artist"));
+
   const photos = details?.images && details.images.length > 0
     ? details.images
     : details?.image
@@ -134,7 +142,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
             {currentPhoto ? (
               <img
                 src={currentPhoto}
-                alt={artist.name}
+                alt={artistName}
                 className="absolute inset-0 w-full h-full object-cover object-[center_20%] transition-transform duration-500 group-hover:scale-102"
               />
             ) : (
@@ -193,7 +201,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                 id="artist-modal-title"
                 className="font-heading font-black text-2xl sm:text-3xl text-white tracking-tight drop-shadow-sm"
               >
-                {artist.name}
+                {artistName}
               </h1>
 
               {details?.fans && (
@@ -234,7 +242,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                         >
                           <img
                             src={imgUrl}
-                            alt={`${artist.name} ${idx + 1}`}
+                            alt={`${artistName} ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
                         </button>
@@ -331,12 +339,12 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        onSelectTag({ name: artist.name, type: "artist" });
+                        onSelectTag({ name: artistName, type: "artist" });
                         onClose();
                       }}
                     >
                       <MessageSquare className="w-3.5 h-3.5" />
-                      <span>View #{artist.name} Discussions</span>
+                      <span>View #{artistName} Discussions</span>
                     </Button>
                   )}
 
@@ -365,7 +373,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
             {/* Lightbox Header Bar */}
             <div className="w-full flex items-center justify-between pb-3 text-white">
               <div className="font-heading font-bold text-base text-white truncate">
-                {artist.name}
+                {artistName}
               </div>
               <button
                 type="button"
