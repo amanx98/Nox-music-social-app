@@ -165,7 +165,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   }}
                   title="Expand uncropped photo"
                   aria-label="Expand uncropped photo"
-                  className="w-8 h-8 rounded-full bg-black/75 hover:bg-white text-white hover:text-black border border-white/25 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
+                  className="w-8 h-8 rounded-full bg-black/75 hover:bg-accent text-text hover:text-accent-text border border-border transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
                 >
                   <Maximize2 className="w-4 h-4 stroke-[2]" />
                 </button>
@@ -178,20 +178,20 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   onClose();
                 }}
                 aria-label="Close"
-                className="w-8 h-8 rounded-full bg-black/75 hover:bg-white text-white hover:text-black border border-white/25 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
+                className="w-8 h-8 rounded-full bg-black/75 hover:bg-accent text-text hover:text-accent-text border border-border transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
               >
                 <X className="w-4 h-4 stroke-[2]" />
               </button>
             </div>
 
-            {/* Artist Headline Info */}
-            <div className="relative z-10 w-full">
+            {/* Bottom Info on Banner */}
+            <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6 bg-gradient-to-t from-surface via-surface/85 to-transparent">
               <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                 <span className="font-mono text-2xs uppercase tracking-wider font-bold px-2 py-0.5 rounded bg-accent text-surface shadow-1">
                   Artist Spotlight
                 </span>
                 {artist.playcount && (
-                  <span className="font-mono text-2xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-black/60 text-white border border-white/20 backdrop-blur-xs">
+                  <span className="font-mono text-2xs uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-black/60 text-text border border-border backdrop-blur-xs">
                     {Number(artist.playcount).toLocaleString()} plays
                   </span>
                 )}
@@ -199,13 +199,13 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
 
               <h1
                 id="artist-modal-title"
-                className="font-heading font-black text-2xl sm:text-3xl text-white tracking-tight drop-shadow-sm"
+                className="font-heading font-black text-2xl sm:text-3xl text-text tracking-tight drop-shadow-sm"
               >
                 {artistName}
               </h1>
 
               {details?.fans && (
-                <div className="font-mono text-xs text-white/80 mt-1 flex items-center gap-1.5 drop-shadow-sm">
+                <div className="font-mono text-xs text-text-muted mt-1 flex items-center gap-1.5 drop-shadow-sm">
                   <Users className="w-3.5 h-3.5" />
                   <span>{details.fans.toLocaleString()} fans</span>
                 </div>
@@ -371,14 +371,14 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
         >
           <div className="relative max-w-4xl max-h-[92vh] w-full flex flex-col items-center justify-center">
             {/* Lightbox Header Bar */}
-            <div className="w-full flex items-center justify-between pb-3 text-white">
-              <div className="font-heading font-bold text-base text-white truncate">
+            <div className="w-full flex items-center justify-between pb-3 text-text">
+              <div className="font-heading font-bold text-base text-text truncate">
                 {artistName}
               </div>
               <button
                 type="button"
                 onClick={() => setShowPhotoLightbox(false)}
-                className="w-8 h-8 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-2"
+                className="w-8 h-8 rounded-md bg-accent text-accent-text hover:bg-accent-hover flex items-center justify-center transition-colors cursor-pointer shadow-2"
                 aria-label="Close"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />

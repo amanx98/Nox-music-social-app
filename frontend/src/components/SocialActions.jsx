@@ -100,15 +100,15 @@ export default function SocialActions({
         type="button"
         className={cn(
           "group flex items-center gap-1.5 text-xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded",
-          reposted ? "text-emerald-400" : "hover:text-emerald-400"
+          reposted ? "text-accent" : "hover:text-accent"
         )}
         onClick={handleRepost}
         aria-label={`Repost (${reposts} reposts)`}
       >
-        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-emerald-500/10">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-accent/10">
           <Repeat2 className="w-4 h-4 stroke-[1.75]" />
         </div>
-        <span className={cn("font-mono text-2xs tabular-nums", reposted ? "text-emerald-400" : "text-text-dim group-hover:text-emerald-400")}>
+        <span className={cn("font-mono text-2xs tabular-nums", reposted ? "text-accent" : "text-text-dim group-hover:text-accent")}>
           {reposts > 0 ? reposts : ""}
         </span>
       </button>
@@ -118,20 +118,20 @@ export default function SocialActions({
         type="button"
         className={cn(
           "group flex items-center gap-1.5 text-xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded",
-          liked ? "text-rose-500" : "hover:text-rose-400"
+          liked ? "text-danger" : "hover:text-danger"
         )}
         onClick={handleLike}
         aria-label={`Like (${likes} likes)`}
       >
-        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-rose-500/10">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-danger/10">
           <Heart
             className={cn(
               "w-4 h-4 stroke-[1.75] transition-transform group-active:scale-125",
-              liked && "fill-rose-500 stroke-rose-500"
+              liked && "fill-danger stroke-danger"
             )}
           />
         </div>
-        <span className={cn("font-mono text-2xs tabular-nums", liked ? "text-rose-500 font-medium" : "text-text-dim group-hover:text-rose-400")}>
+        <span className={cn("font-mono text-2xs tabular-nums", liked ? "text-danger font-medium" : "text-text-dim group-hover:text-danger")}>
           {likes > 0 ? likes : ""}
         </span>
       </button>
@@ -141,16 +141,16 @@ export default function SocialActions({
         type="button"
         className={cn(
           "group flex items-center gap-1 text-xs transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 rounded",
-          bookmarked ? "text-amber-400" : "hover:text-amber-400"
+          bookmarked ? "text-accent" : "hover:text-accent"
         )}
         onClick={handleBookmark}
         aria-label={bookmarked ? "Bookmarked" : "Bookmark"}
       >
-        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-amber-500/10">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center transition-colors group-hover:bg-accent/10">
           <Bookmark
             className={cn(
               "w-4 h-4 stroke-[1.75]",
-              bookmarked && "fill-amber-400 stroke-amber-400"
+              bookmarked && "fill-accent stroke-accent"
             )}
           />
         </div>

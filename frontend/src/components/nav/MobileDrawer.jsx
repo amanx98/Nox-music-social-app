@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { X, MessageSquare, LayoutGrid, LogOut, User } from "lucide-react";
+import { X, MessageSquare, LayoutGrid, Radio, LogOut, User } from "lucide-react";
 import Avatar from "../Avatar";
 import { cn } from "../../lib/cn";
 
@@ -173,6 +173,13 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
               onClick={onClose}
             />
             <DrawerLink
+              to="/discover"
+              label="Discover"
+              icon={<Radio className="w-4 h-4 stroke-[1.75]" />}
+              active={location.pathname.startsWith("/discover")}
+              onClick={onClose}
+            />
+            <DrawerLink
               to="/profile"
               label="Profile"
               icon={<User className="w-4 h-4 stroke-[1.75]" />}
@@ -192,7 +199,7 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
             >
               <Avatar username={user.username} size={34} />
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-white group-hover:text-accent transition-colors truncate">
+                <div className="text-xs font-semibold text-text group-hover:text-accent transition-colors truncate">
                   {user.username}
                 </div>
                 <div className="font-mono text-2xs text-text-muted truncate">
@@ -225,10 +232,10 @@ function DrawerLink({ to, label, icon, active, onClick }) {
       to={to}
       onClick={onClick}
       className={cn(
-        "h-10 px-3.5 flex items-center gap-3 rounded-full text-xs font-semibold transition-all",
+        "h-9 px-3.5 flex items-center gap-3 rounded-md text-xs font-heading font-semibold transition-all focus-visible:outline-2 focus-visible:outline-accent",
         active
-          ? "bg-white text-zinc-950 shadow-sm"
-          : "text-zinc-400 hover:text-white hover:bg-white/5"
+          ? "bg-accent text-accent-text shadow-1 font-bold"
+          : "text-text-muted hover:text-text hover:bg-surface"
       )}
     >
       <span aria-hidden="true">{icon}</span>

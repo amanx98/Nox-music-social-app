@@ -9,6 +9,7 @@ import Layout from "./Layout";
 import FeedPage from "./pages/FeedPage";
 import ProfilePage from "./pages/ProfilePage";
 import TopstersPage from "./pages/TopstersPage";
+import DiscoverPage from "./pages/DiscoverPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
@@ -76,6 +77,7 @@ function App() {
               <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
                 <Route index element={<FeedPage user={user} />} />
                 <Route path="topsters" element={<TopstersPage />} />
+                <Route path="discover" element={<DiscoverPage />} />
                 <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>

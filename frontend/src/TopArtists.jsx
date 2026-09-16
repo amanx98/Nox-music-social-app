@@ -63,7 +63,7 @@ export default function TopArtists({ onSelectTag }) {
       {/* Header with Title, Period Chips, and View Mode Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-heading font-bold text-base text-white m-0">Top Artists</h3>
+          <h3 className="font-heading font-bold text-base text-text m-0">Top Artists</h3>
           <p className="font-sans text-xs text-text-muted mt-0.5 m-0">
             Top listened artists from your Last.fm history.
           </p>
@@ -71,13 +71,13 @@ export default function TopArtists({ onSelectTag }) {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* View Mode Switcher */}
-          <div className="inline-flex p-0.5 rounded-full bg-surface border border-border">
+          <div className="inline-flex p-0.5 rounded-md bg-surface border border-border">
             <button
               type="button"
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer ${
                 viewMode === "grid"
-                  ? "bg-white text-zinc-950 shadow-sm"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-accent text-accent-text font-bold shadow-1"
+                  : "text-text-muted hover:text-text"
               }`}
               onClick={() => setViewMode("grid")}
             >
@@ -85,10 +85,10 @@ export default function TopArtists({ onSelectTag }) {
             </button>
             <button
               type="button"
-              className={`px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer ${
                 viewMode === "list"
-                  ? "bg-white text-zinc-950 shadow-sm"
-                  : "text-zinc-400 hover:text-white"
+                  ? "bg-accent text-accent-text font-bold shadow-1"
+                  : "text-text-muted hover:text-text"
               }`}
               onClick={() => setViewMode("list")}
             >
@@ -97,16 +97,16 @@ export default function TopArtists({ onSelectTag }) {
           </div>
 
           {/* Period Chips */}
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex items-center gap-1 flex-wrap">
             {PERIODS.map((p) => {
               const active = period === p.value;
               return (
                 <button
                   key={p.value}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                     active
-                      ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent"
+                      ? "bg-accent text-accent-text font-bold shadow-1"
+                      : "text-text-muted hover:text-text hover:bg-surface border border-transparent"
                   }`}
                   onClick={() => setPeriod(p.value)}
                 >
@@ -119,11 +119,11 @@ export default function TopArtists({ onSelectTag }) {
       </div>
 
       {error ? (
-        <div className="p-4 rounded-xl border border-border bg-surface text-center space-y-2">
+        <div className="p-4 rounded-md border border-border bg-surface text-center space-y-2">
           <p className="font-sans text-xs text-text-muted m-0">{error}</p>
           <a
-            href="http://localhost:8000/lastfm/login"
-            className="inline-flex items-center justify-center h-8 px-3.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition-colors"
+            href={`${import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000"}/lastfm/login`}
+            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors"
           >
             Connect Last.fm
           </a>
@@ -148,12 +148,12 @@ export default function TopArtists({ onSelectTag }) {
             return (
               <div
                 key={artistName + i}
-                className="rounded-xl border border-border bg-surface p-2.5 flex flex-col justify-between group hover:border-white/25 transition-all cursor-pointer text-left"
+                className="rounded-md border border-border bg-surface p-2.5 flex flex-col justify-between group hover:border-border-strong transition-all cursor-pointer text-left"
                 onClick={() => setSelectedArtist(artist)}
                 title={`Explore ${artistName}`}
               >
-                <div className="aspect-square rounded-lg overflow-hidden bg-surface-sunken mb-2 relative">
-                  <span className="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-black/70 text-white backdrop-blur-xs">
+                <div className="aspect-square rounded-md overflow-hidden bg-surface-sunken mb-2 relative">
+                  <span className="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-black/70 text-text backdrop-blur-xs">
                     #{i + 1}
                   </span>
 
@@ -167,7 +167,7 @@ export default function TopArtists({ onSelectTag }) {
                 </div>
 
                 <div className="min-w-0">
-                  <div className="font-semibold text-xs text-white truncate group-hover:text-accent transition-colors" title={artistName}>
+                  <div className="font-semibold text-xs text-text truncate group-hover:text-accent transition-colors" title={artistName}>
                     {artistName}
                   </div>
                   <div className="flex items-center justify-between text-2xs text-text-muted mt-1">
@@ -213,7 +213,7 @@ export default function TopArtists({ onSelectTag }) {
                   )}
 
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-xs text-white truncate">
+                    <div className="font-semibold text-xs text-text truncate">
                       {artistName}
                     </div>
                     <div className="h-1 bg-surface-sunken rounded-full overflow-hidden w-full max-w-[240px] mt-1.5">

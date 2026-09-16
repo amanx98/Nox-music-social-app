@@ -132,10 +132,10 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
   return (
     <div className="space-y-6 max-w-[960px] mx-auto w-full">
       {/* Profile Banner */}
-      <div className="profile-banner rounded-2xl" />
+      <div className="profile-banner rounded-md" />
 
       {/* Profile Header Card */}
-      <div className="profile-header-card rounded-2xl border border-border bg-surface-raised p-5 sm:p-6 shadow-2">
+      <div className="profile-header-card rounded-md border border-border bg-surface-raised p-5 sm:p-6 shadow-2">
         <div className="flex justify-between items-start flex-wrap gap-4">
           {/* Avatar and User Info */}
           <div className="flex gap-4 items-end">
@@ -160,7 +160,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-heading font-black text-2xl text-white m-0">{username}</h1>
+                <h1 className="font-heading font-black text-2xl text-text m-0">{username}</h1>
                 <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">
                   Archivist
                 </span>
@@ -210,7 +210,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
                 onChange={(e) => setBioInput(e.target.value)}
                 placeholder="Share your taste, favourite music eras, or audio gear..."
                 rows={3}
-                className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-sm text-white outline-none focus:border-accent"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text outline-none focus:border-accent"
               />
               <div className="flex gap-2">
                 <Button variant="primary" size="sm" onClick={handleSaveBio}>
@@ -254,14 +254,14 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
         </div>
       </div>
 
-      {/* Tabs Navigation: Sleek Modern Pills */}
+      {/* Tabs Navigation */}
       <div className="flex items-center gap-1.5 pb-2 border-b border-border overflow-x-auto">
         <button
           className={cn(
-            "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "overview"
-              ? "bg-white text-zinc-950 shadow-sm"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-accent text-accent-text font-bold shadow-1"
+              : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("overview")}
         >
@@ -271,10 +271,10 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
         <button
           className={cn(
-            "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "quilts"
-              ? "bg-white text-zinc-950 shadow-sm"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-accent text-accent-text font-bold shadow-1"
+              : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("quilts")}
         >
@@ -284,10 +284,10 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
         <button
           className={cn(
-            "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "stats"
-              ? "bg-white text-zinc-950 shadow-sm"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-accent text-accent-text font-bold shadow-1"
+              : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("stats")}
         >
@@ -297,10 +297,10 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
         <button
           className={cn(
-            "flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
+            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "settings"
-              ? "bg-white text-zinc-950 shadow-sm"
-              : "text-zinc-400 hover:text-white hover:bg-white/5"
+              ? "bg-accent text-accent-text font-bold shadow-1"
+              : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("settings")}
         >
@@ -316,13 +316,13 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div
               onClick={() => handleTabChange("quilts")}
-              className="p-5 rounded-2xl border border-border bg-surface-raised hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
+              className="p-5 rounded-md border border-border bg-surface-raised hover:border-border-strong transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div>
-                <div className="w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-accent mb-3 group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 rounded-md bg-surface border border-border flex items-center justify-center text-accent mb-3 group-hover:scale-105 transition-transform">
                   <LayoutGrid className="w-4 h-4" />
                 </div>
-                <h3 className="font-heading font-bold text-base text-white group-hover:text-accent transition-colors">
+                <h3 className="font-heading font-bold text-base text-text group-hover:text-accent transition-colors">
                   Topsters &amp; Quilts
                 </h3>
                 <p className="font-sans text-xs text-text-muted mt-1 leading-relaxed">
@@ -337,13 +337,13 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
             <div
               onClick={() => handleTabChange("stats")}
-              className="p-5 rounded-2xl border border-border bg-surface-raised hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
+              className="p-5 rounded-md border border-border bg-surface-raised hover:border-border-strong transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div>
-                <div className="w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-accent mb-3 group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 rounded-md bg-surface border border-border flex items-center justify-center text-accent mb-3 group-hover:scale-105 transition-transform">
                   <BarChart2 className="w-4 h-4" />
                 </div>
-                <h3 className="font-heading font-bold text-base text-white group-hover:text-accent transition-colors">
+                <h3 className="font-heading font-bold text-base text-text group-hover:text-accent transition-colors">
                   Listening Stats
                 </h3>
                 <p className="font-sans text-xs text-text-muted mt-1 leading-relaxed">
@@ -358,13 +358,13 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
 
             <div
               onClick={() => handleTabChange("settings")}
-              className="p-5 rounded-2xl border border-border bg-surface-raised hover:border-white/20 transition-all cursor-pointer group flex flex-col justify-between"
+              className="p-5 rounded-md border border-border bg-surface-raised hover:border-border-strong transition-all cursor-pointer group flex flex-col justify-between"
             >
               <div>
-                <div className="w-9 h-9 rounded-xl bg-surface border border-border flex items-center justify-center text-accent mb-3 group-hover:scale-105 transition-transform">
+                <div className="w-9 h-9 rounded-md bg-surface border border-border flex items-center justify-center text-accent mb-3 group-hover:scale-105 transition-transform">
                   <Settings className="w-4 h-4" />
                 </div>
-                <h3 className="font-heading font-bold text-base text-white group-hover:text-accent transition-colors">
+                <h3 className="font-heading font-bold text-base text-text group-hover:text-accent transition-colors">
                   Theme &amp; Settings
                 </h3>
                 <p className="font-sans text-xs text-text-muted mt-1 leading-relaxed">
@@ -379,10 +379,10 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           </div>
 
           {/* Quick Preview of Top Albums */}
-          <div className="p-6 rounded-2xl border border-border bg-surface-raised space-y-4">
+          <div className="p-6 rounded-md border border-border bg-surface-raised space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="font-heading font-bold text-lg text-white">Recent Top Rotation</h2>
+                <h2 className="font-heading font-bold text-lg text-text">Recent Top Rotation</h2>
                 <p className="font-sans text-xs text-text-muted mt-0.5">
                   High-rotation records synchronized from your listening profile.
                 </p>
@@ -396,23 +396,21 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
                 <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
-            <ErrorBoundary fallback={<div className="p-4 rounded-xl border border-border bg-surface text-center text-xs text-text-muted">Unable to load top rotation at this time.</div>}>
-              <TopAlbums />
-            </ErrorBoundary>
+            <TopAlbums limit={4} compact />
           </div>
         </div>
       )}
 
-      {/* Tab 2: Quilts & Topster Gallery */}
+      {/* Tab 2: Quilts and Topsters */}
       {activeTab === "quilts" && (
-        <ErrorBoundary>
+        <div className="space-y-4">
           <QuiltGallery />
-        </ErrorBoundary>
+        </div>
       )}
 
-      {/* Tab 3: Stats */}
+      {/* Tab 3: Detailed Stats */}
       {activeTab === "stats" && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <ErrorBoundary>
             <TopAlbums />
           </ErrorBoundary>
@@ -426,9 +424,9 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
       {activeTab === "settings" && (
         <div className="space-y-6 max-w-2xl">
           {/* Section 1: Appearance & Themes */}
-          <div className="p-6 rounded-2xl border border-border bg-surface-raised space-y-4">
+          <div className="p-6 rounded-md border border-border bg-surface-raised space-y-4">
             <div>
-              <h2 className="font-heading font-black text-lg text-white">Theme &amp; Look and Feel</h2>
+              <h2 className="font-heading font-black text-lg text-text">Theme &amp; Look and Feel</h2>
               <p className="font-sans text-xs text-text-muted mt-0.5">
                 Atmospheric studio dark themes with subtle cursor spotlight tracking.
               </p>
@@ -437,27 +435,27 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           </div>
 
           {/* Section 2: Last.fm Integration */}
-          <div className="p-6 rounded-2xl border border-border bg-surface-raised space-y-4">
+          <div className="p-6 rounded-md border border-border bg-surface-raised space-y-4">
             <div>
-              <h2 className="font-heading font-black text-lg text-white">Integrations</h2>
+              <h2 className="font-heading font-black text-lg text-text">Integrations</h2>
               <p className="font-sans text-xs text-text-muted mt-0.5">
                 Connect external music services to power scrobbles, topsters, and quilts.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl bg-surface border border-border flex items-center justify-between gap-4">
+            <div className="p-4 rounded-md bg-surface border border-border flex items-center justify-between gap-4">
               <div>
-                <div className="font-semibold text-sm text-white">Last.fm Account</div>
+                <div className="font-semibold text-sm text-text">Last.fm Account</div>
                 <div className="flex items-center gap-1.5 font-mono text-xs mt-1">
                   {lastfmConnected ? (
                     <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400 font-semibold">Connected &amp; Syncing</span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-accent" />
+                      <span className="text-accent font-semibold">Connected &amp; Syncing</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-3.5 h-3.5 text-zinc-400" />
-                      <span className="text-zinc-400">Not Connected</span>
+                      <XCircle className="w-3.5 h-3.5 text-text-dim" />
+                      <span className="text-text-dim">Not Connected</span>
                     </>
                   )}
                 </div>
@@ -482,14 +480,14 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           onClick={() => setShowAvatarPicker(false)}
         >
           <div
-            className="w-full max-w-xs rounded-xl border border-border bg-surface-raised p-5 shadow-5 text-left space-y-3"
+            className="w-full max-w-xs rounded-md border border-border bg-surface-raised p-5 shadow-5 text-left space-y-3"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="font-heading font-bold text-sm text-white">Choose Symbol</h3>
+              <h3 className="font-heading font-bold text-sm text-text">Choose Symbol</h3>
               <button
                 type="button"
-                className="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-white"
+                className="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text"
                 onClick={() => setShowAvatarPicker(false)}
               >
                 <X className="w-3.5 h-3.5" />
@@ -502,7 +500,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
                   key={char}
                   type="button"
                   onClick={() => handleSelectAvatar(char)}
-                  className="h-10 rounded-lg border border-border hover:border-accent hover:bg-surface text-lg font-bold text-white flex items-center justify-center transition-colors cursor-pointer"
+                  className="h-10 rounded-md border border-border hover:border-accent hover:bg-surface text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer"
                 >
                   {char}
                 </button>

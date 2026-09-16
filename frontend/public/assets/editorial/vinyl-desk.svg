@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <radialGradient id="desk-glow" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#181A18" />
+      <stop offset="70%" stop-color="#0E100E" />
+      <stop offset="100%" stop-color="#0A0B0A" />
+    </radialGradient>
+    <radialGradient id="vinyl-sheen" cx="45%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#282C26" />
+      <stop offset="45%" stop-color="#141614" />
+      <stop offset="70%" stop-color="#1F241C" />
+      <stop offset="100%" stop-color="#0C0E0B" />
+    </radialGradient>
+    <linearGradient id="lime-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E2FB75" />
+      <stop offset="100%" stop-color="#C7F43D" />
+    </linearGradient>
+    <linearGradient id="fader-track" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#070807" />
+      <stop offset="100%" stop-color="#1A1D1A" />
+    </linearGradient>
+  </defs>
+
+  <!-- Dark Canvas Base -->
+  <rect width="800" height="800" fill="url(#desk-glow)" />
+
+  <!-- Background Technical Grid Lines -->
+  <g stroke="rgba(244, 245, 239, 0.05)" stroke-width="1">
+    <line x1="0" y1="200" x2="800" y2="200" />
+    <line x1="0" y1="400" x2="800" y2="400" />
+    <line x1="0" y1="600" x2="800" y2="600" />
+    <line x1="200" y1="0" x2="200" y2="800" />
+    <line x1="400" y1="0" x2="400" y2="800" />
+    <line x1="600" y1="0" x2="600" y2="800" />
+  </g>
+
+  <!-- Broadcast Metadata Markings -->
+  <g font-family="'JetBrains Mono', monospace" font-size="11" fill="#737A75" letter-spacing="0.15em">
+    <text x="40" y="55">BROADCAST 027 // DESK-01</text>
+    <text x="760" y="55" text-anchor="end">FREQ: 44.1kHz / 24-BIT</text>
+    <text x="40" y="760">CONTROL FEED // LATENCY 1.2MS</text>
+    <text x="760" y="760" text-anchor="end">NOX SOUND LABS</text>
+  </g>
+
+  <!-- 12-Inch Vinyl Disc Surface -->
+  <g transform="translate(360, 400)">
+    <!-- Outer Rim -->
+    <circle r="290" fill="url(#vinyl-sheen)" stroke="rgba(199, 244, 61, 0.25)" stroke-width="1.5" />
+    
+    <!-- Micro-Grooves Concentric Rings -->
+    <circle r="275" fill="none" stroke="rgba(244, 245, 239, 0.04)" stroke-width="1.5" />
+    <circle r="255" fill="none" stroke="rgba(244, 245, 239, 0.03)" stroke-width="1" />
+    <circle r="235" fill="none" stroke="rgba(244, 245, 239, 0.05)" stroke-width="1.5" />
+    <circle r="215" fill="none" stroke="rgba(244, 245, 239, 0.03)" stroke-width="1" />
+    <circle r="195" fill="none" stroke="rgba(244, 245, 239, 0.04)" stroke-width="1" />
+    <circle r="175" fill="none" stroke="rgba(244, 245, 239, 0.06)" stroke-width="1.5" />
+    <circle r="155" fill="none" stroke="rgba(244, 245, 239, 0.04)" stroke-width="1" />
+    <circle r="135" fill="none" stroke="rgba(244, 245, 239, 0.05)" stroke-width="1.2" />
+
+    <!-- Vinyl Light Reflection Flares -->
+    <path d="M-280,0 L-110,0 A110,110 0 0,1 0,-110 L0,-280 A280,280 0 0,0 -280,0 Z" fill="rgba(199, 244, 61, 0.04)" />
+    <path d="M280,0 L110,0 A110,110 0 0,1 0,110 L0,280 A280,280 0 0,0 280,0 Z" fill="rgba(199, 244, 61, 0.04)" />
+
+    <!-- Center Label Area -->
+    <circle r="105" fill="#0E110E" stroke="url(#lime-accent)" stroke-width="2" />
+    <circle r="92" fill="none" stroke="rgba(244, 245, 239, 0.1)" stroke-width="1" stroke-dasharray="3,3" />
+
+    <!-- Label Typography -->
+    <circle r="16" fill="#C7F43D" />
+    <circle r="6" fill="#0A0B0A" />
+    
+    <text y="-40" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="14" fill="#F4F5EF" text-anchor="middle" letter-spacing="0.1em">NOX.</text>
+    <text y="-25" font-family="'JetBrains Mono', monospace" font-size="8" fill="#C7F43D" text-anchor="middle" letter-spacing="0.2em">TRANSMISSION 01</text>
+    
+    <text y="42" font-family="'JetBrains Mono', monospace" font-size="8.5" fill="#737A75" text-anchor="middle" letter-spacing="0.15em">33 ⅓ RPM // STEREO</text>
+    <text y="58" font-family="'Space Grotesk', sans-serif" font-weight="600" font-size="10" fill="#F4F5EF" text-anchor="middle">SIDE A: DEEP FREQUENCIES</text>
+  </g>
+
+  <!-- Turntable Tonearm Rig -->
+  <g stroke="#C7F43D" stroke-width="2" fill="none">
+    <circle cx="700" cy="180" r="32" fill="#121412" stroke="rgba(244, 245, 239, 0.2)" stroke-width="2" />
+    <circle cx="700" cy="180" r="14" fill="#1C201A" stroke="#C7F43D" stroke-width="2" />
+    <path d="M685,190 L520,380 L480,410" stroke="#F4F5EF" stroke-width="4" stroke-linecap="round" />
+    <polygon points="480,410 465,425 450,415 465,400" fill="#C7F43D" stroke="none" />
+    <line x1="456" y1="421" x2="446" y2="430" stroke="#E2FB75" stroke-width="2" />
+  </g>
+
+  <!-- Left Column: Analog Mixing Console Strip -->
+  <g transform="translate(45, 160)">
+    <rect width="65" height="480" rx="4" fill="#121412" stroke="rgba(244, 245, 239, 0.12)" />
+
+    <!-- Rotary Knobs -->
+    <circle cx="32.5" cy="40" r="16" fill="#1A1D1A" stroke="#737A75" stroke-width="1.5" />
+    <line x1="32.5" y1="24" x2="32.5" y2="34" stroke="#C7F43D" stroke-width="2" />
+    <text x="32.5" y="68" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#737A75" text-anchor="middle">GAIN</text>
+
+    <circle cx="32.5" cy="105" r="16" fill="#1A1D1A" stroke="#737A75" stroke-width="1.5" />
+    <line x1="22" y1="96" x2="30" y2="102" stroke="#F4F5EF" stroke-width="2" />
+    <text x="32.5" y="133" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#737A75" text-anchor="middle">EQ-MID</text>
+
+    <circle cx="32.5" cy="170" r="16" fill="#1A1D1A" stroke="#737A75" stroke-width="1.5" />
+    <line x1="42" y1="162" x2="34" y2="167" stroke="#C7F43D" stroke-width="2" />
+    <text x="32.5" y="198" font-family="'JetBrains Mono', monospace" font-size="7.5" fill="#737A75" text-anchor="middle">SUB-BASS</text>
+
+    <!-- Linear Fader Track -->
+    <rect x="28.5" y="230" width="8" height="180" rx="4" fill="url(#fader-track)" stroke="rgba(244, 245, 239, 0.1)" />
+    <g stroke="rgba(244, 245, 239, 0.2)" stroke-width="1">
+      <line x1="16" y1="240" x2="24" y2="240" />
+      <line x1="18" y1="270" x2="24" y2="270" />
+      <line x1="14" y1="300" x2="24" y2="300" />
+      <line x1="18" y1="330" x2="24" y2="330" />
+      <line x1="14" y1="360" x2="24" y2="360" />
+      <line x1="16" y1="390" x2="24" y2="390" />
+    </g>
+    <rect x="22.5" y="275" width="20" height="28" rx="2" fill="#F4F5EF" stroke="#C7F43D" stroke-width="1.5" />
+    <line x1="22.5" y1="289" x2="42.5" y2="289" stroke="#0A0B0A" stroke-width="2" />
+
+    <!-- Channel VU Meter LED Bar -->
+    <g transform="translate(24, 430)">
+      <rect x="0" y="0" width="4" height="22" fill="#737A75" />
+      <rect x="6" y="0" width="4" height="22" fill="#737A75" />
+      <rect x="0" y="8" width="4" height="14" fill="#C7F43D" />
+      <rect x="6" y="4" width="4" height="18" fill="#C7F43D" />
+      <rect x="12" y="14" width="4" height="8" fill="#FF5A5A" />
+    </g>
+  </g>
+
+  <!-- Horizontal Acid Accent Line -->
+  <line x1="40" y1="710" x2="760" y2="710" stroke="rgba(199, 244, 61, 0.35)" stroke-width="1.5" stroke-dasharray="8,4" />
+</svg>

@@ -1,127 +1,217 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { MessageSquare, LayoutGrid, LogOut, Menu, User } from "lucide-react";
+import {
+  Menu,
+  MessageSquare,
+  LayoutGrid,
+  Radio,
+  Plus,
+  User as UserIcon,
+  Settings,
+  LogOut,
+  ChevronDown,
+} from "lucide-react";
 import Avatar from "../Avatar";
+import HeaderSearch from "./HeaderSearch";
+import NotificationsPanel from "./NotificationsPanel";
 import { cn } from "../../lib/cn";
 
-export default function Header({ user, onLogout, onOpenDrawer, isDrawerOpen }) {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isHidden, setIsHidden] = useState(false);
-  const lastScrollY = useRef(0);
+export default function Header({
+  user,
+  onLogout,
+  onOpenDrawer,
+  isDrawerOpen,
+  onOpenComposer,
+  onSelectThread,
+  onSelectTag,
+}) {
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const location = useLocation();
 
+  // Close profile menu when clicking outside or pressing Escape
   useEffect(() => {
-    let ticking = false;
-
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          setIsScrolled(currentScrollY > 16);
-
-          // Hide on scroll down past 80px, show immediately on scroll up
-          if (currentScrollY > 80 && currentScrollY > lastScrollY.current + 6) {
-            setIsHidden(true);
-          } else if (currentScrollY < lastScrollY.current - 6 || currentScrollY <= 80) {
-            setIsHidden(false);
-          }
-
-          lastScrollY.current = currentScrollY;
-          ticking = false;
-        });
-        ticking = true;
+    function handleGlobalEvents(e) {
+      if (e.key === "Escape") {
+        setIsProfileMenuOpen(false);
       }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+    if (isProfileMenuOpen) {
+      document.addEventListener("mousedown", handleGlobalEvents);
+      document.addEventListener("keydown", handleGlobalEvents);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleGlobalEvents);
+      document.removeEventListener("keydown", handleGlobalEvents);
     };
+  }, [isProfileMenuOpen]);
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  // Close profile menu on route change
+  useEffect(() => {
+    setIsProfileMenuOpen(false);
+  }, [location.pathname]);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-[100] w-full transition-all duration-200 ease-out border-b",
-        isScrolled
-          ? "h-14 bg-surface/90 backdrop-blur-md border-border shadow-1"
-          : "h-14 bg-surface/75 backdrop-blur-sm border-border/50",
-        isHidden ? "-translate-y-full" : "translate-y-0"
-      )}
-    >
-      <div className="max-w-[1240px] h-full mx-auto px-4 flex items-center justify-between gap-4">
-        {/* Left: Mobile Burger Trigger & Brand */}
-        <div className="flex items-center gap-3">
+    <header className="sticky top-0 z-[100] w-full h-14 bg-surface/90 backdrop-blur-md border-b border-border shadow-1 select-none">
+      <div className="max-w-[1440px] h-full mx-auto px-4 flex items-center justify-between gap-3">
+        {/* Left: Mobile Drawer Trigger & NOX Wordmark */}
+        <div className="flex items-center gap-3 shrink-0">
           <button
             type="button"
             onClick={onOpenDrawer}
             aria-expanded={isDrawerOpen}
             aria-controls="mobile-drawer"
             aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
-            className="min-h-[40px] min-w-[40px] flex items-center justify-center p-2 rounded-lg text-text-muted hover:text-white hover:bg-surface-raised transition-colors focus-visible:outline-2 cursor-pointer"
+            className="md:hidden min-h-[38px] min-w-[38px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
           >
             <Menu className="w-5 h-5 stroke-[1.75]" />
           </button>
 
-          {/* Brand Logo with Syne Heading */}
+          {/* Wordmark with acid lime period */}
           <Link
             to="/"
-            className="flex items-center gap-2 group focus-visible:outline-2 rounded-sm"
+            className="flex items-center gap-1 group focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
+            aria-label="Nox Home"
           >
-            <span className="font-heading font-extrabold text-xl tracking-tight text-white group-hover:text-accent transition-colors">
+            <span className="font-heading font-extrabold text-2xl tracking-tighter text-text group-hover:text-accent transition-colors">
               NOX<span className="text-accent">.</span>
+            </span>
+            <span className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-widest text-text-dim px-1.5 py-0.5 ml-1 border border-border rounded-[3px] bg-surface-sunken">
+              RADIO-DESK
             </span>
           </Link>
         </div>
 
-        {/* Center: Desktop Navigation Tabs */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1.5">
+        {/* Center: Primary Destinations (Feed, Topsters, Discover) */}
+        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1">
           <NavLinkItem
             to="/"
             label="Feed"
-            icon={<MessageSquare className="w-4 h-4 stroke-[1.75]" />}
+            icon={<MessageSquare className="w-3.5 h-3.5" />}
             active={location.pathname === "/"}
           />
           <NavLinkItem
             to="/topsters"
             label="Topsters"
-            icon={<LayoutGrid className="w-4 h-4 stroke-[1.75]" />}
-            active={location.pathname === "/topsters"}
+            icon={<LayoutGrid className="w-3.5 h-3.5" />}
+            active={location.pathname.startsWith("/topsters")}
           />
           <NavLinkItem
-            to="/profile"
-            label="Profile"
-            icon={<User className="w-4 h-4 stroke-[1.75]" />}
-            active={location.pathname === "/profile"}
+            to="/discover"
+            label="Discover"
+            icon={<Radio className="w-3.5 h-3.5" />}
+            active={location.pathname.startsWith("/discover")}
           />
         </nav>
 
-        {/* Right: User Avatar & Quick Actions */}
+        {/* Right: Search, Notifications, Compose, Profile Menu */}
         <div className="flex items-center gap-2">
-          {user && (
-            <Link
-              to="/profile"
-              className="flex items-center gap-2 py-1 px-3 rounded-full hover:bg-white/5 border border-border transition-colors focus-visible:outline-2"
-              title="Open profile"
-            >
-              <Avatar username={user.username} size={26} />
-              <span className="font-sans text-xs font-semibold text-white max-w-[120px] truncate">
-                {user.username}
-              </span>
-            </Link>
-          )}
+          {/* Desktop Search Input with Debounced Querying */}
+          <HeaderSearch onSelectThread={onSelectThread} onSelectTag={onSelectTag} />
 
-          {/* Sign Out Button */}
-          {onLogout && (
+          {/* Notifications Panel */}
+          <NotificationsPanel />
+
+          {/* Primary Transmit / Compose Action */}
+          <button
+            type="button"
+            onClick={onOpenComposer}
+            className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-accent text-accent-text hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer shadow-1"
+          >
+            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            <span>Transmit</span>
+          </button>
+
+          {/* Current User Avatar & Profile Dropdown */}
+          <div ref={profileMenuRef} className="relative">
             <button
               type="button"
-              onClick={onLogout}
-              className="w-9 h-9 flex items-center justify-center rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors focus-visible:outline-2 cursor-pointer"
-              title="Sign out"
-              aria-label="Sign out"
+              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              aria-expanded={isProfileMenuOpen}
+              aria-haspopup="true"
+              aria-label="Open profile menu"
+              className="flex items-center gap-1.5 p-1 rounded-md hover:bg-surface-raised border border-transparent hover:border-border transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-accent"
             >
-              <LogOut className="w-4 h-4 stroke-[1.75]" />
+              <Avatar username={user?.username || "me"} size={28} />
+              <span className="hidden lg:inline text-xs font-heading font-semibold text-text max-w-[100px] truncate">
+                {user?.username}
+              </span>
+              <ChevronDown
+                className={cn(
+                  "w-3 h-3 text-text-dim transition-transform duration-150",
+                  isProfileMenuOpen && "rotate-180 text-text"
+                )}
+              />
             </button>
-          )}
+
+            {/* Accessible Profile Menu Dropdown */}
+            {isProfileMenuOpen && (
+              <div
+                role="menu"
+                aria-label="User account actions"
+                className="absolute right-0 top-11 w-56 rounded-md bg-surface-raised border border-border p-1.5 shadow-5 z-50 animate-slide-up text-left divide-y divide-border/60"
+              >
+                {/* User Info Header */}
+                <div className="px-3 py-2">
+                  <div className="font-heading font-bold text-xs text-text truncate">
+                    {user?.username}
+                  </div>
+                  <div className="font-mono text-[11px] text-text-dim truncate">
+                    @{user?.username?.toLowerCase()}
+                  </div>
+                </div>
+
+                {/* Navigation Links */}
+                <div className="py-1">
+                  <Link
+                    to="/profile"
+                    role="menuitem"
+                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-text hover:bg-surface transition-colors"
+                  >
+                    <UserIcon className="w-3.5 h-3.5 text-accent" />
+                    <span>Archivist Profile</span>
+                  </Link>
+
+                  <Link
+                    to="/topsters"
+                    role="menuitem"
+                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-text hover:bg-surface transition-colors"
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5 text-accent" />
+                    <span>Topsters &amp; Quilts</span>
+                  </Link>
+
+                  <Link
+                    to="/profile?tab=settings"
+                    role="menuitem"
+                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-text hover:bg-surface transition-colors"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-text-dim" />
+                    <span>Desk Settings</span>
+                  </Link>
+                </div>
+
+                {/* Sign Out Action */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setIsProfileMenuOpen(false);
+                      onLogout?.();
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-danger hover:bg-danger-muted/30 transition-colors cursor-pointer text-left"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
@@ -133,10 +223,10 @@ function NavLinkItem({ to, label, icon, active }) {
     <Link
       to={to}
       className={cn(
-        "h-9 px-4 flex items-center gap-2 rounded-full text-xs font-semibold transition-all focus-visible:outline-2",
+        "h-8 px-3.5 flex items-center gap-2 rounded-md font-heading text-xs font-semibold tracking-tight transition-all focus-visible:outline-2 focus-visible:outline-accent",
         active
-          ? "bg-white text-zinc-950 shadow-sm"
-          : "text-zinc-400 hover:text-white hover:bg-white/5"
+          ? "bg-accent text-accent-text shadow-1"
+          : "text-text-muted hover:text-text hover:bg-surface-raised"
       )}
     >
       <span aria-hidden="true">{icon}</span>

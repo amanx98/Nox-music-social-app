@@ -58,51 +58,51 @@
      ========================================================================== */
   color-scheme: dark;
 
-  /* Surfaces - Studio dark depth without pitch blackness */
-  --color-surface:        var(--obsidian-950);  /* Studio dark base canvas (~#0f1015) */
-  --color-surface-raised: var(--obsidian-900);  /* Clean distinct card surface (~#171820) */
-  --color-surface-sunken: oklch(0.08 0.004 260); /* Sunken wells (~#0c0d12) */
-  --color-surface-hover:  var(--obsidian-850);  /* Clean surface hover state (~#1f212b) */
+  /* Surfaces - Near-black with slightly lifted surfaces */
+  --color-surface:        #0A0B0A;  /* Background / near-black */
+  --color-surface-raised: #121312;  /* Slightly lifted near-black card surface */
+  --color-surface-sunken: #070807;  /* Slightly sunken well surface */
+  --color-surface-hover:  #181A18;  /* Subtle hover fill */
 
-  /* Text & Typography - High Contrast Crisp Whites */
-  --color-text:           var(--obsidian-100);  /* Pure crisp white (#ffffff) */
-  --color-text-muted:     var(--obsidian-300);  /* Crisp light silver (#e1e1e6) */
-  --color-text-dim:       var(--obsidian-400);  /* Legible tertiary / timestamp (#c5c5cb) */
-  --color-text-inverse:   var(--obsidian-950);  /* Dark text on bright fills */
+  /* Text & Typography - Warm off-white & cool gray */
+  --color-text:           #F4F5EF;  /* Foreground / warm off-white */
+  --color-text-muted:     #A3ABA5;  /* Legible secondary text */
+  --color-text-dim:       #737A75;  /* Muted foreground / cool gray */
+  --color-text-inverse:   #0A0B0A;  /* Primary foreground / near-black */
 
-  /* Hairlines & Dividers */
-  --color-border:         var(--obsidian-750);  /* Hairline borders */
-  --color-border-strong:  var(--obsidian-700);  /* Emphasized dividers */
-  --color-border-hover:   var(--obsidian-500);  /* Interactive border focus */
+  /* Hairlines & Dividers - Subtle off-white at 10-14% */
+  --color-border:         rgba(244, 245, 239, 0.12);
+  --color-border-strong:  rgba(244, 245, 239, 0.22);
+  --color-border-hover:   rgba(199, 244, 61, 0.40);
 
-  /* Accent (Primary Brand Action) */
-  --color-accent:         var(--amber-500);
-  --color-accent-hover:   var(--amber-400);     /* Moves lighter away from dark surface */
-  --color-accent-muted:   oklch(0.75 0.15 78 / 0.12);
-  --color-accent-text:    var(--obsidian-950);
+  /* Primary Identity - Acid Lime */
+  --color-accent:         #C7F43D;  /* Primary / acid lime */
+  --color-accent-hover:   #D6F860;  /* Lighter acid lime */
+  --color-accent-muted:   rgba(199, 244, 61, 0.12);
+  --color-accent-text:    #0A0B0A;  /* Primary foreground / near-black */
 
-  /* Secondary (Muted Silver / Slate) */
-  --color-secondary:       var(--slate-400);
-  --color-secondary-hover: var(--slate-500);
-  --color-secondary-muted: oklch(0.76 0.02 260 / 0.12);
+  /* Secondary (Cool Gray) */
+  --color-secondary:       #737A75;
+  --color-secondary-hover: #8E9690;
+  --color-secondary-muted: rgba(115, 122, 117, 0.16);
 
   /* Destructive / Alert */
-  --color-danger:         var(--rose-500);
-  --color-danger-hover:   var(--rose-400);
-  --color-danger-muted:   oklch(0.65 0.20 25 / 0.15);
-  --color-danger-text:    var(--obsidian-100);
+  --color-danger:         #FF5A5A;
+  --color-danger-hover:   #FF7575;
+  --color-danger-muted:   rgba(255, 90, 90, 0.15);
+  --color-danger-text:    #F4F5EF;
 
-  /* Cursor Follow Spotlight & Ambient Glow */
-  --cursor-glow:          oklch(0.75 0.15 78 / 0.075);
-  --cursor-glow-strong:   oklch(0.75 0.15 78 / 0.15);
+  /* Restrained Audio Amber / Signal Glow */
+  --cursor-glow:          rgba(199, 244, 61, 0.05);
+  --cursor-glow-strong:   rgba(199, 244, 61, 0.10);
 
   /* ==========================================================================
-     3. Fluid Typography Scale (Mathematical clamp keeping rem terms)
+     3. Fluid Typography Scale (Space Grotesk & DM Sans)
      ========================================================================== */
-  --font-sans:     "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-heading:  "Syne", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans:     "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-heading:  "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono:     "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-graffiti: "Sedgwick Ave", cursive;
+  --font-graffiti: "Space Grotesk", sans-serif;
 
   /* Scale: fluidly interpolated between mobile (390px) and desktop (1280px) */
   --text-2xs:  clamp(0.6875rem, 0.66rem + 0.12vw, 0.75rem);   /* 11px - 12px */
@@ -125,7 +125,7 @@
   --tracking-tighter: -0.03em;
   --tracking-tight:   -0.015em;
   --tracking-normal:  0;
-  --tracking-wide:    0.04em;
+  --tracking-wide:    0.05em;
 
   /* Line Measure */
   --measure: 68ch;
@@ -150,15 +150,15 @@
   --space-16:  4rem;      /* 64px */
 
   /* Container & Gutters */
-  --container-max: 1240px;
+  --container-max: 1440px;
   --gutter:        clamp(1rem, 0.5rem + 2.5vw, 2rem);
 
-  /* Corner Radius */
-  --radius-xs: 3px;
-  --radius-sm: 5px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 18px;
+  /* Corner Radius (Maximum 8px strict specification) */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 8px;
   --radius-full: 9999px;
 
   /* ==========================================================================
@@ -285,3 +285,38 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ==========================================================================
+   9. Analog Textures & Editorial Utilities (Diagonal Glass Desk)
+   ========================================================================== */
+
+/* Subtle analog CRT scanline pattern */
+.scanlines {
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.25) 2px,
+    rgba(0, 0, 0, 0.25) 4px
+  );
+}
+
+/* Subtle radio phosphor grid */
+.radio-desk-grid {
+  background-size: 28px 28px;
+  background-image: 
+    linear-gradient(to right, rgba(244, 245, 239, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(244, 245, 239, 0.03) 1px, transparent 1px);
+}
+
+/* Subtle 2-degree diagonal energy accent cut */
+.desk-diagonal {
+  transform: rotate(-1.5deg);
+  transform-origin: center;
+}
+@media (max-width: 768px) {
+  .desk-diagonal {
+    transform: none;
+  }
+}
+

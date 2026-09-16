@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import Button from "./ui/Button";
 
@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component {
             </div>
 
             <div>
-              <h2 className="font-heading font-bold text-lg text-white">
+              <h2 className="font-heading font-bold text-lg text-text">
                 Something caught in the groove
               </h2>
               <p className="font-sans text-xs text-text-muted mt-1 leading-relaxed">

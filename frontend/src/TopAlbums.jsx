@@ -40,7 +40,7 @@ export default function TopAlbums() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-heading font-bold text-base text-white m-0">Top Albums</h3>
+          <h3 className="font-heading font-bold text-base text-text m-0">Top Albums</h3>
           <p className="font-sans text-xs text-text-muted mt-0.5 m-0">Most played records from your listening history.</p>
         </div>
 
@@ -52,10 +52,10 @@ export default function TopAlbums() {
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-md text-xs font-mono transition-all cursor-pointer ${
                   active
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent"
+                    ? "bg-accent text-accent-text font-bold shadow-1"
+                    : "text-text-muted hover:text-text hover:bg-surface border border-transparent"
                 }`}
               >
                 {p.label}
@@ -66,11 +66,11 @@ export default function TopAlbums() {
       </div>
 
       {error ? (
-        <div className="p-4 rounded-xl border border-border bg-surface text-center space-y-2">
+        <div className="p-4 rounded-md border border-border bg-surface text-center space-y-2">
           <p className="font-sans text-xs text-text-muted m-0">{error}</p>
           <a
-            href="http://localhost:8000/lastfm/login"
-            className="inline-flex items-center justify-center h-8 px-3.5 rounded-lg text-xs font-semibold bg-white text-zinc-950 hover:bg-zinc-200 transition-colors"
+            href={`${import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000"}/lastfm/login`}
+            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors"
           >
             Connect Last.fm
           </a>
@@ -101,13 +101,13 @@ export default function TopAlbums() {
                       No Cover
                     </div>
                   )}
-                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-black/70 text-white backdrop-blur-xs">
+                  <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded font-mono text-[10px] font-bold bg-black/70 text-text backdrop-blur-xs">
                     #{i + 1}
                   </span>
                 </div>
 
                 <div className="min-w-0">
-                  <div className="font-semibold text-xs text-white truncate" title={albumName}>
+                  <div className="font-semibold text-xs text-text truncate" title={albumName}>
                     {albumName}
                   </div>
                   <div className="text-2xs text-text-muted truncate mt-0.5">

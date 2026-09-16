@@ -149,13 +149,13 @@ export default function BentoTopsterGrid({
 
                 {/* Bottom Information Vignette */}
                 <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-3.5 sm:p-5 pt-12 flex flex-col justify-end">
-                  <h3 className="font-heading text-sm sm:text-lg font-bold text-white tracking-tight line-clamp-1 group-hover:text-accent transition-colors">
+                  <h3 className="font-heading text-sm sm:text-lg font-bold text-text tracking-tight line-clamp-1 group-hover:text-accent transition-colors">
                     {fName}
                   </h3>
-                  <p className="text-xs text-white/80 font-medium truncate mt-0.5">
+                  <p className="text-xs text-text-muted font-medium truncate mt-0.5">
                     {isArtists ? (featured.fans ? `${Number(featured.fans).toLocaleString()} fans` : "Featured Artist") : fArtist}
                   </p>
-                  <div className="mt-1.5 flex items-center justify-between font-mono text-2xs text-white/60">
+                  <div className="mt-1.5 flex items-center justify-between font-mono text-2xs text-text-dim">
                     <span className="tabular-nums font-semibold text-accent">
                       {Number(featured.playcount || 0).toLocaleString()} plays
                     </span>
@@ -218,20 +218,20 @@ export default function BentoTopsterGrid({
 
                 {/* Rank Badge */}
                 <div className="absolute top-2 left-2 z-10">
-                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-black/75 text-white backdrop-blur-xs">
+                  <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-black/75 text-text backdrop-blur-xs">
                     #{String(rank).padStart(2, "0")}
                   </span>
                 </div>
 
                 {/* Bottom Information Vignette */}
                 <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/90 via-black/55 to-transparent p-2.5 pt-8 flex flex-col justify-end">
-                  <h4 className="font-heading text-xs font-bold text-white truncate group-hover:text-accent transition-colors">
+                  <h4 className="font-heading text-xs font-bold text-text truncate group-hover:text-accent transition-colors">
                     {sName}
                   </h4>
-                  <p className="text-[11px] text-white/70 truncate mt-0.5">
+                  <p className="text-[11px] text-text-muted truncate mt-0.5">
                     {isArtists ? "Artist" : sArtist}
                   </p>
-                  <span className="font-mono text-[10px] text-white/50 tabular-nums mt-0.5">
+                  <span className="font-mono text-[10px] text-text-dim tabular-nums mt-0.5">
                     {Number(item.playcount || 0).toLocaleString()} plays
                   </span>
                 </div>

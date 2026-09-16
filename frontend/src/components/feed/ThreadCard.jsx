@@ -32,17 +32,38 @@ export default function ThreadCard({
   const flair = flairMatch ? flairMatch[1] : null;
   const cleanBody = flairMatch ? flairMatch[2] : thread.body;
 
+  // Get artwork thumbnail based on tag or thread
+  const thumbnailSrc = thread.image_url || (
+    tagInfo?.name?.toLowerCase().includes("ambient")
+      ? "/assets/editorial/ambient.svg"
+      : tagInfo?.name?.toLowerCase().includes("industrial")
+      ? "/assets/editorial/industrial.svg"
+      : tagInfo?.name?.toLowerCase().includes("techno") || tagInfo?.name?.toLowerCase().includes("acid")
+      ? "/assets/editorial/acid-house.svg"
+      : (thread.id % 2 === 0 ? "/assets/editorial/vinyl-desk.svg" : "/assets/editorial/lofi-tape.svg")
+  );
+
   return (
     <article
       onClick={onSelect}
       className={cn(
-        "group relative px-4 py-3.5 border-b border-border/60 bg-surface hover:bg-surface-raised/40 transition-colors duration-150 cursor-pointer flex gap-3 text-left",
+        "group relative p-4 border-b border-border bg-surface hover:bg-surface-raised/60 transition-colors duration-150 cursor-pointer flex gap-3.5 text-left",
         className
       )}
     >
-      {/* Left Column: Author Avatar */}
-      <div className="flex-shrink-0 pt-0.5">
-        <Avatar username={authorName} size={38} />
+      {/* Left Column: Visual Artwork Thumbnail & Author Avatar */}
+      <div className="flex flex-col items-center gap-2 shrink-0">
+        <div className="w-12 h-12 rounded overflow-hidden border border-border bg-surface-sunken shadow-1 group-hover:border-accent transition-colors">
+          <img
+            src={thumbnailSrc}
+            alt=""
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              e.currentTarget.src = "/assets/editorial/vinyl-desk.svg";
+            }}
+          />
+        </div>
+        <Avatar username={authorName} size={22} />
       </div>
 
       {/* Right Column: Content & Controls */}

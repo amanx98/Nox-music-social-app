@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <radialGradient id="portrait-bg" cx="50%" cy="45%" r="60%">
+      <stop offset="0%" stop-color="#141714" />
+      <stop offset="65%" stop-color="#0E100E" />
+      <stop offset="100%" stop-color="#0A0B0A" />
+    </radialGradient>
+    <linearGradient id="lime-rim" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C7F43D" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#C7F43D" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#C7F43D" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="cool-rim" x1="100%" y1="0%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#737A75" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#737A75" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="800" fill="url(#portrait-bg)" />
+
+  <!-- Studio Tape Spool Background Rings -->
+  <g stroke="rgba(244, 245, 239, 0.05)" stroke-width="1.5" fill="none">
+    <circle cx="280" cy="350" r="260" />
+    <circle cx="280" cy="350" r="190" stroke-dasharray="4,4" />
+    <circle cx="280" cy="350" r="120" />
+  </g>
+
+  <!-- Frame Border -->
+  <rect x="24" y="24" width="752" height="752" fill="none" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1" />
+
+  <!-- Stylized Editorial Silhouette -->
+  <!-- Shoulders & Torso -->
+  <path d="M180,800 C210,640 280,590 350,570 C410,555 450,555 510,570 C580,590 650,640 680,800 Z" fill="#111311" />
+  
+  <!-- Neck -->
+  <path d="M370,580 L370,470 C370,470 410,485 450,485 C490,485 530,470 530,470 L530,580 Z" fill="#131613" />
+
+  <!-- Head Silhouette -->
+  <path d="M350,380 C340,310 360,210 440,190 C530,170 570,240 570,330 C570,420 540,480 470,490 C400,500 360,450 350,380 Z" fill="#171A16" />
+
+  <!-- Acid-Lime Rim Light Contour along Profile Edge -->
+  <path d="M360,205 C345,245 342,300 350,370 C356,420 375,465 405,485 L395,540 C365,555 310,580 250,650 C215,690 195,745 185,800" 
+        fill="none" stroke="#C7F43D" stroke-width="4.5" stroke-linecap="round" filter="drop-shadow(0 0 6px rgba(199, 244, 61, 0.4))" />
+
+  <!-- Hair Texture / Top Rim -->
+  <path d="M380,195 C410,185 460,180 500,190 C535,200 558,225 565,260" 
+        fill="none" stroke="rgba(199, 244, 61, 0.4)" stroke-width="2.5" />
+
+  <!-- Headphone Over-Ear Arc & Can -->
+  <!-- Headband -->
+  <path d="M340,310 C340,170 550,170 560,310" fill="none" stroke="#252923" stroke-width="16" stroke-linecap="round" />
+  <path d="M340,310 C340,170 550,170 560,310" fill="none" stroke="rgba(244, 245, 239, 0.2)" stroke-width="2" />
+  <!-- Left Ear Cup -->
+  <rect x="330" y="300" width="36" height="75" rx="8" fill="#1B1E19" stroke="#C7F43D" stroke-width="2" />
+  <!-- Cable Cord Drop with Acid Accent -->
+  <path d="M348,375 C348,420 330,470 335,530 C340,590 310,650 300,800" fill="none" stroke="#737A75" stroke-width="3" />
+  <circle cx="348" cy="385" r="3" fill="#C7F43D" />
+
+  <!-- Secondary Cool Grey Counter-Light -->
+  <path d="M570,300 C575,360 560,420 535,465 L545,520 C575,540 625,575 665,650 C685,690 700,745 705,800" 
+        fill="none" stroke="#737A75" stroke-width="2" stroke-opacity="0.4" />
+
+  <!-- Editorial Typography Overlay -->
+  <g font-family="'Space Grotesk', sans-serif">
+    <text x="50" y="80" font-size="12" font-weight="700" fill="#C7F43D" letter-spacing="0.25em">CURATOR PROFILE</text>
+    <text x="50" y="115" font-size="28" font-weight="700" fill="#F4F5EF" letter-spacing="-0.02em">ARCHIVIST NO. 04</text>
+    <text x="50" y="136" font-family="'JetBrains Mono', monospace" font-size="11" fill="#737A75" letter-spacing="0.08em">FREQUENCY OBSESSIVE // LONDON UK</text>
+  </g>
+
+  <!-- Technical Spec Watermark -->
+  <g font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75" letter-spacing="0.1em">
+    <text x="50" y="730">ISO 800 // 50MM F/1.4</text>
+    <text x="750" y="730" text-anchor="end">SIGNAL TO NOISE: 104DB</text>
+  </g>
+</svg>

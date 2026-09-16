@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" width="100%" height="100%">
+  <!-- Topster 3x3 Grid Canvas -->
+  <rect width="900" height="900" fill="#0A0B0A" />
+
+  <!-- Outer Editorial Mat Border -->
+  <rect x="20" y="20" width="860" height="860" fill="#0D0F0D" stroke="rgba(244, 245, 239, 0.14)" stroke-width="2" rx="4" />
+
+  <!-- 3x3 Quilt Grid: 3 rows, 3 columns, each 260x260 with 16px gap -->
+  <!-- Top Row (Row 0) -->
+  <!-- Cell 0,0: Aphex Twin style ambient waveform -->
+  <g transform="translate(48, 48)">
+    <rect width="254" height="254" fill="#131713" stroke="rgba(199, 244, 61, 0.3)" stroke-width="1.5" rx="2" />
+    <circle cx="127" cy="110" r="70" fill="none" stroke="#C7F43D" stroke-width="2" />
+    <circle cx="127" cy="110" r="45" fill="none" stroke="rgba(244, 245, 239, 0.2)" stroke-width="1.5" />
+    <line x1="40" y1="110" x2="214" y2="110" stroke="#C7F43D" stroke-width="1" stroke-dasharray="4,4" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">SELECTED AMBIENT</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">APHEX TWIN // 1992</text>
+  </g>
+
+  <!-- Cell 0,1: Boards of Canada turquoise/acid horizon -->
+  <g transform="translate(322, 48)">
+    <rect width="254" height="254" fill="#0C1514" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <path d="M0,140 Q60,100 130,120 T254,100 L254,254 L0,254 Z" fill="#162A26" />
+    <circle cx="127" cy="70" r="26" fill="#C7F43D" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">GEOGADDI</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">BOARDS OF CANADA // 2002</text>
+  </g>
+
+  <!-- Cell 0,2: Burial rain mist and street silhouette -->
+  <g transform="translate(596, 48)">
+    <rect width="254" height="254" fill="#111211" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <g stroke="rgba(244, 245, 239, 0.1)" stroke-width="1">
+      <line x1="20" y1="30" x2="10" y2="180" />
+      <line x1="60" y1="20" x2="50" y2="170" />
+      <line x1="120" y1="10" x2="110" y2="190" />
+      <line x1="180" y1="25" x2="170" y2="185" />
+      <line x1="220" y1="15" x2="210" y2="175" />
+    </g>
+    <rect x="70" y="70" width="114" height="80" fill="#1B1E1B" stroke="#737A75" stroke-width="1" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">UNTRUE</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">BURIAL // 2007</text>
+  </g>
+
+  <!-- Middle Row (Row 1) -->
+  <!-- Cell 1,0: Slowdive shoegaze blur -->
+  <g transform="translate(48, 322)">
+    <rect width="254" height="254" fill="#141217" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <circle cx="127" cy="100" r="60" fill="rgba(199, 244, 61, 0.15)" />
+    <circle cx="140" cy="115" r="45" fill="rgba(244, 245, 239, 0.12)" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">SOUVLAKI</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">SLOWDIVE // 1993</text>
+  </g>
+
+  <!-- Cell 1,1: Autechre geometric wireframe (Centerpiece) -->
+  <g transform="translate(322, 322)">
+    <rect width="254" height="254" fill="#0E100E" stroke="#C7F43D" stroke-width="2" rx="2" />
+    <g stroke="#C7F43D" stroke-width="1.5" fill="none">
+      <polygon points="127,45 200,95 200,165 127,205 54,165 54,95" />
+      <line x1="127" y1="45" x2="127" y2="205" stroke-dasharray="3,3" />
+      <line x1="54" y1="95" x2="200" y2="165" />
+      <line x1="54" y1="165" x2="200" y2="95" />
+    </g>
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#C7F43D">LP5</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#F4F5EF">AUTECHRE // 1998</text>
+  </g>
+
+  <!-- Cell 1,2: Portishead dummy vinyl icon -->
+  <g transform="translate(596, 322)">
+    <rect width="254" height="254" fill="#131416" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <circle cx="127" cy="105" r="55" fill="#0A0B0A" stroke="#737A75" stroke-width="1" />
+    <circle cx="127" cy="105" r="18" fill="#C7F43D" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">DUMMY</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">PORTISHEAD // 1994</text>
+  </g>
+
+  <!-- Bottom Row (Row 2) -->
+  <!-- Cell 2,0: Cocteau Twins pastel haze in dark tone -->
+  <g transform="translate(48, 596)">
+    <rect width="254" height="254" fill="#131215" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <path d="M40,140 Q90,60 140,110 T220,80" stroke="rgba(199, 244, 61, 0.3)" stroke-width="3" fill="none" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">HEAVEN OR LAS VEGAS</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">COCTEAU TWINS // 1990</text>
+  </g>
+
+  <!-- Cell 2,1: Joy Division pulsar lines homage -->
+  <g transform="translate(322, 596)">
+    <rect width="254" height="254" fill="#0C0D0C" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <g stroke="#F4F5EF" stroke-width="1.5" fill="none">
+      <path d="M60,80 L100,80 Q127,55 154,80 L194,80" />
+      <path d="M60,95 L95,95 Q127,60 159,95 L194,95" />
+      <path d="M60,110 L90,110 Q127,65 164,110 L194,110" />
+      <path d="M60,125 L95,125 Q127,85 159,125 L194,125" />
+    </g>
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">UNKNOWN PLEASURES</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">JOY DIVISION // 1979</text>
+  </g>
+
+  <!-- Cell 2,2: Massive Attack Mezzanine beetle / industrial dark -->
+  <g transform="translate(596, 596)">
+    <rect width="254" height="254" fill="#131412" stroke="rgba(244, 245, 239, 0.12)" stroke-width="1.5" rx="2" />
+    <polygon points="127,60 155,100 145,145 109,145 99,100" fill="#1E221D" stroke="#C7F43D" stroke-width="1.5" />
+    <line x1="127" y1="40" x2="127" y2="60" stroke="#C7F43D" stroke-width="2" />
+    <text x="20" y="225" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="12" fill="#F4F5EF">MEZZANINE</text>
+    <text x="20" y="240" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">MASSIVE ATTACK // 1998</text>
+  </g>
+
+  <!-- Curatorial Footer -->
+  <g transform="translate(50, 870)" font-family="'JetBrains Mono', monospace" font-size="9" fill="#737A75">
+    <text x="0" y="0">TOPSTER // HEAVY ROTATION ARCHIVE</text>
+    <text x="800" y="0" text-anchor="end">CURATED BY @RESONATOR</text>
+  </g>
+</svg>

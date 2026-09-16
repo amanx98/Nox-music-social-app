@@ -33,14 +33,14 @@ export default function AlbumDetailModal({ album, rank, onClose }) {
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <span className="font-mono text-2xs uppercase tracking-wider font-bold px-2.5 py-1 rounded bg-white text-black shadow-1">
+            <span className="font-mono text-2xs uppercase tracking-wider font-bold px-2.5 py-1 rounded bg-accent text-accent-text shadow-1">
               Rank #{String(rank).padStart(2, "0")}
             </span>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white text-black hover:bg-zinc-200 flex items-center justify-center transition-colors cursor-pointer shadow-1"
+            className="w-8 h-8 rounded-md bg-accent text-accent-text hover:bg-accent-hover flex items-center justify-center transition-colors cursor-pointer shadow-1"
             aria-label="Close"
           >
             <X className="w-4 h-4 stroke-[2.5]" />

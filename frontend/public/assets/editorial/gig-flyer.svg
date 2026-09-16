@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="100%" height="100%">
+  <defs>
+    <pattern id="xerox-halftone" width="8" height="8" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="rgba(244, 245, 239, 0.08)" />
+      <circle cx="6" cy="6" r="1.5" fill="rgba(244, 245, 239, 0.05)" />
+    </pattern>
+  </defs>
+
+  <!-- High-contrast Xerox Paper Canvas -->
+  <rect width="800" height="800" fill="#0A0B0A" />
+  <rect width="800" height="800" fill="url(#xerox-halftone)" />
+
+  <!-- Rough DIY Border -->
+  <rect x="24" y="24" width="752" height="752" fill="none" stroke="#F4F5EF" stroke-width="2" />
+  <rect x="32" y="32" width="736" height="736" fill="none" stroke="rgba(199, 244, 61, 0.4)" stroke-width="1" stroke-dasharray="6,4" />
+
+  <!-- Header Banner -->
+  <rect x="32" y="32" width="736" height="52" fill="#C7F43D" />
+  <text x="50" y="66" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="22" fill="#0A0B0A" letter-spacing="0.12em">
+    NOX UNDERGROUND TRANSMISSION
+  </text>
+  <text x="750" y="66" font-family="'JetBrains Mono', monospace" font-size="14" font-weight="700" fill="#0A0B0A" text-anchor="end">
+    LIVE // 02:00 AM
+  </text>
+
+  <!-- Big Editorial Headline -->
+  <g font-family="'Space Grotesk', sans-serif" font-weight="700">
+    <text x="50" y="165" font-size="64" fill="#F4F5EF" letter-spacing="-0.03em">
+      ANALOG TAPES
+    </text>
+    <text x="50" y="235" font-size="64" fill="#C7F43D" letter-spacing="-0.03em">
+      &amp; SUB-BASS
+    </text>
+  </g>
+
+  <!-- Horizontal Divider with Tape Sprocket Pattern -->
+  <line x1="50" y1="265" x2="750" y2="265" stroke="#F4F5EF" stroke-width="2" />
+
+  <!-- Lineup / Community Callout -->
+  <g font-family="'JetBrains Mono', monospace">
+    <g transform="translate(50, 310)">
+      <rect x="0" y="0" width="120" height="24" fill="#1A1E18" stroke="#C7F43D" stroke-width="1" />
+      <text x="10" y="16" font-size="11" font-weight="600" fill="#C7F43D">STAGE 01</text>
+      <text x="140" y="18" font-family="'Space Grotesk', sans-serif" font-size="20" font-weight="700" fill="#F4F5EF">AUTECHRE SOUNDSYSTEM (LIVE RE-SCORING)</text>
+    </g>
+
+    <g transform="translate(50, 370)">
+      <rect x="0" y="0" width="120" height="24" fill="#1A1E18" stroke="#737A75" stroke-width="1" />
+      <text x="10" y="16" font-size="11" font-weight="600" fill="#737A75">STAGE 02</text>
+      <text x="140" y="18" font-family="'Space Grotesk', sans-serif" font-size="20" font-weight="700" fill="#F4F5EF">BURIAL ARCHIVE LISTENING RETROSPECTIVE</text>
+    </g>
+
+    <g transform="translate(50, 430)">
+      <rect x="0" y="0" width="120" height="24" fill="#1A1E18" stroke="#737A75" stroke-width="1" />
+      <text x="10" y="16" font-size="11" font-weight="600" fill="#737A75">BASEMENT</text>
+      <text x="140" y="18" font-family="'Space Grotesk', sans-serif" font-size="20" font-weight="700" fill="#F4F5EF">303 ACID MACHINE OPEN SESSION</text>
+    </g>
+  </g>
+
+  <!-- Halftone Cassette Illustration Center-Bottom -->
+  <g transform="translate(200, 490)">
+    <rect width="400" height="190" rx="6" fill="#121412" stroke="#F4F5EF" stroke-width="2" />
+    <rect x="30" y="25" width="340" height="140" rx="4" fill="#070807" stroke="rgba(244, 245, 239, 0.2)" />
+    
+    <!-- Cassette label -->
+    <rect x="55" y="40" width="290" height="85" fill="#C7F43D" />
+    <text x="200" y="70" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="16" fill="#0A0B0A" text-anchor="middle">
+      PIRATE RADIO C-90 MIXTAPE
+    </text>
+    <text x="200" y="92" font-family="'JetBrains Mono', monospace" font-size="10" fill="#0A0B0A" text-anchor="middle">
+      BROADCAST RECORDING // SEPT 2026
+    </text>
+
+    <!-- Cassette tape reels -->
+    <circle cx="130" cy="145" r="22" fill="#1A1D1A" stroke="#F4F5EF" stroke-width="1.5" />
+    <circle cx="130" cy="145" r="7" fill="#F4F5EF" />
+    <circle cx="270" cy="145" r="22" fill="#1A1D1A" stroke="#F4F5EF" stroke-width="1.5" />
+    <circle cx="270" cy="145" r="7" fill="#F4F5EF" />
+    <line x1="152" y1="145" x2="248" y2="145" stroke="#737A75" stroke-width="2" />
+  </g>
+
+  <!-- Footer Ticket / Coordinate Info -->
+  <g transform="translate(50, 725)" font-family="'JetBrains Mono', monospace" font-size="10" fill="#737A75">
+    <text x="0" y="0">ENTRY: FREE FOR CRATE DIGGERS</text>
+    <text x="700" y="0" text-anchor="end">BRING VINYL // NO STREAMING PHONES</text>
+  </g>
+</svg>

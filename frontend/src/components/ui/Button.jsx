@@ -7,18 +7,18 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-white text-zinc-950 font-semibold hover:bg-zinc-200 shadow-1",
-        secondary: "bg-surface-raised text-white border border-border hover:bg-surface-hover hover:border-white/30",
-        outline: "bg-transparent text-white border border-border hover:bg-white/10 hover:border-white/30",
-        ghost: "bg-transparent text-text-muted hover:text-white hover:bg-surface-hover",
-        accent: "bg-accent text-zinc-950 font-semibold hover:bg-accent-hover shadow-1",
-        danger: "bg-danger text-white hover:bg-danger-hover",
+        primary: "bg-accent text-accent-text font-heading font-bold hover:bg-accent-hover shadow-1",
+        secondary: "bg-surface-raised text-text border border-border hover:bg-surface-hover hover:border-border-strong",
+        outline: "bg-transparent text-text border border-border hover:bg-surface-raised hover:border-border-hover",
+        ghost: "bg-transparent text-text-muted hover:text-text hover:bg-surface-hover",
+        accent: "bg-accent text-accent-text font-heading font-bold hover:bg-accent-hover shadow-1",
+        danger: "bg-danger text-danger-text font-heading font-bold hover:bg-danger-hover",
       },
       size: {
-        sm: "h-8 px-3 text-xs rounded-lg",
-        md: "h-9.5 px-4 text-sm rounded-lg",
-        lg: "h-11 px-6 text-base rounded-xl",
-        icon: "h-9 w-9 p-0 rounded-lg",
+        sm: "h-8 px-3 text-xs rounded-md",
+        md: "h-9 px-4 text-xs sm:text-sm rounded-md",
+        lg: "h-10 px-5 text-sm sm:text-base rounded-md",
+        icon: "h-8 w-8 p-0 rounded-md",
       },
       full: {
         true: "w-full",

@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <rect width="600" height="600" fill="#0A0D0A" />
+  <rect x="16" y="16" width="568" height="568" fill="none" stroke="#C7F43D" stroke-width="1.5" stroke-opacity="0.4" />
+
+  <!-- Roland TB-303 Resonance Sawtooth Matrix -->
+  <g stroke="#C7F43D" stroke-width="2.5" fill="none">
+    <path d="M40,280 L110,180 L110,280 L180,180 L180,280 L250,180 L250,280 L320,180 L320,280 L390,180 L390,280 L460,180 L460,280 L530,180 L530,280" />
+    <path d="M40,340 L110,240 L110,340 L180,240 L180,340 L250,240 L250,340 L320,240 L320,340 L390,240 L390,340 L460,240 L460,340 L530,240 L530,340" stroke-opacity="0.4" />
+  </g>
+
+  <!-- Acid Smiley Geometric Stylization -->
+  <g transform="translate(300, 260)">
+    <circle r="75" fill="#121611" stroke="#C7F43D" stroke-width="3" />
+    <!-- Eyes as angled dashes -->
+    <line x1="-28" y1="-20" x2="-12" y2="-12" stroke="#C7F43D" stroke-width="4" stroke-linecap="round" />
+    <line x1="12" y1="-12" x2="28" y2="-20" stroke="#C7F43D" stroke-width="4" stroke-linecap="round" />
+    <!-- Squelch mouth -->
+    <path d="M-36,18 Q0,48 36,18" fill="none" stroke="#C7F43D" stroke-width="4" stroke-linecap="round" />
+  </g>
+
+  <!-- Typography -->
+  <text x="40" y="510" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="28" fill="#F4F5EF" letter-spacing="-0.02em">
+    ACID HOUSE &amp; TECHNO
+  </text>
+  <text x="40" y="535" font-family="'JetBrains Mono', monospace" font-size="12" fill="#C7F43D" letter-spacing="0.1em">
+    303 RESONANCE // 132 BPM
+  </text>
+</svg>

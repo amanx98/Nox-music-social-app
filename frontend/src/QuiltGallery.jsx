@@ -104,7 +104,7 @@ export default function QuiltGallery() {
   useEffect(() => {
     loadBentoAlbums(bentoPeriod);
     loadQuilts();
-  }, []);
+  }, [bentoPeriod]);
 
   useEffect(() => {
     localStorage.setItem("nox_quilt_folders", JSON.stringify(folders));
@@ -296,17 +296,17 @@ export default function QuiltGallery() {
         <div
           role="tablist"
           aria-label="Views"
-          className="inline-flex p-1 rounded-full bg-surface-raised border border-border self-start sm:self-auto"
+          className="inline-flex p-1 rounded-md bg-surface-raised border border-border self-start sm:self-auto"
         >
           <button
             role="tab"
             aria-selected={viewMode === "bento"}
             onClick={() => setViewMode("bento")}
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded text-xs font-heading font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
               viewMode === "bento"
-                ? "bg-white text-zinc-950 shadow-sm"
-                : "text-zinc-400 hover:text-white"
+                ? "bg-accent text-accent-text font-bold shadow-1"
+                : "text-text-muted hover:text-text"
             )}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
@@ -317,10 +317,10 @@ export default function QuiltGallery() {
             aria-selected={viewMode === "quilts"}
             onClick={() => setViewMode("quilts")}
             className={cn(
-              "px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
+              "px-3.5 py-1.5 rounded text-xs font-heading font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
               viewMode === "quilts"
-                ? "bg-white text-zinc-950 shadow-sm"
-                : "text-zinc-400 hover:text-white"
+                ? "bg-accent text-accent-text font-bold shadow-1"
+                : "text-text-muted hover:text-text"
             )}
           >
             <Layers className="w-3.5 h-3.5" />
@@ -330,7 +330,7 @@ export default function QuiltGallery() {
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl border border-danger/40 bg-danger-muted text-rose-200 text-xs">
+        <div className="p-3 rounded-md border border-danger/40 bg-danger-muted/30 text-rose-200 text-xs">
           {error}
         </div>
       )}
@@ -339,22 +339,22 @@ export default function QuiltGallery() {
       {viewMode === "bento" && (
         <div className="space-y-4">
           {/* Controls Bar: Category Switcher (Albums vs Artists) + Periods + Sync */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-surface-raised border border-border">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-md bg-surface-raised border border-border">
             <div className="flex items-center gap-3 flex-wrap">
               {/* Albums / Artists Pill Switcher */}
               <div
                 role="group"
                 aria-label="Topster content type"
-                className="inline-flex p-0.5 rounded-full bg-surface border border-border"
+                className="inline-flex p-0.5 rounded-md bg-surface-sunken border border-border"
               >
                 <button
                   type="button"
                   onClick={() => handleBentoCategoryChange("albums")}
                   className={cn(
-                    "px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+                    "px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                     bentoCategory === "albums"
-                      ? "bg-white text-zinc-950 shadow-sm"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-accent text-accent-text font-bold shadow-1"
+                      : "text-text-muted hover:text-text"
                   )}
                 >
                   <Disc className="w-3.5 h-3.5" />
@@ -364,10 +364,10 @@ export default function QuiltGallery() {
                   type="button"
                   onClick={() => handleBentoCategoryChange("artists")}
                   className={cn(
-                    "px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5",
+                    "px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                     bentoCategory === "artists"
-                      ? "bg-white text-zinc-950 shadow-sm"
-                      : "text-zinc-400 hover:text-white"
+                      ? "bg-accent text-accent-text font-bold shadow-1"
+                      : "text-text-muted hover:text-text"
                   )}
                 >
                   <User className="w-3.5 h-3.5" />
@@ -384,10 +384,10 @@ export default function QuiltGallery() {
                       key={p.value}
                       onClick={() => handleBentoPeriodChange(p.value)}
                       className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer",
+                        "px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer",
                         active
-                          ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                          : "text-zinc-400 hover:text-white hover:bg-white/5 border border-transparent"
+                          ? "bg-surface text-accent font-bold border border-accent/40 shadow-1"
+                          : "text-text-muted hover:text-text hover:bg-surface border border-transparent"
                       )}
                     >
                       {p.label}
@@ -498,10 +498,10 @@ export default function QuiltGallery() {
               <button
                 onClick={() => setActiveFolder("all")}
                 className={cn(
-                  "px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all",
+                  "px-3 py-1 rounded text-xs font-heading font-medium cursor-pointer transition-all",
                   activeFolder === "all"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-white hover:bg-white/5"
+                    ? "bg-accent text-accent-text font-bold shadow-1"
+                    : "text-text-muted hover:text-text hover:bg-surface-raised"
                 )}
               >
                 All ({safeQuilts.length})
@@ -515,10 +515,10 @@ export default function QuiltGallery() {
                     key={folder}
                     onClick={() => setActiveFolder(folder)}
                     className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5",
+                      "px-3 py-1 rounded text-xs font-heading font-medium cursor-pointer transition-all flex items-center gap-1.5",
                       isActive
-                        ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                        : "text-zinc-400 hover:text-white hover:bg-white/5"
+                        ? "bg-accent text-accent-text font-bold shadow-1"
+                        : "text-text-muted hover:text-text hover:bg-surface-raised"
                     )}
                   >
                     <Folder className="w-3.5 h-3.5" />
@@ -530,10 +530,10 @@ export default function QuiltGallery() {
               <button
                 onClick={() => setActiveFolder("unassigned")}
                 className={cn(
-                  "px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all",
+                  "px-3 py-1 rounded text-xs font-heading font-medium cursor-pointer transition-all",
                   activeFolder === "unassigned"
-                    ? "bg-white text-zinc-950 font-semibold shadow-sm"
-                    : "text-zinc-400 hover:text-white hover:bg-white/5"
+                    ? "bg-accent text-accent-text font-bold shadow-1"
+                    : "text-text-muted hover:text-text hover:bg-surface-raised"
                 )}
               >
                 Unassigned
@@ -541,7 +541,7 @@ export default function QuiltGallery() {
 
               <button
                 onClick={() => setShowFolderModal(true)}
-                className="px-2.5 py-1 rounded-full text-xs border border-dashed border-border text-zinc-400 hover:text-white flex items-center gap-1 cursor-pointer hover:border-zinc-400 transition-all"
+                className="px-2.5 py-1 rounded text-xs border border-dashed border-border text-text-dim hover:text-text flex items-center gap-1 cursor-pointer hover:border-accent transition-all"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
                 <span>New</span>
