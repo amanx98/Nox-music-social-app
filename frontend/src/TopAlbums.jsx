@@ -55,7 +55,7 @@ export default function TopAlbums() {
                 className={`px-3 py-1 rounded-md text-xs font-mono transition-all cursor-pointer ${
                   active
                     ? "bg-accent text-accent-text font-bold shadow-1"
-                    : "text-text-muted hover:text-text hover:bg-surface border border-transparent"
+                    : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                 }`}
               >
                 {p.label}

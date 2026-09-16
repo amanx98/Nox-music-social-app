@@ -71,13 +71,13 @@ export default function TopArtists({ onSelectTag }) {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           {/* View Mode Switcher */}
-          <div className="inline-flex p-0.5 rounded-md bg-surface border border-border">
+          <div className="inline-flex p-0.5 rounded-md bg-black border border-border">
             <button
               type="button"
               className={`px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer ${
                 viewMode === "grid"
                   ? "bg-accent text-accent-text font-bold shadow-1"
-                  : "text-text-muted hover:text-text"
+                  : "text-text-muted hover:text-text hover:bg-surface-hover"
               }`}
               onClick={() => setViewMode("grid")}
             >
@@ -88,7 +88,7 @@ export default function TopArtists({ onSelectTag }) {
               className={`px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer ${
                 viewMode === "list"
                   ? "bg-accent text-accent-text font-bold shadow-1"
-                  : "text-text-muted hover:text-text"
+                  : "text-text-muted hover:text-text hover:bg-surface-hover"
               }`}
               onClick={() => setViewMode("list")}
             >
@@ -106,7 +106,7 @@ export default function TopArtists({ onSelectTag }) {
                   className={`px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
                     active
                       ? "bg-accent text-accent-text font-bold shadow-1"
-                      : "text-text-muted hover:text-text hover:bg-surface border border-transparent"
+                      : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                   }`}
                   onClick={() => setPeriod(p.value)}
                 >

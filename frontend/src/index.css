@@ -74,12 +74,13 @@
   --mustard: var(--color-accent);
   --mustard-hover: var(--color-accent-hover);
   --mustard-dim: var(--color-accent-muted);
-  --teal: var(--color-secondary);
-  --teal-hover: var(--color-secondary-hover);
-  --teal-dim: var(--color-secondary-muted);
+  --teal: var(--color-accent);
+  --teal-hover: var(--color-accent-hover);
+  --teal-dim: var(--color-accent-muted);
   --coral: var(--color-danger);
   --coral-hover: var(--color-danger-hover);
   --coral-dim: var(--color-danger-muted);
+  --ink: #0A0B0A;
   --radius: var(--radius-md);
   --font-display: var(--font-sans);
   --font-body: var(--font-sans);
@@ -180,110 +181,160 @@ textarea {
   resize: vertical;
 }
 
-/* Button variants */
+/* Button base reset - never impose global padding or background colors */
 button {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 13px;
-  text-transform: none;
-  letter-spacing: normal;
-  background: var(--teal);
-  color: var(--cream-text);
-  border: none;
-  border-radius: var(--radius);
-  padding: 8px 15px;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Standalone High-Contrast Button Classes */
+.btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  user-select: none;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-accent);
+  color: #0A0B0A !important; /* Pure black text on lime - 100% contrast */
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 13px;
+  border: 1px solid var(--color-accent);
+  transition: all 0.15s ease-out;
+  cursor: pointer;
+  box-shadow: var(--shadow-1);
 }
 
-button:hover:not(:disabled) {
-  background: var(--mustard);
-  color: var(--ink);
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  color: #0A0B0A !important;
+  border-color: var(--color-accent-hover);
   transform: translateY(-1px);
 }
 
-button:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.btn-primary {
-  background: var(--teal);
-  color: var(--cream-text);
-}
-
 .btn-secondary {
-  background: var(--bg-card);
-  color: var(--cream-text);
-  border: 1px solid var(--border-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: #000000;
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 13px;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--bg-subtle);
-  color: var(--cream-text);
-  border-color: var(--cream-text-dim);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--cream-text-dim);
-  border: 1px solid var(--border-strong);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
 }
 
 .btn-outline:hover:not(:disabled) {
-  background: var(--bg-card);
-  color: var(--cream-text);
-  border-color: var(--cream-text);
+  background: var(--color-accent);
+  color: #0A0B0A !important; /* Crisp black text when hovered to lime */
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
 }
 
 .btn-danger {
-  background: rgba(224, 109, 83, 0.18);
-  color: var(--coral);
-  border: 1px solid rgba(224, 109, 83, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  background: var(--color-danger);
+  color: #ffffff !important;
+  border: 1px solid var(--color-danger);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 13px;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--coral);
-  color: #fff;
+  background: var(--color-danger-hover);
+  color: #ffffff !important;
+  transform: translateY(-1px);
 }
 
 .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: var(--cream-text-dim);
-  padding: 6px 10px;
-  text-transform: none;
-  letter-spacing: normal;
+  color: var(--color-text-muted);
+  font-size: 13px;
   font-weight: 500;
-  font-size: 14px;
+  transition: all 0.15s ease-out;
+  cursor: pointer;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--bg-card);
-  color: var(--cream-text);
+  background: var(--color-surface-hover);
+  color: var(--color-text);
   transform: none;
 }
 
 .btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px;
-  border-radius: var(--radius);
-  background: var(--bg-card);
-  color: var(--cream-text-dim);
-  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #000000;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  transition: all 0.15s ease-out;
+  cursor: pointer;
 }
 
 .btn-icon:hover:not(:disabled) {
-  background: var(--bg-subtle);
-  color: var(--mustard);
+  background: var(--color-accent);
+  color: #0A0B0A !important;
+  border-color: var(--color-accent);
 }
 
 /* Badges & Meta */
@@ -303,9 +354,10 @@ button:disabled {
 }
 
 .badge-mustard {
-  background: var(--mustard-dim);
-  color: var(--mustard);
-  border-color: rgba(217, 164, 65, 0.3);
+  background: var(--color-accent);
+  color: #0A0B0A !important;
+  border-color: var(--color-accent);
+  font-weight: 700;
 }
 
 .badge-teal {

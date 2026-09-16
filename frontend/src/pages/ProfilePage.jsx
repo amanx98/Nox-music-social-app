@@ -500,7 +500,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
                   key={char}
                   type="button"
                   onClick={() => handleSelectAvatar(char)}
-                  className="h-10 rounded-md border border-border hover:border-accent hover:bg-surface text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer"
+                  className="h-10 rounded-md border border-border bg-black hover:border-accent hover:bg-accent hover:text-accent-text text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer p-0"
                 >
                   {char}
                 </button>

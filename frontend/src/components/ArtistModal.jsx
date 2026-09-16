@@ -165,7 +165,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   }}
                   title="Expand uncropped photo"
                   aria-label="Expand uncropped photo"
-                  className="w-8 h-8 rounded-full bg-black/75 hover:bg-accent text-text hover:text-accent-text border border-border transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
+                  className="w-8 h-8 rounded-full bg-black/80 hover:bg-accent text-text hover:text-accent-text border border-border/60 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm p-0 shrink-0"
                 >
                   <Maximize2 className="w-4 h-4 stroke-[2]" />
                 </button>
@@ -178,7 +178,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   onClose();
                 }}
                 aria-label="Close"
-                className="w-8 h-8 rounded-full bg-black/75 hover:bg-accent text-text hover:text-accent-text border border-border transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm"
+                className="w-8 h-8 rounded-full bg-black/80 hover:bg-accent text-text hover:text-accent-text border border-border/60 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm p-0 shrink-0"
               >
                 <X className="w-4 h-4 stroke-[2]" />
               </button>
@@ -234,10 +234,10 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                           key={idx}
                           type="button"
                           onClick={() => setActivePhotoIndex(idx)}
-                          className={`w-16 h-16 rounded-lg overflow-hidden border flex-shrink-0 transition-all cursor-pointer ${
+                          className={`w-14 h-14 rounded-md overflow-hidden p-0 bg-black flex-shrink-0 transition-all cursor-pointer ${
                             activePhotoIndex === idx
-                              ? "border-accent ring-2 ring-accent/30 scale-102"
-                              : "border-border opacity-60 hover:opacity-100"
+                              ? "ring-2 ring-accent ring-offset-2 ring-offset-surface-raised scale-105"
+                              : "border border-border/40 opacity-70 hover:opacity-100 hover:border-accent/60 hover:scale-102"
                           }`}
                         >
                           <img
@@ -284,10 +284,10 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                                     type="button"
                                     onClick={() => handlePlayPreview(track)}
                                     aria-label={isPlaying ? "Pause preview" : "Play preview"}
-                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer p-0 shrink-0 ${
                                       isPlaying
-                                        ? "bg-accent text-surface"
-                                        : "bg-surface-raised text-text hover:bg-accent hover:text-surface border border-border"
+                                        ? "bg-accent text-accent-text shadow-1"
+                                        : "bg-black text-text hover:bg-accent hover:text-accent-text border border-border"
                                     }`}
                                   >
                                     {isPlaying ? (
