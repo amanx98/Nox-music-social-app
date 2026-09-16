@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Hash, Mic, Radio, Search, Plus, ArrowRight, Loader2 } from "lucide-react";
+import { Hash, Mic, Radio, Search, Plus, ArrowRight, Loader2, X } from "lucide-react";
 import { getTags, createTag } from "../api/client";
 import { useToast } from "../components/Toast";
 
@@ -81,19 +81,30 @@ export default function DiscoverPage() {
       {/* Search & Filter Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-md bg-surface-raised border border-border">
         {/* Search Input */}
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-dim" />
+        <div className="relative flex-1 min-w-[220px] flex items-center">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-dim pointer-events-none z-10" />
           <input
-            type="search"
+            type="text"
             placeholder="Filter scenes and tags..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-9 pl-9 pr-3 rounded-md bg-surface-sunken border border-border text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+            style={{ paddingLeft: "2.75rem", paddingRight: "2rem" }}
+            className="input-unstyled w-full h-9 rounded-md bg-surface-sunken border border-border text-xs text-text placeholder:text-text-dim outline-none focus:border-accent font-sans transition-colors"
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-text-dim hover:text-text cursor-pointer transition-colors"
+              aria-label="Clear filter"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Filter Badges */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {["all", "genre", "artist", "custom"].map((filter) => {
             const active = activeFilter === filter;
             return (
@@ -101,10 +112,11 @@ export default function DiscoverPage() {
                 key={filter}
                 type="button"
                 onClick={() => setActiveFilter(filter)}
-                className={`h-8 px-3 rounded-md font-mono text-2xs uppercase tracking-wider transition-colors cursor-pointer ${
+                style={active ? { backgroundColor: "#C7F43D", color: "#0A0B0A" } : undefined}
+                className={`h-8 px-3.5 rounded-md font-mono text-2xs uppercase tracking-wider transition-colors cursor-pointer ${
                   active
-                    ? "bg-accent text-black font-bold border border-accent shadow-1"
-                    : "bg-surface-sunken text-text-muted hover:text-text border border-border"
+                    ? "bg-accent text-black font-bold border border-accent shadow-md"
+                    : "bg-[#1E211E] border border-white/10 text-[#F4F5EF] hover:bg-[#282C28] hover:border-white/20 hover:text-white"
                 }`}
               >
                 {filter === "all" ? `All (${tags.length})` : filter}

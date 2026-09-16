@@ -210,41 +210,38 @@ button:disabled {
   pointer-events: none;
 }
 
-/* Universal High-Contrast Rules for Acid Lime Backgrounds & Hover States */
-.bg-accent,
-[class*="bg-accent"],
-button.bg-accent,
-a.bg-accent,
+/* Dynamic High-Contrast Rules for Acid Lime Backgrounds & Hover States */
 .active-nav-link,
-.active-drawer-link {
-  color: #0A0B0A !important;
-}
-
-.bg-accent *,
-[class*="bg-accent"] *,
-button.bg-accent *,
-a.bg-accent *,
-.active-nav-link *,
-.active-drawer-link * {
-  color: #0A0B0A !important;
-  stroke: #0A0B0A !important;
-}
-
-/* Hovering any element with hover:bg-accent */
-[class*="hover:bg-accent"]:hover,
-button[class*="hover:bg-accent"]:hover,
-a[class*="hover:bg-accent"]:hover,
-.nav-link-item:hover,
-.drawer-link-item:hover {
+.active-drawer-link,
+.btn-accent-active {
   background-color: var(--color-accent) !important;
   color: #0A0B0A !important;
 }
 
-[class*="hover:bg-accent"]:hover *,
-button[class*="hover:bg-accent"]:hover *,
-a[class*="hover:bg-accent"]:hover *,
+.active-nav-link *,
+.active-drawer-link *,
+.btn-accent-active * {
+  color: #0A0B0A !important;
+  stroke: #0A0B0A !important;
+}
+
+/* Hover state: ONLY when mouse is actively hovering over an interactive element */
+.nav-link-item:hover,
+.drawer-link-item:hover,
+.profile-menu-item:hover,
+.profile-trigger:hover,
+.header-search-trigger:hover,
+.notifications-trigger:hover {
+  background-color: var(--color-accent) !important;
+  color: #0A0B0A !important;
+}
+
 .nav-link-item:hover *,
-.drawer-link-item:hover * {
+.drawer-link-item:hover *,
+.profile-menu-item:hover *,
+.profile-trigger:hover *,
+.header-search-trigger:hover *,
+.notifications-trigger:hover * {
   color: #0A0B0A !important;
   stroke: #0A0B0A !important;
 }

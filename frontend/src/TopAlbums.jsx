@@ -52,10 +52,11 @@ export default function TopAlbums() {
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
-                className={`px-3.5 py-1.5 rounded-md text-xs font-mono font-medium transition-all cursor-pointer ${
+                style={active ? { backgroundColor: "#C7F43D", color: "#0A0B0A" } : undefined}
+                className={`px-3.5 py-1.5 rounded-md text-xs font-mono transition-all cursor-pointer ${
                   active
-                    ? "bg-accent text-black font-bold border border-accent shadow-1"
-                    : "bg-surface-sunken border border-border/80 text-text-muted hover:text-text hover:bg-surface-hover hover:border-border-strong"
+                    ? "bg-accent text-black font-bold border border-accent shadow-md"
+                    : "bg-[#1E211E] border border-white/10 text-[#F4F5EF] hover:bg-[#282C28] hover:border-white/20 hover:text-white font-medium"
                 }`}
               >
                 {p.label}

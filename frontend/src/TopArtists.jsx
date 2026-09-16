@@ -71,13 +71,14 @@ export default function TopArtists({ onSelectTag }) {
 
         <div className="flex items-center gap-3 flex-wrap">
           {/* View Mode Switcher */}
-          <div className="inline-flex gap-1 p-1 rounded-lg bg-surface-sunken border border-border">
+          <div className="inline-flex items-center gap-1.5 p-1 rounded-lg bg-[#121412] border border-white/10">
             <button
               type="button"
+              style={viewMode === "grid" ? { backgroundColor: "#C7F43D", color: "#0A0B0A" } : undefined}
               className={`px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer ${
                 viewMode === "grid"
-                  ? "bg-accent text-black font-bold shadow-1"
-                  : "text-text-muted hover:text-text hover:bg-surface-hover"
+                  ? "bg-accent text-black font-bold shadow-md border border-accent"
+                  : "bg-[#1E211E] text-[#F4F5EF] border border-white/10 hover:bg-[#282C28] hover:text-white"
               }`}
               onClick={() => setViewMode("grid")}
             >
@@ -85,10 +86,11 @@ export default function TopArtists({ onSelectTag }) {
             </button>
             <button
               type="button"
+              style={viewMode === "list" ? { backgroundColor: "#C7F43D", color: "#0A0B0A" } : undefined}
               className={`px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer ${
                 viewMode === "list"
-                  ? "bg-accent text-black font-bold shadow-1"
-                  : "text-text-muted hover:text-text hover:bg-surface-hover"
+                  ? "bg-accent text-black font-bold shadow-md border border-accent"
+                  : "bg-[#1E211E] text-[#F4F5EF] border border-white/10 hover:bg-[#282C28] hover:text-white"
               }`}
               onClick={() => setViewMode("list")}
             >
@@ -103,10 +105,11 @@ export default function TopArtists({ onSelectTag }) {
               return (
                 <button
                   key={p.value}
-                  className={`px-3.5 py-1.5 rounded-md text-xs font-mono font-medium transition-all cursor-pointer ${
+                  style={active ? { backgroundColor: "#C7F43D", color: "#0A0B0A" } : undefined}
+                  className={`px-3.5 py-1.5 rounded-md text-xs font-mono transition-all cursor-pointer ${
                     active
-                      ? "bg-accent text-black font-bold border border-accent shadow-1"
-                      : "bg-surface-sunken border border-border/80 text-text-muted hover:text-text hover:bg-surface-hover hover:border-border-strong"
+                      ? "bg-accent text-black font-bold border border-accent shadow-md"
+                      : "bg-[#1E211E] border border-white/10 text-[#F4F5EF] hover:bg-[#282C28] hover:border-white/20 hover:text-white font-medium"
                   }`}
                   onClick={() => setPeriod(p.value)}
                 >

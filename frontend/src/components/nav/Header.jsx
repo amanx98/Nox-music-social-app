@@ -227,7 +227,7 @@ function NavLinkItem({ to, label, icon, active }) {
         "nav-link-item h-8 px-3.5 flex items-center gap-2 rounded-md font-heading text-xs font-semibold tracking-tight transition-all focus-visible:outline-2 focus-visible:outline-accent",
         active
           ? "active-nav-link bg-accent text-black font-bold shadow-1"
-          : "text-text-muted hover:bg-accent hover:text-black"
+          : "text-text hover:bg-accent hover:text-black"
       )}
     >
       <span aria-hidden="true" className="transition-colors pointer-events-none flex items-center">{icon}</span>
