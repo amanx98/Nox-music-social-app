@@ -61,7 +61,7 @@ export default function NotificationsPanel() {
         aria-expanded={isOpen}
         aria-haspopup="true"
         aria-label={`Notifications (${unreadCount} unread)`}
-        className="relative min-h-[38px] min-w-[38px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
+        className="relative min-h-[38px] min-w-[38px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-[#0A0B0A] hover:bg-accent transition-colors focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
       >
         <Bell className="w-4 h-4 stroke-[2]" />
         {unreadCount > 0 && (

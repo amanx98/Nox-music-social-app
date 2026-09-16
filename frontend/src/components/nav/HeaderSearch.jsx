@@ -110,13 +110,13 @@ export default function HeaderSearch({ onSelectThread, onSelectTag }) {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="h-9 px-2.5 rounded-md text-text-muted hover:text-text hover:bg-surface-raised border border-transparent hover:border-border transition-all flex items-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-accent"
+          className="h-9 px-2.5 rounded-md text-text-muted hover:text-[#0A0B0A] hover:bg-accent border border-transparent transition-all flex items-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-accent group"
           aria-label="Search posts, tags, and frequencies (Ctrl+K)"
           title="Search (Ctrl+K)"
         >
           <Search className="w-4 h-4 stroke-[2]" />
-          <span className="hidden xl:inline text-xs font-mono text-text-dim">Search...</span>
-          <kbd className="hidden xl:inline-block font-mono text-[10px] px-1 py-0.2 rounded bg-surface-sunken border border-border text-text-dim">
+          <span className="hidden xl:inline text-xs font-mono text-text-dim group-hover:text-[#0A0B0A] transition-colors">Search...</span>
+          <kbd className="hidden xl:inline-block font-mono text-[10px] px-1 py-0.2 rounded bg-surface-sunken border border-border text-text-dim group-hover:text-[#0A0B0A] group-hover:border-[#0A0B0A]/30 transition-colors">
             ⌘K
           </kbd>
         </button>

@@ -65,7 +65,7 @@ export default function Header({
             aria-expanded={isDrawerOpen}
             aria-controls="mobile-drawer"
             aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
-            className="md:hidden min-h-[38px] min-w-[38px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-text hover:bg-surface-raised transition-colors focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
+            className="md:hidden min-h-[38px] min-w-[38px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-[#0A0B0A] hover:bg-accent transition-colors focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
           >
             <Menu className="w-5 h-5 stroke-[1.75]" />
           </button>
@@ -119,7 +119,7 @@ export default function Header({
           <button
             type="button"
             onClick={onOpenComposer}
-            className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-accent text-accent-text hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer shadow-1"
+            className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover hover:text-[#0A0B0A] font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer shadow-1"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>Transmit</span>
@@ -133,15 +133,15 @@ export default function Header({
               aria-expanded={isProfileMenuOpen}
               aria-haspopup="true"
               aria-label="Open profile menu"
-              className="flex items-center gap-1.5 p-1 rounded-md hover:bg-surface-raised border border-transparent hover:border-border transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-accent"
+              className="flex items-center gap-1.5 p-1 rounded-md hover:bg-accent hover:text-[#0A0B0A] border border-transparent hover:border-accent transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-accent group"
             >
               <Avatar username={user?.username || "me"} size={28} />
-              <span className="hidden lg:inline text-xs font-heading font-semibold text-text max-w-[100px] truncate">
+              <span className="hidden lg:inline text-xs font-heading font-semibold text-text group-hover:text-[#0A0B0A] max-w-[100px] truncate transition-colors">
                 {user?.username}
               </span>
               <ChevronDown
                 className={cn(
-                  "w-3 h-3 text-text-dim transition-transform duration-150",
+                  "w-3 h-3 text-text-dim group-hover:text-[#0A0B0A] transition-all duration-150",
                   isProfileMenuOpen && "rotate-180 text-text"
                 )}
               />
@@ -169,27 +169,27 @@ export default function Header({
                   <Link
                     to="/profile"
                     role="menuitem"
-                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-text hover:bg-surface transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-[#0A0B0A] hover:bg-accent transition-colors group"
                   >
-                    <UserIcon className="w-3.5 h-3.5 text-accent" />
+                    <UserIcon className="w-3.5 h-3.5 text-accent group-hover:text-[#0A0B0A] transition-colors" />
                     <span>Archivist Profile</span>
                   </Link>
 
                   <Link
                     to="/topsters"
                     role="menuitem"
-                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-text hover:bg-surface transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-[#0A0B0A] hover:bg-accent transition-colors group"
                   >
-                    <LayoutGrid className="w-3.5 h-3.5 text-accent" />
+                    <LayoutGrid className="w-3.5 h-3.5 text-accent group-hover:text-[#0A0B0A] transition-colors" />
                     <span>Topsters &amp; Quilts</span>
                   </Link>
 
                   <Link
                     to="/profile?tab=settings"
                     role="menuitem"
-                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-text hover:bg-surface transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-[#0A0B0A] hover:bg-accent transition-colors group"
                   >
-                    <Settings className="w-3.5 h-3.5 text-text-dim" />
+                    <Settings className="w-3.5 h-3.5 text-text-dim group-hover:text-[#0A0B0A] transition-colors" />
                     <span>Desk Settings</span>
                   </Link>
                 </div>
@@ -203,7 +203,7 @@ export default function Header({
                       setIsProfileMenuOpen(false);
                       onLogout?.();
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-danger hover:bg-danger-muted/30 transition-colors cursor-pointer text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-danger hover:bg-danger/20 transition-colors cursor-pointer text-left"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>
@@ -225,11 +225,11 @@ function NavLinkItem({ to, label, icon, active }) {
       className={cn(
         "h-8 px-3.5 flex items-center gap-2 rounded-md font-heading text-xs font-semibold tracking-tight transition-all focus-visible:outline-2 focus-visible:outline-accent",
         active
-          ? "bg-accent text-accent-text shadow-1"
-          : "text-text-muted hover:text-text hover:bg-surface-raised"
+          ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
+          : "text-text-muted hover:bg-accent hover:text-[#0A0B0A]"
       )}
     >
-      <span aria-hidden="true">{icon}</span>
+      <span aria-hidden="true" className="transition-colors">{icon}</span>
       <span>{label}</span>
     </Link>
   );
