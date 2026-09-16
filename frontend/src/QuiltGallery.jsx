@@ -296,7 +296,7 @@ export default function QuiltGallery() {
         <div
           role="tablist"
           aria-label="Views"
-          className="inline-flex p-1 rounded-md bg-black border border-border self-start sm:self-auto"
+          className="inline-flex gap-0.5 p-1 rounded-md bg-black border border-border self-start sm:self-auto"
         >
           <button
             role="tab"
@@ -305,7 +305,7 @@ export default function QuiltGallery() {
             className={cn(
               "px-3.5 py-1.5 rounded text-xs font-heading font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
               viewMode === "bento"
-                ? "bg-accent text-accent-text font-bold shadow-1"
+                ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                 : "text-text-muted hover:text-text hover:bg-surface-hover"
             )}
           >
@@ -319,7 +319,7 @@ export default function QuiltGallery() {
             className={cn(
               "px-3.5 py-1.5 rounded text-xs font-heading font-semibold transition-all flex items-center gap-1.5 cursor-pointer",
               viewMode === "quilts"
-                ? "bg-accent text-accent-text font-bold shadow-1"
+                ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                 : "text-text-muted hover:text-text hover:bg-surface-hover"
             )}
           >
@@ -345,7 +345,7 @@ export default function QuiltGallery() {
               <div
                 role="group"
                 aria-label="Topster content type"
-                className="inline-flex p-0.5 rounded-md bg-black border border-border"
+                className="inline-flex gap-0.5 p-1 rounded-md bg-black border border-border"
               >
                 <button
                   type="button"
@@ -353,7 +353,7 @@ export default function QuiltGallery() {
                   className={cn(
                     "px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                     bentoCategory === "albums"
-                      ? "bg-accent text-accent-text font-bold shadow-1"
+                      ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                       : "text-text-muted hover:text-text hover:bg-surface-hover"
                   )}
                 >
@@ -366,7 +366,7 @@ export default function QuiltGallery() {
                   className={cn(
                     "px-3 py-1 rounded text-xs font-heading font-semibold transition-all cursor-pointer flex items-center gap-1.5",
                     bentoCategory === "artists"
-                      ? "bg-accent text-accent-text font-bold shadow-1"
+                      ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                       : "text-text-muted hover:text-text hover:bg-surface-hover"
                   )}
                 >
@@ -386,7 +386,7 @@ export default function QuiltGallery() {
                       className={cn(
                         "px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer",
                         active
-                          ? "bg-accent text-accent-text font-bold shadow-1"
+                          ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                           : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                       )}
                     >
@@ -500,7 +500,7 @@ export default function QuiltGallery() {
                 className={cn(
                   "px-3 py-1 rounded text-xs font-heading font-medium cursor-pointer transition-all",
                   activeFolder === "all"
-                    ? "bg-accent text-accent-text font-bold shadow-1"
+                    ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                     : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                 )}
               >
@@ -517,7 +517,7 @@ export default function QuiltGallery() {
                     className={cn(
                       "px-3 py-1 rounded text-xs font-heading font-medium cursor-pointer transition-all flex items-center gap-1.5",
                       isActive
-                        ? "bg-accent text-accent-text font-bold shadow-1"
+                        ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                         : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                     )}
                   >
@@ -532,7 +532,7 @@ export default function QuiltGallery() {
                 className={cn(
                   "px-3 py-1 rounded text-xs font-heading font-medium cursor-pointer transition-all",
                   activeFolder === "unassigned"
-                    ? "bg-accent text-accent-text font-bold shadow-1"
+                    ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                     : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                 )}
               >

@@ -135,7 +135,7 @@ export default function FeedPage({ user: propUser }) {
                 <button
                   type="button"
                   onClick={handleOpenComposer}
-                  className="inline-flex items-center gap-1 h-7 px-3 rounded-md bg-accent text-accent-text hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px cursor-pointer shadow-1"
+                  className="inline-flex items-center gap-1 h-7 px-3 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px cursor-pointer shadow-1"
                 >
                   <Plus className="w-3 h-3 stroke-[2.5]" />
                   <span>ADD YOUR TAKE</span>
@@ -192,7 +192,7 @@ export default function FeedPage({ user: propUser }) {
                   <button
                     type="button"
                     onClick={handleOpenComposer}
-                    className="h-8 px-4 rounded-md bg-accent text-accent-text hover:bg-accent-hover font-heading font-bold text-xs transition-all active:translate-y-px cursor-pointer"
+                    className="h-8 px-4 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover font-heading font-bold text-xs transition-all active:translate-y-px cursor-pointer"
                   >
                     Transmit First Take
                   </button>
@@ -230,7 +230,7 @@ export default function FeedPage({ user: propUser }) {
         <button
           type="button"
           onClick={handleOpenComposer}
-          className="w-12 h-12 rounded-md bg-accent text-accent-text hover:bg-accent-hover shadow-5 flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
+          className="w-12 h-12 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover shadow-5 flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
           aria-label="Start a discussion"
         >
           <Plus className="w-6 h-6 stroke-[2.5]" />

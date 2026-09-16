@@ -165,7 +165,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   }}
                   title="Expand uncropped photo"
                   aria-label="Expand uncropped photo"
-                  className="w-8 h-8 rounded-full bg-black/80 hover:bg-accent text-text hover:text-accent-text border border-border/60 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm p-0 shrink-0"
+                  className="w-8 h-8 rounded-full bg-black/80 hover:bg-accent text-text hover:text-[#0A0B0A] border border-border/60 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm p-0 shrink-0"
                 >
                   <Maximize2 className="w-4 h-4 stroke-[2]" />
                 </button>
@@ -178,7 +178,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                   onClose();
                 }}
                 aria-label="Close"
-                className="w-8 h-8 rounded-full bg-black/80 hover:bg-accent text-text hover:text-accent-text border border-border/60 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm p-0 shrink-0"
+                className="w-8 h-8 rounded-full bg-black/80 hover:bg-accent text-text hover:text-[#0A0B0A] border border-border/60 transition-all cursor-pointer flex items-center justify-center shadow-2 backdrop-blur-sm p-0 shrink-0"
               >
                 <X className="w-4 h-4 stroke-[2]" />
               </button>
@@ -286,8 +286,8 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
                                     aria-label={isPlaying ? "Pause preview" : "Play preview"}
                                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer p-0 shrink-0 ${
                                       isPlaying
-                                        ? "bg-accent text-accent-text shadow-1"
-                                        : "bg-black text-text hover:bg-accent hover:text-accent-text border border-border"
+                                        ? "bg-accent text-[#0A0B0A] shadow-1"
+                                        : "bg-black text-text hover:bg-accent hover:text-[#0A0B0A] border border-border"
                                     }`}
                                   >
                                     {isPlaying ? (
@@ -378,7 +378,7 @@ export default function ArtistModal({ artist, onClose, onSelectTag }) {
               <button
                 type="button"
                 onClick={() => setShowPhotoLightbox(false)}
-                className="w-8 h-8 rounded-md bg-accent text-accent-text hover:bg-accent-hover flex items-center justify-center transition-colors cursor-pointer shadow-2"
+                className="w-8 h-8 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover flex items-center justify-center transition-colors cursor-pointer shadow-2"
                 aria-label="Close"
               >
                 <X className="w-4 h-4 stroke-[2.5]" />

@@ -260,7 +260,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "overview"
-              ? "bg-accent text-accent-text font-bold shadow-1"
+              ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("overview")}
@@ -273,7 +273,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "quilts"
-              ? "bg-accent text-accent-text font-bold shadow-1"
+              ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("quilts")}
@@ -286,7 +286,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "stats"
-              ? "bg-accent text-accent-text font-bold shadow-1"
+              ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("stats")}
@@ -299,7 +299,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer",
             activeTab === "settings"
-              ? "bg-accent text-accent-text font-bold shadow-1"
+              ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
           onClick={() => handleTabChange("settings")}
@@ -500,7 +500,7 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
                   key={char}
                   type="button"
                   onClick={() => handleSelectAvatar(char)}
-                  className="h-10 rounded-md border border-border bg-black hover:border-accent hover:bg-accent hover:text-accent-text text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer p-0"
+                  className="h-10 rounded-md border border-border bg-black hover:border-accent hover:bg-accent hover:text-[#0A0B0A] text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer p-0"
                 >
                   {char}
                 </button>

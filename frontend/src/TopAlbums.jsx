@@ -54,7 +54,7 @@ export default function TopAlbums() {
                 onClick={() => setPeriod(p.value)}
                 className={`px-3 py-1 rounded-md text-xs font-mono transition-all cursor-pointer ${
                   active
-                    ? "bg-accent text-accent-text font-bold shadow-1"
+                    ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
                     : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
                 }`}
               >
@@ -70,7 +70,7 @@ export default function TopAlbums() {
           <p className="font-sans text-xs text-text-muted m-0">{error}</p>
           <a
             href={`${import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000"}/lastfm/login`}
-            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-accent-text hover:bg-accent-hover transition-colors"
+            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-[#0A0B0A] hover:bg-accent-hover transition-colors"
           >
             Connect Last.fm
           </a>

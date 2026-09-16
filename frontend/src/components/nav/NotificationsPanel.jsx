@@ -77,7 +77,7 @@ export default function NotificationsPanel() {
                 Transmissions &amp; Signals
               </span>
               {unreadCount > 0 && (
-                <span className="font-mono text-[9px] px-1.5 py-0.2 rounded-full bg-accent text-accent-text font-bold">
+                <span className="font-mono text-[9px] px-1.5 py-0.2 rounded-full bg-accent text-[#0A0B0A] font-bold">
                   {unreadCount}
                 </span>
               )}
