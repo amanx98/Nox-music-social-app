@@ -45,17 +45,17 @@ export default function TopAlbums() {
         </div>
 
         {/* Period Chips */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap" role="group" aria-label="Time period">
           {PERIODS.map((p) => {
             const active = period === p.value;
             return (
               <button
                 key={p.value}
                 onClick={() => setPeriod(p.value)}
-                className={`px-3 py-1 rounded-md text-xs font-mono transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-md text-xs font-mono font-medium transition-all cursor-pointer ${
                   active
-                    ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
-                    : "bg-black border border-border text-text-muted hover:text-text hover:border-accent"
+                    ? "bg-accent text-black font-bold border border-accent shadow-1"
+                    : "bg-surface-sunken border border-border/80 text-text-muted hover:text-text hover:bg-surface-hover hover:border-border-strong"
                 }`}
               >
                 {p.label}
@@ -70,7 +70,7 @@ export default function TopAlbums() {
           <p className="font-sans text-xs text-text-muted m-0">{error}</p>
           <a
             href={`${import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000"}/lastfm/login`}
-            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-[#0A0B0A] hover:bg-accent-hover transition-colors"
+            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-black hover:bg-accent-hover transition-colors"
           >
             Connect Last.fm
           </a>

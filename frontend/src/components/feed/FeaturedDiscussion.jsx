@@ -39,8 +39,8 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
       {/* Subtle Angle Accent Header Tab */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-surface-sunken/80">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-[3px] bg-accent text-[#0A0B0A]">
-            <Flame className="w-2.5 h-2.5 fill-[#0A0B0A]" />
+          <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-[3px] bg-accent text-black">
+            <Flame className="w-2.5 h-2.5 fill-black" />
             FEATURED
           </span>
           <span className="font-mono text-[10px] text-accent uppercase tracking-wider font-semibold">
@@ -126,7 +126,7 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
             <button
               type="button"
               onClick={() => onSelectThread?.(thread)}
-              className="h-8 px-3.5 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px cursor-pointer flex items-center gap-1.5 shadow-1"
+              className="h-8 px-3.5 rounded-md bg-accent text-black hover:bg-accent-hover hover:text-black font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px cursor-pointer flex items-center gap-1.5 shadow-1"
             >
               <span>Join discussion</span>
               <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />

@@ -110,20 +110,20 @@ export default function HeaderSearch({ onSelectThread, onSelectTag }) {
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="h-9 px-2.5 rounded-md text-text-muted hover:text-[#0A0B0A] hover:bg-accent border border-transparent transition-all flex items-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-accent group"
+          className="header-search-trigger h-9 px-2.5 rounded-md text-text-muted hover:text-black hover:bg-accent border border-transparent transition-all flex items-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-accent group"
           aria-label="Search posts, tags, and frequencies (Ctrl+K)"
           title="Search (Ctrl+K)"
         >
           <Search className="w-4 h-4 stroke-[2]" />
-          <span className="hidden xl:inline text-xs font-mono text-text-dim group-hover:text-[#0A0B0A] transition-colors">Search...</span>
-          <kbd className="hidden xl:inline-block font-mono text-[10px] px-1 py-0.2 rounded bg-surface-sunken border border-border text-text-dim group-hover:text-[#0A0B0A] group-hover:border-[#0A0B0A]/30 transition-colors">
+          <span className="hidden xl:inline text-xs font-mono text-text-dim group-hover:text-black transition-colors">Search...</span>
+          <kbd className="hidden xl:inline-block font-mono text-[10px] px-1 py-0.2 rounded bg-surface-sunken border border-border text-text-dim group-hover:text-black group-hover:border-black/30 transition-colors">
             ⌘K
           </kbd>
         </button>
       ) : (
         <div className="relative flex items-center animate-fade-in">
-          <div className="flex items-center h-9 w-[260px] sm:w-[320px] rounded-md bg-surface-sunken border border-accent ring-1 ring-accent/30 px-2.5 shadow-2">
-            <Search className="w-4 h-4 text-accent shrink-0 mr-2" />
+          <div className="flex items-center gap-2 h-9 w-[280px] sm:w-[340px] md:w-[380px] rounded-md bg-surface-sunken border border-accent/70 ring-1 ring-accent/30 px-3 shadow-2">
+            <Search className="w-4 h-4 text-accent shrink-0 pointer-events-none" />
             <input
               ref={inputRef}
               type="text"
@@ -133,16 +133,17 @@ export default function HeaderSearch({ onSelectThread, onSelectTag }) {
                 if (e.key === "Escape") handleClose();
               }}
               placeholder="Search frequencies, tags, users..."
-              className="bg-transparent text-xs text-text placeholder:text-text-dim w-full outline-none font-sans"
+              style={{ padding: 0, margin: 0, border: "none", background: "transparent", outline: "none", boxShadow: "none" }}
+              className="input-unstyled !p-0 !m-0 !border-0 !bg-transparent !outline-none !shadow-none !ring-0 text-xs text-text placeholder:text-text-dim flex-1 min-w-0 font-sans h-full"
               aria-label="Search input"
             />
             {loading ? (
-              <Loader2 className="w-3.5 h-3.5 text-accent animate-spin shrink-0 ml-1.5" />
+              <Loader2 className="w-3.5 h-3.5 text-accent animate-spin shrink-0" />
             ) : query ? (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="text-text-dim hover:text-text p-0.5 rounded cursor-pointer shrink-0 ml-1"
+                className="text-text-dim hover:text-text p-1 rounded cursor-pointer shrink-0 hover:bg-surface-hover transition-colors flex items-center justify-center"
                 aria-label="Clear query"
               >
                 <X className="w-3.5 h-3.5" />
@@ -151,7 +152,7 @@ export default function HeaderSearch({ onSelectThread, onSelectTag }) {
             <button
               type="button"
               onClick={handleClose}
-              className="font-mono text-[10px] uppercase text-text-dim hover:text-accent ml-2 shrink-0 px-1 border border-border rounded"
+              className="font-mono text-[10px] font-bold uppercase text-text-dim hover:text-black hover:bg-accent px-1.5 py-0.5 border border-border rounded shrink-0 transition-colors cursor-pointer"
               title="Close search (Esc)"
             >
               ESC

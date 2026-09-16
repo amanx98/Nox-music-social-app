@@ -103,7 +103,7 @@ export default function DiscoverPage() {
                 onClick={() => setActiveFilter(filter)}
                 className={`h-8 px-3 rounded-md font-mono text-2xs uppercase tracking-wider transition-colors cursor-pointer ${
                   active
-                    ? "bg-accent text-[#0A0B0A] font-bold"
+                    ? "bg-accent text-black font-bold border border-accent shadow-1"
                     : "bg-surface-sunken text-text-muted hover:text-text border border-border"
                 }`}
               >
@@ -199,7 +199,7 @@ export default function DiscoverPage() {
           <button
             type="submit"
             disabled={creating || !newTagName.trim()}
-            className="h-9 px-4 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+            className="h-9 px-4 rounded-md bg-accent text-black hover:bg-accent-hover hover:text-black font-heading font-bold text-xs tracking-tight transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
             <span>{creating ? "Creating..." : "Create Scene"}</span>

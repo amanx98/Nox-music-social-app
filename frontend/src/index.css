@@ -145,7 +145,7 @@ a {
 }
 
 /* Form Elements */
-input, textarea, select {
+input:not(.input-unstyled), textarea, select {
   font-family: var(--font-body);
   font-size: 13.5px;
   background: var(--bg-card);
@@ -157,9 +157,19 @@ input, textarea, select {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input:focus, textarea:focus, select:focus {
+input:not(.input-unstyled):focus, textarea:focus, select:focus {
   border-color: var(--mustard);
   box-shadow: 0 0 0 2px var(--mustard-dim);
+}
+
+.input-unstyled,
+.input-unstyled:focus {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 input::placeholder, textarea::placeholder {
@@ -198,6 +208,45 @@ button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   pointer-events: none;
+}
+
+/* Universal High-Contrast Rules for Acid Lime Backgrounds & Hover States */
+.bg-accent,
+[class*="bg-accent"],
+button.bg-accent,
+a.bg-accent,
+.active-nav-link,
+.active-drawer-link {
+  color: #0A0B0A !important;
+}
+
+.bg-accent *,
+[class*="bg-accent"] *,
+button.bg-accent *,
+a.bg-accent *,
+.active-nav-link *,
+.active-drawer-link * {
+  color: #0A0B0A !important;
+  stroke: #0A0B0A !important;
+}
+
+/* Hovering any element with hover:bg-accent */
+[class*="hover:bg-accent"]:hover,
+button[class*="hover:bg-accent"]:hover,
+a[class*="hover:bg-accent"]:hover,
+.nav-link-item:hover,
+.drawer-link-item:hover {
+  background-color: var(--color-accent) !important;
+  color: #0A0B0A !important;
+}
+
+[class*="hover:bg-accent"]:hover *,
+button[class*="hover:bg-accent"]:hover *,
+a[class*="hover:bg-accent"]:hover *,
+.nav-link-item:hover *,
+.drawer-link-item:hover * {
+  color: #0A0B0A !important;
+  stroke: #0A0B0A !important;
 }
 
 /* Standalone High-Contrast Button Classes */

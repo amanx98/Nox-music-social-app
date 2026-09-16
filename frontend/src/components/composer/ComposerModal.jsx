@@ -167,7 +167,7 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
                 onClick={() => setPostType(type.id)}
                 className={`flex-1 h-8 rounded text-xs font-heading font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   active
-                    ? "bg-accent text-[#0A0B0A] font-bold shadow-1"
+                    ? "bg-accent text-black font-bold shadow-1"
                     : "text-text-muted hover:text-text hover:bg-surface-raised"
                 }`}
               >
@@ -288,7 +288,7 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
               <button
                 type="submit"
                 disabled={!isReady}
-                className="h-8 px-4 rounded-md bg-accent text-[#0A0B0A] hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 shadow-1"
+                className="h-8 px-4 rounded-md bg-accent text-black hover:bg-accent-hover hover:text-black font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 shadow-1"
               >
                 {submitting ? (
                   <>

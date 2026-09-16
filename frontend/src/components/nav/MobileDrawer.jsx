@@ -150,7 +150,7 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
               type="button"
               onClick={onClose}
               aria-label="Close menu"
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-[#0A0B0A] hover:bg-accent transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-text-muted hover:text-black hover:bg-accent transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
@@ -231,14 +231,15 @@ function DrawerLink({ to, label, icon, active, onClick }) {
     <Link
       to={to}
       onClick={onClick}
+      style={active ? { color: "#0A0B0A", backgroundColor: "var(--color-accent)" } : undefined}
       className={cn(
-        "h-9 px-3.5 flex items-center gap-3 rounded-md text-xs font-heading font-semibold transition-all focus-visible:outline-2 focus-visible:outline-accent",
+        "drawer-link-item h-9 px-3.5 flex items-center gap-3 rounded-md text-xs font-heading font-semibold transition-all focus-visible:outline-2 focus-visible:outline-accent",
         active
-          ? "bg-accent text-[#0A0B0A] shadow-1 font-bold"
-          : "text-text-muted hover:bg-accent hover:text-[#0A0B0A]"
+          ? "active-drawer-link bg-accent text-black shadow-1 font-bold"
+          : "text-text-muted hover:bg-accent hover:text-black"
       )}
     >
-      <span aria-hidden="true" className="transition-colors">{icon}</span>
+      <span aria-hidden="true" className="transition-colors pointer-events-none flex items-center">{icon}</span>
       <span>{label}</span>
     </Link>
   );
