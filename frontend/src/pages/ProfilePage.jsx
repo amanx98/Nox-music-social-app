@@ -12,6 +12,8 @@ import {
   XCircle,
   X,
   ArrowRight,
+  Sparkles,
+  Clock,
 } from "lucide-react";
 import QuiltGallery from "../QuiltGallery";
 import TopAlbums from "../TopAlbums";
@@ -78,6 +80,39 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
   const [lastfmConnected, setLastfmConnected] = useState(() => {
     return localStorage.getItem("lastfm_connected") === "true";
   });
+
+  const [spotlightMode, setSpotlightMode] = useState(() => {
+    try {
+      return localStorage.getItem("nox_topster_spotlight_mode") || "all_time";
+    } catch {
+      return "all_time";
+    }
+  });
+
+  useEffect(() => {
+    function handleModeSync(e) {
+      const nextMode = e.detail || (e.key === "nox_topster_spotlight_mode" ? e.newValue : null);
+      if (nextMode && (nextMode === "all_time" || nextMode === "latest")) {
+        setSpotlightMode(nextMode);
+      }
+    }
+    window.addEventListener("nox-spotlight-mode-change", handleModeSync);
+    window.addEventListener("storage", handleModeSync);
+    return () => {
+      window.removeEventListener("nox-spotlight-mode-change", handleModeSync);
+      window.removeEventListener("storage", handleModeSync);
+    };
+  }, []);
+
+  function handleSpotlightModeChange(newMode) {
+    if (newMode === spotlightMode) return;
+    setSpotlightMode(newMode);
+    try {
+      localStorage.setItem("nox_topster_spotlight_mode", newMode);
+    } catch {}
+    window.dispatchEvent(new CustomEvent("nox-spotlight-mode-change", { detail: newMode }));
+    addToast(newMode === "latest" ? "Spotlight set to Latest Topster" : "Spotlight set to All Time");
+  }
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -468,6 +503,76 @@ export default function ProfilePage({ user: propUser, initialTab = "overview" })
               >
                 {lastfmConnected ? "Re-authorize" : "Connect Last.fm"}
               </Button>
+            </div>
+          </div>
+
+          {/* Section 3: Topster Spotlight Preferences */}
+          <div className="p-6 rounded-md border border-border bg-surface-raised space-y-4">
+            <div>
+              <h2 className="font-heading font-black text-lg text-text">Topster Spotlight Display</h2>
+              <p className="font-sans text-xs text-text-muted mt-0.5">
+                Choose whether the broadcast feed &quot;Topster of the Hour&quot; spotlight features your latest topster or your default all-time favorite rotation.
+              </p>
+            </div>
+
+            <div
+              role="radiogroup"
+              aria-label="Topster spotlight mode preference"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={spotlightMode === "all_time"}
+                onClick={() => handleSpotlightModeChange("all_time")}
+                style={spotlightMode === "all_time" ? { borderColor: "#C7F43D", backgroundColor: "#151815" } : undefined}
+                className={cn(
+                  "p-4 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between gap-3",
+                  spotlightMode === "all_time"
+                    ? "border-accent bg-surface shadow-md ring-1 ring-accent"
+                    : "border-border bg-surface hover:border-border-strong hover:bg-surface-hover"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-accent" />
+                    <span className="font-heading font-bold text-sm text-text">All Time (Default)</span>
+                  </div>
+                  {spotlightMode === "all_time" && (
+                    <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  )}
+                </div>
+                <p className="font-sans text-xs text-text-muted m-0">
+                  Feature your all-time favorite albums and classic quilts in the feed spotlight.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                role="radio"
+                aria-checked={spotlightMode === "latest"}
+                onClick={() => handleSpotlightModeChange("latest")}
+                style={spotlightMode === "latest" ? { borderColor: "#C7F43D", backgroundColor: "#151815" } : undefined}
+                className={cn(
+                  "p-4 rounded-md border text-left transition-all cursor-pointer flex flex-col justify-between gap-3",
+                  spotlightMode === "latest"
+                    ? "border-accent bg-surface shadow-md ring-1 ring-accent"
+                    : "border-border bg-surface hover:border-border-strong hover:bg-surface-hover"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-accent" />
+                    <span className="font-heading font-bold text-sm text-text">Latest Topster</span>
+                  </div>
+                  {spotlightMode === "latest" && (
+                    <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  )}
+                </div>
+                <p className="font-sans text-xs text-text-muted m-0">
+                  Automatically feature your most recently generated topster or past 7-day high-rotation scrobbles.
+                </p>
+              </button>
             </div>
           </div>
         </div>

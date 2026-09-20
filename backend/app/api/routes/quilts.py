@@ -88,7 +88,9 @@ def list_quilts(
     current_user: User = Depends(get_current_user),
 ):
     quilts = session.exec(
-        select(AlbumQuilt).where(AlbumQuilt.user_id == current_user.id)
+        select(AlbumQuilt)
+        .where(AlbumQuilt.user_id == current_user.id)
+        .order_by(AlbumQuilt.created_at.desc(), AlbumQuilt.id.desc())
     ).all()
     return [
         {
