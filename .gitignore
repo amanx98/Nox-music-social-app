@@ -5,6 +5,10 @@ backend/**/__pycache__/
 backend/.env
 backend/static/quilts/*
 !backend/static/quilts/.gitkeep
+backend/static/uploads/avatars/*
+!backend/static/uploads/avatars/.gitkeep
+backend/static/uploads/banners/*
+!backend/static/uploads/banners/.gitkeep
 *.db
 *.sqlite3
 
