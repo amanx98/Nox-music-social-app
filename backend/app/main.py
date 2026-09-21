@@ -7,6 +7,7 @@ from app.api.routes.auth import router as auth_router
 from app.models.post import Post
 from app.models.lastfm_profile import LastfmProfile
 from app.models.album_quilt import AlbumQuilt
+from app.models.social import ThreadLike, ThreadRepost, ThreadBookmark
 
 app = FastAPI()
 

@@ -121,3 +121,35 @@ export async function getArtistDetails(artistName) {
     };
   }
 }
+
+export async function likeThread(threadId) {
+  return apiRequest(`/threads/${threadId}/like`, { method: "POST" });
+}
+
+export async function repostThread(threadId) {
+  return apiRequest(`/threads/${threadId}/repost`, { method: "POST" });
+}
+
+export async function bookmarkThread(threadId) {
+  return apiRequest(`/threads/${threadId}/bookmark`, { method: "POST" });
+}
+
+export async function getUserThreads(userId, includeReposts = true) {
+  return apiRequest(`/threads/?user_id=${userId}&include_reposts=${includeReposts}`);
+}
+
+export async function getUserLikes(userId) {
+  return apiRequest(`/threads/user/${userId}/likes`);
+}
+
+export async function getUserReposts(userId) {
+  return apiRequest(`/threads/user/${userId}/reposts`);
+}
+
+export async function getUserBookmarks() {
+  return apiRequest("/threads/me/bookmarks");
+}
+
+export async function getUserReplies(userId) {
+  return apiRequest(`/posts/?user_id=${userId}`);
+}

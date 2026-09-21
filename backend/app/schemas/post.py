@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class PostCreate(BaseModel):
     thread_id: int
@@ -11,3 +12,7 @@ class PostRead(BaseModel):
     user_id: int
     body: str
     created_at: datetime
+    author_name: Optional[str] = None
+    author_username: Optional[str] = None
+    thread_title: Optional[str] = None
+    thread_author: Optional[str] = None
