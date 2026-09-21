@@ -12,6 +12,7 @@ router = APIRouter(prefix="/posts", tags=["posts"])
 def _enrich_post(post: Post, session: Session) -> PostRead:
     author = session.get(User, post.user_id)
     author_name = author.username if author else f"audiphile_{post.user_id}"
+    author_avatar_url = author.avatar_url if author else None
 
     thread = session.get(Thread, post.thread_id)
     thread_title = thread.title if thread else None
@@ -26,6 +27,7 @@ def _enrich_post(post: Post, session: Session) -> PostRead:
         created_at=post.created_at,
         author_name=author_name,
         author_username=author_name,
+        author_avatar_url=author_avatar_url,
         thread_title=thread_title,
         thread_author=thread_author,
     )

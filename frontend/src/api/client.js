@@ -1,4 +1,15 @@
-const API_BASE = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000";
+export const API_BASE = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000";
+
+export function resolveImageUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
+    return url;
+  }
+  if (url.startsWith("/")) {
+    return `${API_BASE}${url}`;
+  }
+  return `${API_BASE}/${url}`;
+}
 
 export async function apiRequest(path, options = {}) {
   const token = localStorage.getItem("access_token");
@@ -46,6 +57,63 @@ export async function register(username, email, password) {
 
 export async function getMe() {
   return apiRequest("/auth/me");
+}
+
+export async function updateProfile(data) {
+  return apiRequest("/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function uploadAvatar(fileOrUrl) {
+  const token = localStorage.getItem("access_token");
+  const formData = new FormData();
+  if (fileOrUrl && (fileOrUrl instanceof File || fileOrUrl instanceof Blob)) {
+    formData.append("file", fileOrUrl);
+  } else if (typeof fileOrUrl === "string" && fileOrUrl.trim()) {
+    formData.append("image_url", fileOrUrl.trim());
+  } else {
+    formData.append("image_url", "");
+  }
+
+  const response = await fetch(`${API_BASE}/auth/avatar`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update avatar");
+  }
+
+  return response.json();
+}
+
+export async function uploadBanner(fileOrUrl) {
+  const token = localStorage.getItem("access_token");
+  const formData = new FormData();
+  if (fileOrUrl && (fileOrUrl instanceof File || fileOrUrl instanceof Blob)) {
+    formData.append("file", fileOrUrl);
+  } else if (typeof fileOrUrl === "string" && fileOrUrl.trim()) {
+    formData.append("image_url", fileOrUrl.trim());
+  } else {
+    formData.append("image_url", "");
+  }
+
+  const response = await fetch(`${API_BASE}/auth/banner`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update banner");
+  }
+
+  return response.json();
 }
 
 export async function getTags() {

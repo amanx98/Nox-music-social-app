@@ -147,7 +147,7 @@ export default function ThreadList({ tag, onSelectThread, onSelectTag, user }) {
           className="rounded-xl border border-accent/40 bg-surface-raised p-4 flex flex-col gap-3 shadow-3 animate-slide-up"
         >
           <div className="flex items-center gap-2.5 pb-2.5 border-b border-border">
-            <Avatar username={user?.username || "me"} size={32} />
+            <Avatar username={user?.username || "me"} src={user?.avatar_url} size={32} />
             <span className="font-mono text-xs text-text-muted">
               Posting as <span className="text-accent font-medium">@{user?.username || "you"}</span>
             </span>

@@ -84,7 +84,7 @@ export default function ThreadView({ thread, onBack, user }) {
         {/* Author Line */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Avatar username={threadAuthor} size={42} />
+            <Avatar username={threadAuthor} src={thread.author_avatar_url || thread.avatar_url} size={42} />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-sans font-semibold text-sm text-text">{threadAuthor}</span>
@@ -129,7 +129,7 @@ export default function ThreadView({ thread, onBack, user }) {
         className="rounded-xl border border-border bg-surface-raised p-4 flex gap-3 shadow-1"
       >
         <div className="pt-1 flex-shrink-0">
-          <Avatar username={user?.username || "me"} size={34} />
+          <Avatar username={user?.username || "me"} src={user?.avatar_url} size={34} />
         </div>
         <div className="flex-1 space-y-2">
           <textarea
@@ -179,7 +179,7 @@ export default function ThreadView({ thread, onBack, user }) {
               return (
                 <div key={post.id} className="p-3.5 flex gap-3 text-left hover:bg-surface-raised/30 transition-colors">
                   <div className="flex-shrink-0 pt-0.5">
-                    <Avatar username={replyAuthor} size={32} />
+                    <Avatar username={replyAuthor} src={post.author_avatar_url || post.avatar_url} size={32} />
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-baseline gap-1.5 flex-wrap">

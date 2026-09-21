@@ -197,7 +197,7 @@ export default function MobileDrawer({ isOpen, onClose, user, onLogout, triggerR
               onClick={onClose}
               className="flex items-center gap-2.5 min-w-0 group hover:opacity-85 transition-opacity"
             >
-              <Avatar username={user.username} size={34} />
+              <Avatar username={user.username} src={user.avatar_url} size={34} />
               <div className="min-w-0">
                 <div className="text-xs font-semibold text-text group-hover:text-accent transition-colors truncate">
                   {user.username}

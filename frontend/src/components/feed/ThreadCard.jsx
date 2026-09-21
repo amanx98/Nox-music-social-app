@@ -74,7 +74,7 @@ export default function ThreadCard({
               }}
             />
           </div>
-          <Avatar username={authorName} size={22} />
+          <Avatar username={authorName} src={thread.author_avatar_url || thread.avatar_url} size={22} />
         </div>
 
         {/* Right Column: Content & Controls */}

@@ -19,6 +19,9 @@ import {
   Heart,
   Bookmark,
   FileText,
+  Camera,
+  Upload,
+  Trash2,
 } from "lucide-react";
 import QuiltGallery from "../QuiltGallery";
 import TopAlbums from "../TopAlbums";
@@ -34,6 +37,10 @@ import {
   getUserBookmarks,
   getUserReposts,
   getUserReplies,
+  uploadAvatar,
+  uploadBanner,
+  updateProfile,
+  resolveImageUrl,
 } from "../api/client";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
@@ -144,7 +151,32 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
   const [customAvatar, setCustomAvatar] = useState(() => {
     return localStorage.getItem(`nox_avatar_${userId}`) || "";
   });
+  const [avatarUrl, setAvatarUrl] = useState(() => {
+    return user?.avatar_url || localStorage.getItem(`nox_avatar_img_${userId}`) || "";
+  });
+  const [bannerUrl, setBannerUrl] = useState(() => {
+    return user?.banner_url || localStorage.getItem(`nox_banner_img_${userId}`) || "";
+  });
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showBannerModal, setShowBannerModal] = useState(false);
+  const [avatarModalTab, setAvatarModalTab] = useState("photo");
+  const [avatarUrlInput, setAvatarUrlInput] = useState("");
+  const [bannerUrlInput, setBannerUrlInput] = useState("");
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  useEffect(() => {
+    if (user?.avatar_url !== undefined) {
+      setAvatarUrl(user.avatar_url || "");
+    }
+    if (user?.banner_url !== undefined) {
+      setBannerUrl(user.banner_url || "");
+    }
+    if (user?.bio !== undefined && user?.bio !== null) {
+      setBio(user.bio);
+      setBioInput(user.bio);
+    }
+  }, [user?.avatar_url, user?.banner_url, user?.bio]);
 
   const [lastfmConnected, setLastfmConnected] = useState(() => {
     return localStorage.getItem("lastfm_connected") === "true";
@@ -311,11 +343,143 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
     return () => window.removeEventListener("nox-social-action", handleSocialUpdate);
   }, [activeTab, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks]);
 
-  function handleSaveBio() {
+  async function handleSaveBio() {
     setBio(bioInput);
     localStorage.setItem(`nox_bio_${userId}`, bioInput);
     setIsEditingBio(false);
+    try {
+      await updateProfile({ bio: bioInput });
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: { bio: bioInput } }));
+    } catch {
+      // Bio still saved in localStorage
+    }
     addToast("Bio updated");
+  }
+
+  async function handleAvatarFileUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      addToast("Image must be smaller than 5MB", "error");
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const updatedUser = await uploadAvatar(file);
+      const newUrl = updatedUser.avatar_url;
+      setAvatarUrl(newUrl);
+      localStorage.setItem(`nox_avatar_img_${userId}`, newUrl);
+      if (username) localStorage.setItem(`nox_avatar_img_${username}`, newUrl);
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: updatedUser }));
+      addToast("Profile picture updated!");
+      setShowAvatarPicker(false);
+    } catch (err) {
+      addToast(err.message || "Failed to upload avatar", "error");
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleAvatarUrlSubmit(e) {
+    e.preventDefault();
+    if (!avatarUrlInput.trim()) return;
+    setUploadingAvatar(true);
+    try {
+      const updatedUser = await uploadAvatar(avatarUrlInput.trim());
+      const newUrl = updatedUser.avatar_url;
+      setAvatarUrl(newUrl);
+      localStorage.setItem(`nox_avatar_img_${userId}`, newUrl);
+      if (username) localStorage.setItem(`nox_avatar_img_${username}`, newUrl);
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: updatedUser }));
+      addToast("Profile picture updated!");
+      setAvatarUrlInput("");
+      setShowAvatarPicker(false);
+    } catch (err) {
+      addToast(err.message || "Failed to set avatar URL", "error");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleRemoveAvatar() {
+    setUploadingAvatar(true);
+    try {
+      const updatedUser = await uploadAvatar(null);
+      setAvatarUrl("");
+      localStorage.removeItem(`nox_avatar_img_${userId}`);
+      if (username) localStorage.removeItem(`nox_avatar_img_${username}`);
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: updatedUser }));
+      addToast("Profile picture removed");
+      setShowAvatarPicker(false);
+    } catch (err) {
+      addToast(err.message || "Failed to remove avatar", "error");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
+  async function handleBannerFileUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      addToast("Banner must be smaller than 8MB", "error");
+      return;
+    }
+    setUploadingBanner(true);
+    try {
+      const updatedUser = await uploadBanner(file);
+      const newUrl = updatedUser.banner_url;
+      setBannerUrl(newUrl);
+      localStorage.setItem(`nox_banner_img_${userId}`, newUrl);
+      if (username) localStorage.setItem(`nox_banner_img_${username}`, newUrl);
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: updatedUser }));
+      addToast("Banner image updated!");
+      setShowBannerModal(false);
+    } catch (err) {
+      addToast(err.message || "Failed to upload banner", "error");
+    } finally {
+      setUploadingBanner(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleBannerUrlSubmit(e) {
+    e.preventDefault();
+    if (!bannerUrlInput.trim()) return;
+    setUploadingBanner(true);
+    try {
+      const updatedUser = await uploadBanner(bannerUrlInput.trim());
+      const newUrl = updatedUser.banner_url;
+      setBannerUrl(newUrl);
+      localStorage.setItem(`nox_banner_img_${userId}`, newUrl);
+      if (username) localStorage.setItem(`nox_banner_img_${username}`, newUrl);
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: updatedUser }));
+      addToast("Banner image updated!");
+      setBannerUrlInput("");
+      setShowBannerModal(false);
+    } catch (err) {
+      addToast(err.message || "Failed to set banner URL", "error");
+    } finally {
+      setUploadingBanner(false);
+    }
+  }
+
+  async function handleRemoveBanner() {
+    setUploadingBanner(true);
+    try {
+      const updatedUser = await uploadBanner(null);
+      setBannerUrl("");
+      localStorage.removeItem(`nox_banner_img_${userId}`);
+      if (username) localStorage.removeItem(`nox_banner_img_${username}`);
+      window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: updatedUser }));
+      addToast("Banner removed");
+      setShowBannerModal(false);
+    } catch (err) {
+      addToast(err.message || "Failed to remove banner", "error");
+    } finally {
+      setUploadingBanner(false);
+    }
   }
 
   function handleAddTag(e) {
@@ -337,9 +501,17 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
 
   function handleSelectAvatar(char) {
     setCustomAvatar(char);
+    setAvatarUrl("");
     localStorage.setItem(`nox_avatar_${userId}`, char);
+    localStorage.removeItem(`nox_avatar_img_${userId}`);
+    if (username) {
+      localStorage.setItem(`nox_avatar_symbol_${username}`, char);
+      localStorage.removeItem(`nox_avatar_img_${username}`);
+    }
+    uploadAvatar(null).catch(() => {});
+    window.dispatchEvent(new CustomEvent("nox-profile-updated", { detail: { avatar_url: null } }));
     setShowAvatarPicker(false);
-    addToast("Avatar icon updated");
+    addToast("Avatar symbol updated");
   }
 
   async function connectLastfm() {
@@ -367,7 +539,29 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
   return (
     <div className="space-y-6 max-w-[960px] mx-auto w-full">
       {/* Profile Banner */}
-      <div className="profile-banner rounded-md" />
+      <div
+        className="profile-banner rounded-md relative group overflow-hidden border border-border"
+        style={
+          bannerUrl
+            ? {
+                backgroundImage: `url("${resolveImageUrl(bannerUrl)}")`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : undefined
+        }
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent pointer-events-none" />
+        <button
+          type="button"
+          onClick={() => setShowBannerModal(true)}
+          className="absolute top-3 right-3 px-3 py-1.5 rounded-md bg-surface/85 hover:bg-accent hover:text-black text-text border border-border/80 backdrop-blur-md font-heading font-semibold text-xs flex items-center gap-1.5 transition-all shadow-2 cursor-pointer z-10"
+          title="Customize Profile Banner"
+        >
+          <Camera className="w-3.5 h-3.5" />
+          <span>{bannerUrl ? "Change Banner" : "Add Banner"}</span>
+        </button>
+      </div>
 
       {/* Profile Header Card */}
       <div className="profile-header-card rounded-md border border-border bg-surface-raised p-5 sm:p-6 shadow-2">
@@ -377,19 +571,20 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
             <div className="relative">
               <Avatar
                 username={username}
+                src={avatarUrl}
                 size={84}
                 customIcon={customAvatar}
                 onClick={() => setShowAvatarPicker(true)}
-                className="cursor-pointer border-2 border-accent"
+                className="cursor-pointer border-2 border-accent shadow-3"
               />
               <button
                 type="button"
                 onClick={() => setShowAvatarPicker(true)}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-surface flex items-center justify-center shadow-2 border border-surface cursor-pointer hover:scale-105 transition-transform"
-                title="Change avatar symbol"
-                aria-label="Change avatar"
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-black flex items-center justify-center shadow-2 border border-surface cursor-pointer hover:scale-110 transition-transform"
+                title="Change profile picture"
+                aria-label="Change profile picture"
               >
-                <Edit2 className="w-3.5 h-3.5" />
+                <Camera className="w-3.5 h-3.5 stroke-[2.5]" />
               </button>
             </div>
 
@@ -1041,53 +1236,275 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
         </div>
       )}
 
-      {/* Avatar Picker Modal */}
+      {/* Avatar Customization Modal */}
       {showAvatarPicker && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
           onClick={() => setShowAvatarPicker(false)}
         >
           <div
-            className="w-full max-w-xs rounded-md border border-border bg-surface-raised p-5 shadow-5 text-left space-y-3"
+            className="w-full max-w-sm rounded-md border border-border bg-surface-raised p-5 shadow-5 text-left space-y-4 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-between items-center pb-2 border-b border-border">
-              <h3 className="font-heading font-bold text-sm text-text">Choose Symbol</h3>
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-widest text-accent font-bold">
+                  ARCHIVIST IDENTITY
+                </div>
+                <h3 className="font-heading font-bold text-sm text-text m-0">Profile Picture</h3>
+              </div>
               <button
                 type="button"
-                className="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text"
+                className="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text cursor-pointer"
                 onClick={() => setShowAvatarPicker(false)}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 py-2">
-              {["✦", "★", "▲", "◆", "●", "■", "✶", "❖"].map((char) => (
-                <button
-                  key={char}
-                  type="button"
-                  onClick={() => handleSelectAvatar(char)}
-                  className="h-10 rounded-md border border-border bg-black hover:border-accent hover:bg-accent hover:text-black text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer p-0"
-                >
-                  {char}
-                </button>
-              ))}
+            {/* Current Preview */}
+            <div className="flex items-center gap-3 p-3 rounded-md bg-surface-sunken border border-border">
+              <Avatar
+                username={username}
+                src={avatarUrl}
+                customIcon={customAvatar}
+                size={52}
+              />
+              <div className="min-w-0">
+                <div className="font-heading font-bold text-xs text-text truncate">{username}</div>
+                <div className="font-mono text-2xs text-text-dim">
+                  {avatarUrl ? "Custom image active" : customAvatar ? `Symbol active (${customAvatar})` : "Monogram active"}
+                </div>
+              </div>
             </div>
 
-            <Button
-              variant="outline"
-              size="sm"
-              full
-              onClick={() => {
-                setCustomAvatar("");
-                localStorage.removeItem(`nox_avatar_${userId}`);
-                setShowAvatarPicker(false);
-                addToast("Avatar reset to initial");
-              }}
+            {/* Mode Switcher Tabs */}
+            <div className="flex items-center gap-1.5 p-1 rounded-md bg-surface-sunken border border-border">
+              <button
+                type="button"
+                onClick={() => setAvatarModalTab("photo")}
+                className={cn(
+                  "flex-1 h-7 rounded text-xs font-heading font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  avatarModalTab === "photo"
+                    ? "bg-accent text-black font-bold shadow-1"
+                    : "text-text-muted hover:text-text"
+                )}
+              >
+                <Upload className="w-3 h-3" />
+                <span>Photo / URL</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAvatarModalTab("symbols")}
+                className={cn(
+                  "flex-1 h-7 rounded text-xs font-heading font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer",
+                  avatarModalTab === "symbols"
+                    ? "bg-accent text-black font-bold shadow-1"
+                    : "text-text-muted hover:text-text"
+                )}
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>Symbols</span>
+              </button>
+            </div>
+
+            {avatarModalTab === "photo" ? (
+              <div className="space-y-3">
+                {/* File Upload Button */}
+                <div>
+                  <label className="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-md border border-dashed border-border hover:border-accent bg-surface hover:bg-surface-hover text-xs font-heading font-semibold text-text transition-colors">
+                    <Upload className="w-4 h-4 text-accent" />
+                    <span>{uploadingAvatar ? "Uploading photo..." : "Upload photo from device"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarFileUpload}
+                      disabled={uploadingAvatar}
+                    />
+                  </label>
+                  <p className="font-mono text-[10px] text-text-dim text-center mt-1">
+                    JPEG, PNG, WEBP, or GIF up to 5MB
+                  </p>
+                </div>
+
+                {/* Or URL Input */}
+                <form onSubmit={handleAvatarUrlSubmit} className="space-y-2 pt-1 border-t border-border/60">
+                  <label className="block font-mono text-2xs text-text-dim uppercase tracking-wider">
+                    Or paste image link:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://images.example.com/pfp.jpg"
+                      value={avatarUrlInput}
+                      onChange={(e) => setAvatarUrlInput(e.target.value)}
+                      className="flex-1 h-8 rounded-md border border-border bg-surface px-2.5 text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+                    />
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      disabled={uploadingAvatar || !avatarUrlInput.trim()}
+                    >
+                      Set URL
+                    </Button>
+                  </div>
+                </form>
+
+                {/* Remove Image Action if present */}
+                {avatarUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    disabled={uploadingAvatar}
+                    className="w-full h-8 flex items-center justify-center gap-1.5 rounded-md text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove Photo</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-4 gap-2">
+                  {["✦", "★", "▲", "◆", "●", "■", "✶", "❖"].map((char) => (
+                    <button
+                      key={char}
+                      type="button"
+                      onClick={() => handleSelectAvatar(char)}
+                      className={cn(
+                        "h-10 rounded-md border border-border bg-surface hover:border-accent hover:bg-accent hover:text-black text-lg font-bold text-text flex items-center justify-center transition-colors cursor-pointer",
+                        customAvatar === char && "border-accent bg-accent text-black"
+                      )}
+                    >
+                      {char}
+                    </button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  full
+                  onClick={() => {
+                    setCustomAvatar("");
+                    localStorage.removeItem(`nox_avatar_${userId}`);
+                    if (username) localStorage.removeItem(`nox_avatar_symbol_${username}`);
+                    setShowAvatarPicker(false);
+                    addToast("Avatar reset to monogram");
+                  }}
+                >
+                  Reset to Monogram
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Banner Customization Modal */}
+      {showBannerModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+          onClick={() => setShowBannerModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-md border border-border bg-surface-raised p-5 shadow-5 text-left space-y-4 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center pb-2 border-b border-border">
+              <div>
+                <div className="font-mono text-[9px] uppercase tracking-widest text-accent font-bold">
+                  DESK CUSTOMIZATION
+                </div>
+                <h3 className="font-heading font-bold text-sm text-text m-0">Profile Banner</h3>
+              </div>
+              <button
+                type="button"
+                className="w-6 h-6 rounded flex items-center justify-center text-text-muted hover:text-text cursor-pointer"
+                onClick={() => setShowBannerModal(false)}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Banner Preview */}
+            <div
+              className="h-28 rounded-md border border-border overflow-hidden relative"
+              style={
+                bannerUrl
+                  ? {
+                      backgroundImage: `url("${resolveImageUrl(bannerUrl)}")`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }
+                  : {
+                      background: "linear-gradient(135deg, #24201a 0%, #171512 50%, #2b251d 100%)",
+                    }
+              }
             >
-              Reset to Monogram
-            </Button>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                <span className="font-mono text-[10px] text-text-muted">
+                  {bannerUrl ? "Custom banner preview" : "Default atmospheric desk background"}
+                </span>
+              </div>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label className="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-md border border-dashed border-border hover:border-accent bg-surface hover:bg-surface-hover text-xs font-heading font-semibold text-text transition-colors">
+                <Upload className="w-4 h-4 text-accent" />
+                <span>{uploadingBanner ? "Uploading banner..." : "Upload banner image"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerFileUpload}
+                  disabled={uploadingBanner}
+                />
+              </label>
+              <p className="font-mono text-[10px] text-text-dim text-center mt-1">
+                Recommended: 1200x300 or wide panorama (up to 8MB)
+              </p>
+            </div>
+
+            {/* URL Input */}
+            <form onSubmit={handleBannerUrlSubmit} className="space-y-2 pt-2 border-t border-border/60">
+              <label className="block font-mono text-2xs text-text-dim uppercase tracking-wider">
+                Or paste image link:
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  placeholder="https://images.example.com/banner.jpg"
+                  value={bannerUrlInput}
+                  onChange={(e) => setBannerUrlInput(e.target.value)}
+                  className="flex-1 h-8 rounded-md border border-border bg-surface px-2.5 text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+                />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  disabled={uploadingBanner || !bannerUrlInput.trim()}
+                >
+                  Set URL
+                </Button>
+              </div>
+            </form>
+
+            {/* Remove Banner if present */}
+            {bannerUrl && (
+              <button
+                type="button"
+                onClick={handleRemoveBanner}
+                disabled={uploadingBanner}
+                className="w-full h-8 flex items-center justify-center gap-1.5 rounded-md text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Reset to Default Banner</span>
+              </button>
+            )}
           </div>
         </div>
       )}

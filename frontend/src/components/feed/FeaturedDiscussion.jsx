@@ -97,7 +97,7 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
         <div className="md:col-span-7 flex flex-col justify-between space-y-3">
           {/* Author Line */}
           <div className="flex items-center gap-2">
-            <Avatar username={authorName} size={30} />
+            <Avatar username={authorName} src={thread?.author_avatar_url || thread?.avatar_url} size={30} />
             <div className="flex items-baseline gap-1.5 flex-wrap">
               <span className="font-heading font-bold text-xs text-text">{authorName}</span>
               <span className="font-mono text-[11px] text-text-dim">@{authorName.toLowerCase()}</span>

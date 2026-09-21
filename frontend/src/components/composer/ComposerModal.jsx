@@ -183,7 +183,7 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
           {/* User & Tag Row */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <Avatar username={user?.username || "me"} size={26} />
+              <Avatar username={user?.username || "me"} src={user?.avatar_url} size={26} />
               <span className="font-mono text-xs text-text-muted">
                 as <span className="text-accent font-semibold">@{user?.username || "you"}</span>
               </span>

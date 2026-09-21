@@ -135,7 +135,7 @@ export default function Header({
               aria-label="Open profile menu"
               className="profile-trigger flex items-center gap-1.5 p-1 rounded-md hover:bg-accent hover:text-black border border-transparent hover:border-accent transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-accent group"
             >
-              <Avatar username={user?.username || "me"} size={28} />
+              <Avatar username={user?.username || "me"} src={user?.avatar_url} size={28} />
               <span className="hidden lg:inline text-xs font-heading font-semibold text-text group-hover:text-black max-w-[100px] truncate transition-colors">
                 {user?.username}
               </span>
@@ -155,12 +155,15 @@ export default function Header({
                 className="absolute right-0 top-11 w-56 rounded-md bg-surface-raised border border-border p-1.5 shadow-5 z-50 animate-slide-up text-left divide-y divide-border/60"
               >
                 {/* User Info Header */}
-                <div className="px-3 py-2">
-                  <div className="font-heading font-bold text-xs text-text truncate">
-                    {user?.username}
-                  </div>
-                  <div className="font-mono text-[11px] text-text-dim truncate">
-                    @{user?.username?.toLowerCase()}
+                <div className="px-3 py-2 flex items-center gap-2.5">
+                  <Avatar username={user?.username || "me"} src={user?.avatar_url} size={32} />
+                  <div className="min-w-0">
+                    <div className="font-heading font-bold text-xs text-text truncate">
+                      {user?.username}
+                    </div>
+                    <div className="font-mono text-[11px] text-text-dim truncate">
+                      @{user?.username?.toLowerCase()}
+                    </div>
                   </div>
                 </div>
 

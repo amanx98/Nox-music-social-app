@@ -36,6 +36,23 @@ function App() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    async function refreshUser(e) {
+      if (e?.detail && typeof e.detail === "object") {
+        setUser((prev) => (prev ? { ...prev, ...e.detail } : e.detail));
+      } else {
+        try {
+          const me = await getMe();
+          setUser(me);
+        } catch {
+          // keep existing user state if refresh request fails
+        }
+      }
+    }
+    window.addEventListener("nox-profile-updated", refreshUser);
+    return () => window.removeEventListener("nox-profile-updated", refreshUser);
+  }, []);
+
   function handleLogout() {
     localStorage.removeItem("access_token");
     setUser(null);

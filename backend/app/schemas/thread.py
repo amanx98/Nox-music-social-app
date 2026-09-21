@@ -17,6 +17,7 @@ class ThreadRead(BaseModel):
     # Enriched fields
     author_name: Optional[str] = None
     author_username: Optional[str] = None
+    author_avatar_url: Optional[str] = None
     tag_name: Optional[str] = None
     tag_type: Optional[str] = None
     likes_count: int = 0

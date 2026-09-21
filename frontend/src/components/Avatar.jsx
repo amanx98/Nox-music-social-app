@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Disc, Headphones, Mic, Radio, Music, Volume2 } from "lucide-react";
+import { resolveImageUrl } from "../api/client";
 
 // Curated avatar palettes with perceptual dark tones and subtle colored borders
 const AVATAR_PALETTES = [
@@ -23,13 +24,31 @@ export function getAvatarForUser(username = "") {
 export default function Avatar({
   username = "user",
   size = 36,
+  src,
+  avatarUrl,
   customIcon,
   onClick,
   className = "",
 }) {
+  const [imageError, setImageError] = useState(false);
+
+  // Derive active image source
+  const rawSrc = src || avatarUrl || (typeof window !== "undefined" ? localStorage.getItem(`nox_avatar_img_${username}`) : null);
+  const resolvedSrc = rawSrc ? resolveImageUrl(rawSrc) : null;
+
+  // Reset error state if image source changes
+  useEffect(() => {
+    setImageError(false);
+  }, [resolvedSrc]);
+
+  // Derive custom icon or symbol from props or localStorage
+  const effectiveIcon = customIcon || (typeof window !== "undefined" ? localStorage.getItem(`nox_avatar_symbol_${username}`) : null);
+
   const palette = getAvatarForUser(username);
   const initial = (username[0] || "U").toUpperCase();
   const IconComponent = palette.icon;
+
+  const showImage = Boolean(resolvedSrc && !imageError);
 
   return (
     <div
@@ -50,11 +69,21 @@ export default function Avatar({
         cursor: onClick ? "pointer" : "default",
         userSelect: "none",
         flexShrink: 0,
+        overflow: "hidden",
+        position: "relative",
       }}
       title={username}
     >
-      {customIcon ? (
-        <span style={{ fontSize: `${Math.round(size * 0.45)}px` }}>{customIcon}</span>
+      {showImage ? (
+        <img
+          src={resolvedSrc}
+          alt={username}
+          onError={() => setImageError(true)}
+          className="w-full h-full object-cover rounded-full pointer-events-none"
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : effectiveIcon ? (
+        <span style={{ fontSize: `${Math.round(size * 0.45)}px` }}>{effectiveIcon}</span>
       ) : size >= 38 ? (
         <span
           className="font-heading font-bold"

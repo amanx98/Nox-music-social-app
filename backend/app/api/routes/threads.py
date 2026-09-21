@@ -23,6 +23,7 @@ def _enrich_thread(
 ) -> ThreadRead:
     author = session.get(User, thread.user_id)
     author_name = author.username if author else f"audiphile_{thread.user_id}"
+    author_avatar_url = author.avatar_url if author else None
     
     tag = session.get(Tag, thread.tag_id) if thread.tag_id else None
     tag_name = tag.name if tag else None
@@ -60,6 +61,7 @@ def _enrich_thread(
         created_at=thread.created_at,
         author_name=author_name,
         author_username=author_name,
+        author_avatar_url=author_avatar_url,
         tag_name=tag_name,
         tag_type=tag_type,
         likes_count=likes_count,
