@@ -106,7 +106,10 @@ async def get_artist_details(artist_name: str) -> dict:
             if resp.status_code == 200:
                 data = resp.json().get("data", [])
                 if data:
-                    a = data[0]
+                    # Find exact case-insensitive match, or fallback to first result
+                    target = artist_name.lower().strip()
+                    a = next((item for item in data if item.get("name", "").lower().strip() == target), data[0])
+                    
                     artist_id = a.get("id")
                     pic_xl = a.get("picture_xl") or a.get("picture_big") or a.get("picture_medium")
                     if pic_xl:
@@ -153,7 +156,9 @@ async def get_artist_details(artist_name: str) -> dict:
                 if tadb_resp.status_code == 200:
                     artists = tadb_resp.json().get("artists") or []
                     if artists:
-                        artist_obj = artists[0]
+                        target = artist_name.lower().strip()
+                        artist_obj = next((item for item in artists if item.get("strArtist", "").lower().strip() == target), artists[0])
+                        
                         for key in ["strArtistFanart", "strArtistFanart2", "strArtistFanart3", "strArtistFanart4", "strArtistThumb"]:
                             photo_url = artist_obj.get(key)
                             if photo_url and photo_url not in result["images"]:
