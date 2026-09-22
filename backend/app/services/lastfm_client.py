@@ -161,16 +161,7 @@ async def get_artist_details(artist_name: str) -> dict:
             except Exception:
                 pass
 
-            # Fetch distinct Wikipedia photo
-            try:
-                wiki_slug = artist_name.replace(" ", "_")
-                wiki_resp = await client.get(f"https://en.wikipedia.org/api/rest_v1/page/summary/{wiki_slug}")
-                if wiki_resp.status_code == 200:
-                    orig = wiki_resp.json().get("originalimage", {}).get("source")
-                    if orig and orig not in result["images"]:
-                        result["images"].append(orig)
-            except Exception:
-                pass
+            # Removed Wikipedia scrape to prevent fetching random unrelated photos
 
             # If still no primary image but found other images, set first image as primary
             if not result["image"] and result["images"]:
