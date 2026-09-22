@@ -5,7 +5,9 @@ from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.lastfm_profile import LastfmProfile
 from app.models.user import User
-from app.core.deps import get_current_user
+from typing import Optional
+from app.core.deps import get_current_user, get_optional_current_user
+from app.core.security import decode_access_token
 from app.services.lastfm_client import get_lastfm_login_url, get_session_key
 
 router = APIRouter(prefix="/lastfm", tags=["lastfm"])
@@ -13,9 +15,29 @@ router = APIRouter(prefix="/lastfm", tags=["lastfm"])
 pending_lastfm_users: dict[str, int] = {}
 
 @router.get("/login")
-def lastfm_login(current_user: User = Depends(get_current_user)):
-    pending_lastfm_users["awaiting"] = current_user.id
-    return {"login_url": get_lastfm_login_url()}
+def lastfm_login(
+    token: Optional[str] = None,
+    redirect: bool = False,
+    session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    user = current_user
+    if not user and token:
+        payload = decode_access_token(token)
+        if payload and "sub" in payload:
+            try:
+                user = session.exec(select(User).where(User.id == int(payload["sub"]))).first()
+            except Exception:
+                pass
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    pending_lastfm_users["awaiting"] = user.id
+    login_url = get_lastfm_login_url()
+    if redirect:
+        return RedirectResponse(url=login_url)
+    return {"login_url": login_url}
 
 @router.get("/callback")
 async def lastfm_callback(token: str, session: Session = Depends(get_session)):

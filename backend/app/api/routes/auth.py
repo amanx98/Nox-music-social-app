@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from app.db.session import get_session
 from app.models.user import User
@@ -44,8 +44,13 @@ def register(user_in: UserCreate, session: Session = Depends(get_session)):
 
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    # OAuth2PasswordRequestForm uses "username" field — we treat it as email here
-    user = session.exec(select(User).where(User.email == form_data.username)).first()
+    login_id = form_data.username.strip().lower()
+    user = session.exec(
+        select(User).where(
+            (func.lower(User.email) == login_id) |
+            (func.lower(User.username) == login_id)
+        )
+    ).first()
     if not user or not verify_password(form_data.password, user.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
 

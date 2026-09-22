@@ -13,7 +13,13 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
     setLoading(true);
     try {
       await login(email, password);
-      const user = await getMe();
+      let user;
+      try {
+        user = await getMe();
+      } catch {
+        await new Promise((r) => setTimeout(r, 400));
+        user = await getMe();
+      }
       onLoginSuccess(user);
     } catch (err) {
       setError(err.message || "Invalid credentials. Please try again.");
@@ -52,13 +58,16 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          <label className="meta" style={{ fontSize: "11px" }}>EMAIL ADDRESS</label>
+          <label className="meta" style={{ fontSize: "11px" }}>EMAIL OR USERNAME</label>
           <input
-            type="email"
-            placeholder="you@frequency.fm"
+            type="text"
+            placeholder="amanx98 or you@frequency.fm"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck="false"
           />
         </div>
 

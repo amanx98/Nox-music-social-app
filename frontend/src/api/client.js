@@ -1,4 +1,4 @@
-export const API_BASE = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000";
+export const API_BASE = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "";
 
 export function resolveImageUrl(url) {
   if (!url) return "";
@@ -34,14 +34,19 @@ export async function apiRequest(path, options = {}) {
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({}));
-      throw new Error(errorBody.detail || `Request failed: ${response.status}`);
+      const err = new Error(errorBody.detail || `Request failed: ${response.status}`);
+      err.status = response.status;
+      throw err;
     }
 
     return response.json();
   } catch (err) {
     clearTimeout(timeoutId);
     if (err.name === "AbortError") {
-      throw new Error(`Request to ${path} timed out. Please retry.`);
+      const timeoutErr = new Error(`Request to ${path} timed out. Please retry.`);
+      timeoutErr.isTimeout = true;
+      timeoutErr.status = 408;
+      throw timeoutErr;
     }
     throw err;
   }
@@ -166,6 +171,14 @@ export async function createPost(threadId, body) {
     method: "POST",
     body: JSON.stringify({ thread_id: threadId, body }),
   });
+}
+
+export async function connectLastfm() {
+  const data = await apiRequest("/lastfm/login");
+  if (data?.login_url) {
+    window.location.href = data.login_url;
+  }
+  return data;
 }
 
 export async function getTopAlbums(period = "overall") {

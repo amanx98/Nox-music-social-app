@@ -26,14 +26,31 @@ function App() {
         return;
       }
       try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Auth check timed out")), 5000)
-        );
-        const me = await Promise.race([getMe(), timeoutPromise]);
-        if (mounted) setUser(me);
+        let me = null;
+        try {
+          me = await getMe();
+        } catch (firstErr) {
+          if (
+            firstErr.status === 401 ||
+            firstErr.message?.toLowerCase().includes("token") ||
+            firstErr.message?.includes("401") ||
+            firstErr.message?.toLowerCase().includes("unauthorized")
+          ) {
+            throw firstErr;
+          }
+          // Retry once on transient network/timeout error before falling back to login
+          await new Promise((r) => setTimeout(r, 500));
+          me = await getMe();
+        }
+        if (mounted && me) setUser(me);
       } catch (err) {
         console.warn("Auth check failed:", err);
-        if (err.message?.includes("401") || err.message?.includes("Unauthorized")) {
+        if (
+          err.status === 401 ||
+          err.message?.toLowerCase().includes("token") ||
+          err.message?.includes("401") ||
+          err.message?.toLowerCase().includes("unauthorized")
+        ) {
           localStorage.removeItem("access_token");
         }
       } finally {

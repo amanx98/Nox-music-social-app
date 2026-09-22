@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getTopArtists, getArtistDetails } from "./api/client";
+import { getTopArtists, getArtistDetails, connectLastfm } from "./api/client";
 import ArtistModal from "./components/ArtistModal";
 
 const PERIODS = [
@@ -124,12 +124,19 @@ export default function TopArtists({ onSelectTag }) {
       {error ? (
         <div className="p-4 rounded-md border border-border bg-surface text-center space-y-2">
           <p className="font-sans text-xs text-text-muted m-0">{error}</p>
-          <a
-            href={`${import.meta.env?.VITE_API_URL || import.meta.env?.VITE_API_BASE || "http://localhost:8000"}/lastfm/login`}
-            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-black hover:bg-accent-hover transition-colors"
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await connectLastfm();
+              } catch (err) {
+                setError(err.message || "Failed to initiate Last.fm connection");
+              }
+            }}
+            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-black hover:bg-accent-hover transition-colors cursor-pointer"
           >
             Connect Last.fm
-          </a>
+          </button>
         </div>
       ) : loading ? (
         <div className="text-center py-8">
