@@ -6,8 +6,10 @@ import FeaturedDiscussion from "../components/feed/FeaturedDiscussion";
 import ThreadCard from "../components/feed/ThreadCard";
 import DiscoveryRail from "../components/feed/DiscoveryRail";
 import TopsterSpotlight from "../components/feed/TopsterSpotlight";
+import ForYouSection from "../components/feed/ForYouSection";
 import ThreadView from "../ThreadView";
 import ComposerModal from "../components/composer/ComposerModal";
+
 
 export default function FeedPage({ user: propUser }) {
   const context = useOutletContext?.() || {};
@@ -222,7 +224,11 @@ export default function FeedPage({ user: propUser }) {
 
           {/* 7. Topster Spotlight */}
           <TopsterSpotlight user={user} />
+
+          {/* 8. For You — NOX Engine Recommendations */}
+          <ForYouSection />
         </div>
+
       </div>
 
       {/* Floating Mobile Compose Control (Fixed at bottom right on small screens) */}

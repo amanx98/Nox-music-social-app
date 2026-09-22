@@ -50,3 +50,6 @@ app.include_router(lastfm_router)
 
 from app.api.routes.quilts import router as quilts_router
 app.include_router(quilts_router)
+
+from app.api.routes.curation import router as curation_router
+app.include_router(curation_router)

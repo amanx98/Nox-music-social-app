@@ -1,8 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Hash, Mic, Radio, Search, Plus, ArrowRight, Loader2, X } from "lucide-react";
+import { Hash, Mic, Radio, Search, Plus, ArrowRight, Loader2, X, Sparkles } from "lucide-react";
 import { getTags, createTag } from "../api/client";
 import { useToast } from "../components/Toast";
+import EngineCompareView from "../components/curation/EngineCompareView";
+import PlaylistGeneratorModal from "../components/curation/PlaylistGeneratorModal";
+import TasteVectorCard from "../components/curation/TasteVectorCard";
+
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
@@ -16,6 +20,9 @@ export default function DiscoverPage() {
   const [newTagName, setNewTagName] = useState("");
   const [newTagType, setNewTagType] = useState("genre");
   const [creating, setCreating] = useState(false);
+  const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
+
+
 
   const loadTags = useCallback(async () => {
     setLoading(true);
@@ -218,6 +225,52 @@ export default function DiscoverPage() {
           </button>
         </form>
       </div>
+
+      {/* ——— ENGINE LAB ——— */}
+      <section className="space-y-5 pt-2">
+        {/* Section header */}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-4 border-b border-border">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <Sparkles className="w-4 h-4 text-accent" />
+              <span className="font-mono text-[10px] font-bold tracking-widest text-accent uppercase">
+                ENGINE LAB // CURATION SCIENCE
+              </span>
+            </div>
+            <h2 className="font-heading font-black text-2xl sm:text-3xl text-text tracking-tight uppercase m-0">
+              Taste Engine
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsPlaylistModalOpen(true)}
+              className="h-9 px-4 rounded-md bg-accent text-black hover:bg-accent-hover font-heading font-bold text-xs tracking-tight transition-all cursor-pointer flex items-center gap-1.5 shadow-1"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Generate Playlist
+            </button>
+          </div>
+        </div>
+
+        {/* Two-column layout: Taste ID left, Compare right on wide screens */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          {/* Taste Vector Card */}
+          <div className="lg:col-span-1">
+            <TasteVectorCard />
+          </div>
+
+          {/* Engine Compare View */}
+          <div className="lg:col-span-2">
+            <EngineCompareView />
+          </div>
+        </div>
+      </section>
+
+      {/* Playlist Generator Modal */}
+      <PlaylistGeneratorModal
+        isOpen={isPlaylistModalOpen}
+        onClose={() => setIsPlaylistModalOpen(false)}
+      />
     </div>
   );
 }

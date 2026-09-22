@@ -221,3 +221,57 @@ export async function getUserBookmarks() {
 export async function getUserReplies(userId) {
   return apiRequest(`/posts/?user_id=${userId}`);
 }
+
+// ---------------------------------------------------------------------------
+// Curation Engine API
+// ---------------------------------------------------------------------------
+
+/** Get (or rebuild) the current user's taste vector + top tags */
+export async function getTasteVector(refresh = false) {
+  return apiRequest(`/curation/taste-vector${refresh ? "?refresh=true" : ""}`);
+}
+
+/** Get NOX's content-based recommendations (cosine similarity scored) */
+export async function getRecommendations(limit = 30) {
+  return apiRequest(`/curation/recommendations?limit=${limit}`);
+}
+
+/**
+ * Side-by-side comparison: our engine vs Last.fm's collaborative filter.
+ * Returns overlap, nox_only, lastfm_only, overlap_pct, taste_vector, top_tags.
+ */
+export async function getEngineComparison() {
+  return apiRequest("/curation/compare");
+}
+
+/**
+ * Generate a playlist (not saved yet).
+ * @param {Object} options - { mood?, seed_artist?, name?, length? }
+ */
+export async function generatePlaylist(options = {}) {
+  return apiRequest("/curation/playlist/generate", {
+    method: "POST",
+    body: JSON.stringify(options),
+  });
+}
+
+/**
+ * Generate and immediately save a playlist to the user's library.
+ * @param {Object} options - { mood?, seed_artist?, name?, length? }
+ */
+export async function saveGeneratedPlaylist(options = {}) {
+  return apiRequest("/curation/playlist/save", {
+    method: "POST",
+    body: JSON.stringify(options),
+  });
+}
+
+/** Get all saved playlists for the current user */
+export async function getPlaylists() {
+  return apiRequest("/curation/playlists");
+}
+
+/** Delete a saved playlist */
+export async function deletePlaylist(playlistId) {
+  return apiRequest(`/curation/playlists/${playlistId}`, { method: "DELETE" });
+}
