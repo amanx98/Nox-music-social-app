@@ -25,7 +25,8 @@ async def create_quilt(
     if not profile:
         raise HTTPException(status_code=404, detail="Last.fm not connected")
 
-    limit = grid_size * grid_size
+    # Fetch extra items so we can skip ones without album art and still fill the quilt
+    limit = (grid_size * grid_size) + 20
 
     if quilt_type == "tracks":
         data = await get_top_tracks(profile.lastfm_username, period=period, limit=limit)
