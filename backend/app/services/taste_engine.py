@@ -263,8 +263,9 @@ async def _get_track_similar_lastfm(track: str, artist: str, client: httpx.Async
     ]
 
 
-async def _get_deezer_preview(track: str, artist: str, client: httpx.AsyncClient) -> Optional[str]:
-    """Fetch a 30s Deezer preview URL for a track with strict 2.0s timeout."""
+async def _get_deezer_preview(track: str, artist: str, client: httpx.AsyncClient) -> dict:
+    """Fetch a 30s Deezer preview URL and album art for a track with strict 2.0s timeout."""
+    result = {"preview": None, "image_url": None}
     try:
         r = await client.get(
             "https://api.deezer.com/search",
@@ -274,19 +275,28 @@ async def _get_deezer_preview(track: str, artist: str, client: httpx.AsyncClient
         if r.status_code == 200:
             items = r.json().get("data", [])
             if items:
-                return items[0].get("preview")
+                result["preview"] = items[0].get("preview")
+                result["image_url"] = items[0].get("album", {}).get("cover_medium") or items[0].get("album", {}).get("cover_small")
     except Exception:
         pass
-    return None
+    return result
 
 
 async def _enrich_with_previews(tracks: list[dict]) -> list[dict]:
-    """Fetch Deezer preview URLs for a batch of tracks concurrently."""
+    """Fetch Deezer preview URLs and album art for a batch of tracks concurrently."""
     async with httpx.AsyncClient(verify=False) as client:
         tasks = [_get_deezer_preview(t["name"], t["artist"], client) for t in tracks]
-        previews = await asyncio.gather(*tasks)
-    for track, preview in zip(tracks, previews):
-        track["preview_url"] = preview
+        deezer_data = await asyncio.gather(*tasks)
+        
+    for track, data in zip(tracks, deezer_data):
+        track["preview_url"] = data["preview"]
+        
+        # Overwrite missing or default Last.fm star with Deezer's cover art
+        current_img = track.get("image_url", "")
+        if not current_img or "2a96cbd8b46e442fc41c2b86b821562f" in current_img:
+            if data["image_url"]:
+                track["image_url"] = data["image_url"]
+                
     return tracks
 
 
@@ -640,7 +650,10 @@ async def get_lastfm_recommendations(lastfm_username: str, seed_tracks: list[dic
 
     # Sort by Last.fm match score (their internal ranking)
     flat.sort(key=lambda x: -x.get("match", 0))
-    return flat[:limit]
+    
+    top_picks = flat[:limit]
+    enriched = await _enrich_with_previews(top_picks)
+    return enriched
 
 
 async def compare_engines(lastfm_username: str) -> dict:
