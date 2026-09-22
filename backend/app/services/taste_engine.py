@@ -714,6 +714,172 @@ async def compare_engines(lastfm_username: str) -> dict:
     }
 
 
+async def _resolve_canonical_artist(artist: str, client: httpx.AsyncClient) -> str:
+    """Resolve possibly misspelled or lowercase artist name via Last.fm search."""
+    data = await _lastfm_get({"method": "artist.search", "artist": artist, "limit": 1}, client)
+    matches = data.get("results", {}).get("artistmatches", {}).get("artist", [])
+    if isinstance(matches, dict):
+        matches = [matches]
+    if matches and isinstance(matches, list) and matches[0].get("name"):
+        return matches[0]["name"]
+    return artist
+
+
+async def _get_deezer_artist_tracks(artist: str, client: httpx.AsyncClient, limit: int = 15) -> list[dict]:
+    """Fetch tracks for an artist via Deezer as fallback for niche or underground artists."""
+    try:
+        r = await client.get(
+            "https://api.deezer.com/search",
+            params={"q": f'artist:"{artist}"', "limit": limit},
+            timeout=3.0,
+        )
+        if r.status_code == 200:
+            data = r.json().get("data", [])
+            return [
+                {
+                    "name": item.get("title", ""),
+                    "artist": item.get("artist", {}).get("name", artist),
+                    "image_url": item.get("album", {}).get("cover_medium") or item.get("album", {}).get("cover_big"),
+                    "preview_url": item.get("preview"),
+                    "source": f"artist:{artist}",
+                }
+                for item in data
+                if item.get("title")
+            ]
+    except Exception:
+        pass
+    return []
+
+
+async def _generate_artist_grounded_playlist(
+    seed_artist: str,
+    taste_vector: dict,
+    mood: Optional[str] = None,
+    name: Optional[str] = None,
+    length: int = 25,
+) -> dict:
+    """
+    Curate a playlist strictly grounded in the genre, subgenres, and musical orbit
+    of the lead artist name provided by the user.
+
+    Prevents unrelated genres from polluting the tracklist (e.g. no Sade/Marvin Gaye
+    in a Griselda/boom-bap rap playlist).
+    """
+    async with httpx.AsyncClient(verify=False) as client:
+        # Step 1: Canonicalize name
+        canonical = await _resolve_canonical_artist(seed_artist, client)
+
+        # Step 2: Fetch artist tags, lead tracks, and similar artists concurrently
+        tags_task = _get_artist_tags(canonical, client)
+        tracks_task = _get_artist_top_tracks(canonical, client, limit=12)
+        similar_task = _get_similar_artists(canonical, client, limit=8)
+
+        artist_tags, lead_tracks, similar_artists = await asyncio.gather(
+            tags_task, tracks_task, similar_task
+        )
+
+        # Fallback for underground / niche artists with low Last.fm metadata
+        if not lead_tracks:
+            lead_tracks = await _get_deezer_artist_tracks(canonical, client, limit=12)
+
+        # Derive subgenres specific to this artist
+        lead_subgenres = [k for k in artist_tags.keys() if k not in GENRE_BLOCKLIST][:4]
+
+        # Step 3: Fetch orbit tracks (from immediate similar artists)
+        orbit_tracks = []
+        if similar_artists:
+            sim_tasks = [_get_artist_top_tracks(a, client, limit=5) for a in similar_artists]
+            sim_batches = await asyncio.gather(*sim_tasks)
+            for batch in sim_batches:
+                orbit_tracks.extend(batch)
+
+        # Step 4: Sourcing from the artist's specific subgenres (not generic top genres)
+        subgenre_tracks = []
+        if lead_subgenres:
+            sg_tasks = [_get_tag_top_tracks(sg, client, limit=15) for sg in lead_subgenres[:2]]
+            sg_batches = await asyncio.gather(*sg_tasks)
+            for batch in sg_batches:
+                subgenre_tracks.extend(batch)
+
+        # Step 5: Mood tracks (if mood provided, source from mood but restrict to orbit or subgenres)
+        mood_tracks = []
+        if mood:
+            mood_lower = mood.lower()
+            m_batch = await _get_tag_top_tracks(mood_lower, client, limit=20, page=1)
+            orbit_set = {canonical.lower()} | {a.lower() for a in similar_artists}
+            for t in m_batch:
+                # Only include mood tracks that belong to the orbit or share artist subgenre
+                if t.get("artist", "").lower() in orbit_set:
+                    mood_tracks.append(t)
+
+        # Step 6: Build candidate pool
+        seen = set()
+        lead_pool = []
+        for t in lead_tracks:
+            key = (t.get("name", "").lower(), t.get("artist", "").lower())
+            if key not in seen and t.get("name"):
+                seen.add(key)
+                lead_pool.append({
+                    **t,
+                    "is_lead_artist": True,
+                    "matching_tags": lead_subgenres[:3],
+                    "track_tags": lead_subgenres[:5],
+                })
+
+        orbit_pool = []
+        # Priority: mood matching orbit tracks > similar artist tracks > subgenre tracks
+        for t in mood_tracks + orbit_tracks + subgenre_tracks:
+            key = (t.get("name", "").lower(), t.get("artist", "").lower())
+            if key not in seen and t.get("name"):
+                seen.add(key)
+                orbit_pool.append({
+                    **t,
+                    "is_lead_artist": False,
+                    "matching_tags": lead_subgenres[:3],
+                    "track_tags": lead_subgenres[:5],
+                })
+
+        # Step 7: Interleave lead artist tracks with orbit tracks
+        # 1 lead artist track every 4 tracks (tracks 1, 5, 9, 13, 17, 21...)
+        curated = []
+        li, oi = iter(lead_pool), iter(orbit_pool)
+        for i in range(length):
+            if i % 4 == 0:
+                t = next(li, next(oi, None))
+            else:
+                t = next(oi, next(li, None))
+            if t:
+                curated.append(t)
+
+        # If pool was small (super niche artist), fill with remaining available tracks
+        if len(curated) < length:
+            for t in lead_pool + orbit_pool:
+                if len(curated) >= length:
+                    break
+                if t not in curated:
+                    curated.append(t)
+
+        # Step 8: Enrich preview URLs
+        curated = await _enrich_with_previews(curated[:length])
+
+        # Step 9: Title & summary
+        if not name:
+            sg_str = f" ({lead_subgenres[0].title()})" if lead_subgenres else ""
+            m_str = f" - {mood.title()}" if mood else ""
+            name = f"{canonical} Orbit{sg_str}{m_str}"
+
+        return {
+            "name": name,
+            "source": "nox_engine",
+            "seed_artist": canonical,
+            "mood": mood,
+            "subgenres": lead_subgenres,
+            "track_count": len(curated),
+            "tracks": curated,
+            "taste_vector_preview": dict(list(taste_vector.items())[:10]) if taste_vector else {},
+        }
+
+
 async def generate_playlist(
     lastfm_username: str,
     mood: Optional[str] = None,
@@ -722,40 +888,34 @@ async def generate_playlist(
     length: int = 25,
 ) -> dict:
     """
-    Generate a playlist from the user's taste vector.
+    Generate a curated playlist.
 
-    Key improvements over naive filtering:
-    - mood is passed INTO the engine (affects candidate sourcing + scoring weight),
-      not just used as a post-filter. So "dreamy" tracks are sourced from the
-      dreamy tag pool, not just filtered from a generic pool.
-    - seed_artist biases the orbit so that artist's similar artists are weighted
-      in candidate sourcing too.
+    - When seed_artist is given: curates strictly within that artist's genre/subgenre
+      DNA and similar artist orbit (e.g. Westside Gunn gives Griselda/boom-bap, never soul/pop).
+    - When seed_artist is empty: generates from user's overall Taste ID + selected mood.
     """
-    # Pass mood directly into the engine so it sources mood-appropriate candidates
-    nox_result = await get_nox_recommendations(lastfm_username, limit=60, mood=mood)
+    taste_vector = await build_taste_vector(lastfm_username)
+
+    if seed_artist and seed_artist.strip():
+        return await _generate_artist_grounded_playlist(
+            seed_artist=seed_artist.strip(),
+            taste_vector=taste_vector,
+            mood=mood,
+            name=name,
+            length=length,
+        )
+
+    # General Taste ID playlist
+    nox_result = await get_nox_recommendations(
+        lastfm_username,
+        limit=length + 10,
+        mood=mood,
+        existing_taste_vector=taste_vector,
+    )
     recs = nox_result.get("recommendations", [])
-    taste_vector = nox_result.get("taste_vector", {})
     top_genres = nox_result.get("top_genres", [])
-
-    # If seed_artist provided: interleave seed-artist tracks into the list
-    if seed_artist and recs:
-        seed_lower = seed_artist.lower()
-        orbit_boost = [r for r in recs if seed_lower in r.get("artist", "").lower()]
-        others = [r for r in recs if seed_lower not in r.get("artist", "").lower()]
-        # Interleave: 1 seed-artist track every 4 tracks
-        mixed = []
-        bi = iter(orbit_boost)
-        oi = iter(others)
-        for i in range(min(length, len(recs))):
-            if i % 4 == 0:
-                mixed.append(next(bi, next(oi, None)))
-            else:
-                mixed.append(next(oi, next(bi, None)))
-        recs = [r for r in mixed if r is not None]
-
     tracks = recs[:length]
 
-    # Auto-generate name if not provided
     if not name:
         top_tag = top_genres[0].title() if top_genres else "Mixed"
         mood_part = f" ({mood.title()})" if mood else ""
@@ -766,9 +926,9 @@ async def generate_playlist(
         "name": name,
         "source": "nox_engine",
         "mood": mood,
-        "seed_artist": seed_artist,
+        "seed_artist": None,
         "track_count": len(tracks),
         "tracks": tracks,
-        "taste_vector_preview": dict(list(taste_vector.items())[:10]),
+        "taste_vector_preview": dict(list(taste_vector.items())[:10]) if taste_vector else {},
     }
 

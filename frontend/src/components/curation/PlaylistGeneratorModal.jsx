@@ -80,7 +80,14 @@ function TrackRow({ track, index }) {
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="font-heading font-bold text-xs text-text truncate">{track.name}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="font-heading font-bold text-xs text-text truncate">{track.name}</p>
+          {track.is_lead_artist && (
+            <span className="font-mono text-[7px] uppercase tracking-wider px-1 py-0.2 rounded bg-accent/20 text-accent font-bold shrink-0">
+              Lead
+            </span>
+          )}
+        </div>
         <p className="font-sans text-[10px] text-text-dim truncate">{track.artist}</p>
       </div>
 
@@ -269,6 +276,15 @@ export default function PlaylistGeneratorModal({ isOpen, onClose }) {
                   {playlist.track_count} tracks · NOX engine
                   {selectedMood && ` · ${selectedMood}`}
                 </p>
+                {playlist.subgenres?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1.5">
+                    {playlist.subgenres.slice(0, 3).map((sg) => (
+                      <span key={sg} className="font-mono text-[8px] px-1.5 py-0.5 rounded bg-accent/10 border border-accent/25 text-accent">
+                        {sg}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 onClick={handleSave}
