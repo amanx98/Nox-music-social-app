@@ -28,14 +28,16 @@ A social platform for music fans — connect your Last.fm account, browse and po
 - **Communities** — Reddit-style tags for artists and genres, with threaded discussions
 - **Last.fm integration** — connect your account to pull real listening stats
 - **Album quilts** — auto-generated grid collages of your top albums or top tracks, with custom time period and grid size
-- **Top artists / top albums** — see your real listening history inside the app
+- **Top artists visual grid** — beautifully composed Bento grids of your top artists, powered by intelligent cross-platform photo matching (Deezer & TheAudioDB) that bypasses Last.fm's missing image limitations
+- **Taste Engine (AI Curation)** — personalized track recommendations based on your listening history using genre and vector-based taste profiling
+- **Audio Previews** — instantly listen to 30-second high-quality audio previews of recommended songs via Deezer
 
 ## Tech stack
 
 **Backend:** FastAPI, PostgreSQL, SQLModel, Alembic, Pillow (image generation)
-**Frontend:** React (Vite), React Router
+**Frontend:** React (Vite), React Router, Tailwind CSS, Framer Motion
 **Auth:** JWT, bcrypt password hashing
-**External API:** Last.fm
+**External APIs:** Last.fm, Deezer, TheAudioDB
 
 ## Getting started
 
@@ -79,7 +81,7 @@ docker run --name music-app-db -e POSTGRES_PASSWORD=yourpassword -e POSTGRES_DB=
 
 - [ ] Spotify integration (pending developer account access)
 - [ ] Auto-generate quilts on a schedule
-- [ ] Top artists as a visual grid (blocked on Last.fm's API not returning artist images)
+- [x] Top artists as a visual grid (solved via Deezer/TheAudioDB API fallback and track-anchor correlation)
 
 ## License
 
