@@ -43,7 +43,11 @@ async def create_quilt(
             artist_name = art_artist.get("name", "") if isinstance(art_artist, dict) else (art_artist if isinstance(art_artist, str) else "")
             track_name = t.get("name", "")
             art_url = await get_track_album_art(artist_name, track_name) if artist_name and track_name else None
-            albums.append({"image_url": art_url})
+            albums.append({
+                "image_url": art_url,
+                "name": track_name,
+                "artist": artist_name,
+            })
     else:
         data = await get_top_albums(profile.lastfm_username, period=period, limit=limit)
         items_raw = data.get("topalbums", {}).get("album", [])
@@ -51,16 +55,23 @@ async def create_quilt(
             items_raw = [items_raw]
         elif not isinstance(items_raw, list):
             items_raw = []
-        albums = [
-            {
+        
+        albums = []
+        for a in items_raw:
+            if not isinstance(a, dict):
+                continue
+            
+            art_artist = a.get("artist")
+            artist_name = art_artist.get("name", "") if isinstance(art_artist, dict) else (art_artist if isinstance(art_artist, str) else "")
+            
+            albums.append({
                 "image_url": next(
                     (img.get("#text") for img in a.get("image", []) if isinstance(img, dict) and img.get("size") == "extralarge"),
                     None,
-                )
-            }
-            for a in items_raw
-            if isinstance(a, dict)
-        ]
+                ),
+                "name": a.get("name", ""),
+                "artist": artist_name,
+            })
 
     filepath = await generate_quilt(albums, grid_size=grid_size)
 

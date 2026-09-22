@@ -23,12 +23,31 @@ async def generate_quilt(albums: list[dict], grid_size: int = 3) -> str:
                 break
             
             image_url = album.get("image_url")
-            # Skip if missing or if it's the Last.fm default grey star placeholder
+            
+            # If missing or it's the Last.fm default grey star placeholder, fallback to Deezer
+            if not image_url or "2a96cbd8b46e442fc41c2b86b821562f" in image_url:
+                artist = album.get("artist", "")
+                name = album.get("name", "")
+                if artist and name:
+                    try:
+                        dz_res = await client.get(
+                            "https://api.deezer.com/search",
+                            params={"q": f"{artist} {name}", "limit": 1},
+                            timeout=3.0
+                        )
+                        if dz_res.status_code == 200:
+                            data = dz_res.json().get("data", [])
+                            if data and len(data) > 0:
+                                image_url = data[0].get("album", {}).get("cover_xl") or data[0].get("album", {}).get("cover_big")
+                    except Exception:
+                        pass
+                        
+            # If it's still missing after the fallback attempt, skip it to keep the quilt full
             if not image_url or "2a96cbd8b46e442fc41c2b86b821562f" in image_url:
                 continue
                 
             try:
-                response = await client.get(image_url)
+                response = await client.get(image_url, timeout=5.0)
                 if response.status_code != 200:
                     continue
                 img = Image.open(BytesIO(response.content)).convert("RGB")
