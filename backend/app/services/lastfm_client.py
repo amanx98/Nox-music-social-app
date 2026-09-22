@@ -101,21 +101,57 @@ async def get_artist_details(artist_name: str) -> dict:
     headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
     try:
         async with httpx.AsyncClient(verify=False, timeout=8.0, headers=headers) as client:
-            resp = await client.get(f"https://api.deezer.com/search/artist?q={artist_name}")
             artist_id = None
-            if resp.status_code == 200:
-                data = resp.json().get("data", [])
-                if data:
-                    # Find exact case-insensitive match, or fallback to first result
-                    target = artist_name.lower().strip()
-                    a = next((item for item in data if item.get("name", "").lower().strip() == target), data[0])
-                    
-                    artist_id = a.get("id")
-                    pic_xl = a.get("picture_xl") or a.get("picture_big") or a.get("picture_medium")
-                    if pic_xl:
-                        result["image"] = pic_xl
-                        result["images"].append(pic_xl)
-                    result["fans"] = a.get("nb_fan")
+            a = None
+            
+            # Step 1: Use Last.fm top tracks as an anchor to find the exact Deezer artist
+            try:
+                params = {
+                    "method": "artist.getTopTracks",
+                    "artist": artist_name,
+                    "api_key": settings.lastfm_api_key,
+                    "limit": 3,
+                    "format": "json",
+                }
+                r = await client.get(LASTFM_API_BASE, params=params)
+                if r.status_code == 200:
+                    tracks = r.json().get("toptracks", {}).get("track", [])
+                    if tracks and isinstance(tracks, list):
+                        top_track_name = tracks[0].get("name")
+                        if top_track_name:
+                            search_resp = await client.get("https://api.deezer.com/search", params={"q": f"{artist_name} {top_track_name}", "limit": 1})
+                            if search_resp.status_code == 200:
+                                search_data = search_resp.json().get("data", [])
+                                if search_data:
+                                    artist_id = search_data[0].get("artist", {}).get("id")
+            except Exception:
+                pass
+                
+            if artist_id:
+                # We found the exact artist ID using track correlation!
+                resp = await client.get(f"https://api.deezer.com/artist/{artist_id}")
+                if resp.status_code == 200:
+                    a = resp.json()
+            else:
+                # Step 2: Fallback to exact name match + highest fan count
+                resp = await client.get(f"https://api.deezer.com/search/artist?q={artist_name}")
+                if resp.status_code == 200:
+                    data = resp.json().get("data", [])
+                    if data:
+                        target = artist_name.lower().strip()
+                        exact_matches = [item for item in data if item.get("name", "").lower().strip() == target]
+                        if exact_matches:
+                            a = max(exact_matches, key=lambda x: x.get("nb_fan", 0))
+                        else:
+                            a = data[0]
+                        artist_id = a.get("id")
+            
+            if a:
+                pic_xl = a.get("picture_xl") or a.get("picture_big") or a.get("picture_medium")
+                if pic_xl:
+                    result["image"] = pic_xl
+                    result["images"].append(pic_xl)
+                result["fans"] = a.get("nb_fan")
 
                     tracks_data = []
                     if artist_id:
