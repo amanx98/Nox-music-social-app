@@ -123,7 +123,13 @@ async def get_artist_details(artist_name: str) -> dict:
                             if search_resp.status_code == 200:
                                 search_data = search_resp.json().get("data", [])
                                 if search_data:
-                                    artist_id = search_data[0].get("artist", {}).get("id")
+                                    # Verify the track actually belongs to the exact artist to prevent fuzzy-match bleeding
+                                    import re
+                                    found_artist = search_data[0].get("artist", {})
+                                    found_norm = re.sub(r'[^a-z0-9]', '', found_artist.get("name", "").lower())
+                                    req_norm = re.sub(r'[^a-z0-9]', '', artist_name.lower())
+                                    if found_norm and req_norm and found_norm == req_norm:
+                                        artist_id = found_artist.get("id")
             except Exception:
                 pass
                 
@@ -138,8 +144,8 @@ async def get_artist_details(artist_name: str) -> dict:
                 if resp.status_code == 200:
                     data = resp.json().get("data", [])
                     if data:
-                        target = artist_name.lower().strip()
-                        exact_matches = [item for item in data if item.get("name", "").lower().strip() == target]
+                        target = re.sub(r'[^a-z0-9]', '', artist_name.lower())
+                        exact_matches = [item for item in data if re.sub(r'[^a-z0-9]', '', item.get("name", "").lower()) == target]
                         if exact_matches:
                             a = max(exact_matches, key=lambda x: x.get("nb_fan", 0))
                         else:
@@ -192,8 +198,8 @@ async def get_artist_details(artist_name: str) -> dict:
                 if tadb_resp.status_code == 200:
                     artists = tadb_resp.json().get("artists") or []
                     if artists:
-                        target = artist_name.lower().strip()
-                        artist_obj = next((item for item in artists if item.get("strArtist", "").lower().strip() == target), artists[0])
+                        target = re.sub(r'[^a-z0-9]', '', artist_name.lower())
+                        artist_obj = next((item for item in artists if re.sub(r'[^a-z0-9]', '', item.get("strArtist", "").lower()) == target), artists[0])
                         
                         for key in ["strArtistFanart", "strArtistFanart2", "strArtistFanart3", "strArtistFanart4", "strArtistThumb"]:
                             photo_url = artist_obj.get(key)
