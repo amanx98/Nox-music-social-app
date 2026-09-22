@@ -4,23 +4,28 @@ A social platform for music fans — connect your Last.fm account, browse and po
 
 ## Screenshots
 
-**Feed — browse communities and threads**
-![Feed](assets/feed.png)
-
-**Tags — artist and genre communities**
-![Tags](assets/tags.png)
-
-**Thread view — discussions and replies**
-![Thread](assets/thread.png)
-
-**Profile — your music identity**
-![Profile](assets/profile_page.png)
-
-**Top artists — real listening stats from Last.fm**
-![Top Artists](assets/top_artists.png)
-
-**Album quilts — auto-generated collages from your top albums or tracks**
-![Quilts](assets/quilts.png)
+<table>
+  <tr>
+    <td valign="top" width="50%">
+      <b>Thread View</b><br/>
+      <img src="assets/thread.png" width="100%"/>
+    </td>
+    <td valign="top" width="50%">
+      <b>Discover & Taste Engine</b><br/>
+      <img src="assets/discover.png" width="100%"/>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" width="50%">
+      <b>User Profile</b><br/>
+      <img src="assets/profile.png" width="100%"/>
+    </td>
+    <td valign="top" width="50%">
+      <b>Bento Grids & Quilts</b><br/>
+      <img src="assets/bento.png" width="100%"/>
+    </td>
+  </tr>
+</table>
 
 ## Features
 
