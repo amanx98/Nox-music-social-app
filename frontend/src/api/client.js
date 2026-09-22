@@ -22,7 +22,11 @@ export async function apiRequest(path, options = {}) {
 
   const timeoutMs = options.timeout ?? 10000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  let timeoutId;
+  if (timeoutMs !== false) {
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  }
 
   try {
     const response = await fetch(`${API_BASE}${path}`, {
@@ -188,7 +192,7 @@ export async function getTopAlbums(period = "overall") {
 export async function generateQuilt(period = "overall", quiltType = "albums", gridSize = 3) {
   return apiRequest(
     `/quilts/generate?period=${period}&quilt_type=${quiltType}&grid_size=${gridSize}`,
-    { method: "POST", timeout: 60000 }
+    { method: "POST", timeout: false }
   );
 }
 
