@@ -153,38 +153,38 @@ async def get_artist_details(artist_name: str) -> dict:
                     result["images"].append(pic_xl)
                 result["fans"] = a.get("nb_fan")
 
-                    tracks_data = []
-                    if artist_id:
-                        track_resp = await client.get(f"https://api.deezer.com/artist/{artist_id}/top?limit=10")
-                        if track_resp.status_code == 200:
-                            tracks_data = track_resp.json().get("data", [])
+            tracks_data = []
+            if artist_id:
+                track_resp = await client.get(f"https://api.deezer.com/artist/{artist_id}/top?limit=10")
+                if track_resp.status_code == 200:
+                    tracks_data = track_resp.json().get("data", [])
 
-                    # If artist top endpoint returned few or no tracks, search Deezer catalog by ranking
-                    if len(tracks_data) < 5:
-                        search_resp = await client.get("https://api.deezer.com/search", params={"q": artist_name, "order": "RANKING"})
-                        if search_resp.status_code == 200:
-                            search_tracks = search_resp.json().get("data", [])
-                            seen_ids = {t.get("id") for t in tracks_data}
-                            for st in search_tracks:
-                                artist_item_name = st.get("artist", {}).get("name", "").lower()
-                                if (artist_name.lower() in artist_item_name or artist_item_name in artist_name.lower()) and st.get("id") not in seen_ids:
-                                    tracks_data.append(st)
-                                    seen_ids.add(st.get("id"))
-                                if len(tracks_data) >= 10:
-                                    break
+            # If artist top endpoint returned few or no tracks, search Deezer catalog by ranking
+            if len(tracks_data) < 5:
+                search_resp = await client.get("https://api.deezer.com/search", params={"q": artist_name, "order": "RANKING"})
+                if search_resp.status_code == 200:
+                    search_tracks = search_resp.json().get("data", [])
+                    seen_ids = {t.get("id") for t in tracks_data}
+                    for st in search_tracks:
+                        artist_item_name = st.get("artist", {}).get("name", "").lower()
+                        if (artist_name.lower() in artist_item_name or artist_item_name in artist_name.lower()) and st.get("id") not in seen_ids:
+                            tracks_data.append(st)
+                            seen_ids.add(st.get("id"))
+                        if len(tracks_data) >= 10:
+                            break
 
-                    if tracks_data:
-                        result["top_tracks"] = [
-                            {
-                                "id": t.get("id"),
-                                "title": t.get("title"),
-                                "duration": t.get("duration"),
-                                "preview": t.get("preview"),
-                                "album_title": t.get("album", {}).get("title"),
-                                "album_cover": t.get("album", {}).get("cover_big") or t.get("album", {}).get("cover_medium"),
-                            }
-                            for t in tracks_data
-                        ]
+            if tracks_data:
+                result["top_tracks"] = [
+                    {
+                        "id": t.get("id"),
+                        "title": t.get("title"),
+                        "duration": t.get("duration"),
+                        "preview": t.get("preview"),
+                        "album_title": t.get("album", {}).get("title"),
+                        "album_cover": t.get("album", {}).get("cover_big") or t.get("album", {}).get("cover_medium"),
+                    }
+                    for t in tracks_data
+                ]
 
             # Fetch distinct photos from TheAudioDB
             try:
