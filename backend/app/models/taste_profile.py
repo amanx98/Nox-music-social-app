@@ -23,6 +23,7 @@ class TasteProfile(SQLModel, table=True):
     top_artists: str = Field(default="[]")   # JSON [str] — top 10 artist names
     top_genres: str = Field(default="[]")    # JSON [str] — top 5 genre tags
     seed_tracks: str = Field(default="[]")   # JSON [{name, artist}] — for getSimilar baseline
+    cached_recommendations: str = Field(default="[]") # JSON list of cached ScoredTracks
 
     # Cache control — rebuilt when stale (default TTL: 24h)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

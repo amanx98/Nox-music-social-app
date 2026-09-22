@@ -18,22 +18,32 @@ function App() {
   const [showRegister, setShowRegister] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
     async function checkAuth() {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setLoadingUser(false);
+        if (mounted) setLoadingUser(false);
         return;
       }
       try {
-        const me = await getMe();
-        setUser(me);
-      } catch {
-        localStorage.removeItem("access_token");
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Auth check timed out")), 5000)
+        );
+        const me = await Promise.race([getMe(), timeoutPromise]);
+        if (mounted) setUser(me);
+      } catch (err) {
+        console.warn("Auth check failed:", err);
+        if (err.message?.includes("401") || err.message?.includes("Unauthorized")) {
+          localStorage.removeItem("access_token");
+        }
       } finally {
-        setLoadingUser(false);
+        if (mounted) setLoadingUser(false);
       }
     }
     checkAuth();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   useEffect(() => {

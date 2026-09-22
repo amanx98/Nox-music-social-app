@@ -61,14 +61,18 @@ def _save_taste_profile(
     top_genres: list,
     seed_tracks: list,
     session: Session,
+    cached_recommendations: Optional[list] = None,
+    top_artists: Optional[list] = None,
 ) -> TasteProfile:
     existing = _load_or_create_taste_profile(user_id, session)
-    # Derive top artists from taste_vector keys isn't possible — store empty for now,
-    # populated separately when we have top artists from the build step.
     if existing:
         existing.taste_vector = json.dumps(taste_vector)
         existing.top_genres = json.dumps(top_genres)
         existing.seed_tracks = json.dumps(seed_tracks)
+        if cached_recommendations is not None:
+            existing.cached_recommendations = json.dumps(cached_recommendations)
+        if top_artists is not None:
+            existing.top_artists = json.dumps(top_artists)
         existing.updated_at = datetime.utcnow()
         session.add(existing)
     else:
@@ -77,6 +81,8 @@ def _save_taste_profile(
             taste_vector=json.dumps(taste_vector),
             top_genres=json.dumps(top_genres),
             seed_tracks=json.dumps(seed_tracks),
+            cached_recommendations=json.dumps(cached_recommendations or []),
+            top_artists=json.dumps(top_artists or []),
         )
         session.add(existing)
     session.commit()
@@ -117,7 +123,7 @@ async def get_taste_vector(
 
     cached = _load_or_create_taste_profile(current_user.id, session)
 
-    if refresh or _is_taste_profile_stale(cached):
+    if refresh or _is_taste_profile_stale(cached) or not cached.taste_vector or cached.taste_vector == "{}":
         # Rebuild the vector from Last.fm
         taste_vector = await build_taste_vector(lastfm_username)
         top_genres = [
@@ -145,32 +151,79 @@ async def get_taste_vector(
 @router.get("/recommendations")
 async def get_recommendations(
     limit: int = Query(30, ge=5, le=50),
+    refresh: bool = Query(False, description="Force recalculation"),
+    mood: Optional[str] = Query(None, description="Optional mood filter"),
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
     """
     Return NOX's content-based recommendations.
-
-    Algorithm: cosine similarity between the user's taste vector and
-    candidate tracks sourced from the user's top genre pools.
-    Each result includes a score (0–1) and the matching tags that
-    explain why this track was recommended.
+    Uses cached recommendations if available for sub-millisecond response.
     """
     lastfm_username = _get_lastfm_username(current_user.id, session)
+    cached = _load_or_create_taste_profile(current_user.id, session)
 
-    result = await get_nox_recommendations(lastfm_username, limit=limit)
+    # Return cached recommendations if fresh, not refreshing, and no specific mood filter
+    if cached and not refresh and not mood and getattr(cached, "cached_recommendations", None):
+        try:
+            cached_recs = json.loads(cached.cached_recommendations)
+            if isinstance(cached_recs, list) and len(cached_recs) > 0 and not _is_taste_profile_stale(cached):
+                top_genres = json.loads(cached.top_genres or "[]")
+                taste_vector = json.loads(cached.taste_vector or "{}")
+                return {
+                    "engine": "nox_cosine_similarity",
+                    "algorithm": "content-based (tag vector cosine similarity)",
+                    "count": len(cached_recs[:limit]),
+                    "recommendations": cached_recs[:limit],
+                    "taste_summary": {
+                        "top_genres": top_genres[:5],
+                        "vector_dimensions": len(taste_vector),
+                    },
+                }
+        except Exception:
+            pass
 
-    # Cache the taste vector if we built it
+    existing_vector = None
+    existing_genres = None
+    existing_artists = None
+    if cached and not _is_taste_profile_stale(cached):
+        try:
+            existing_vector = json.loads(cached.taste_vector or "{}")
+            existing_genres = json.loads(cached.top_genres or "[]")
+            existing_artists = json.loads(cached.top_artists or "[]")
+        except Exception:
+            pass
+
+    result = await get_nox_recommendations(
+        lastfm_username,
+        limit=limit,
+        mood=mood,
+        existing_taste_vector=existing_vector,
+        existing_top_genres=existing_genres,
+        existing_top_artists=existing_artists,
+    )
+
+    recs = result.get("recommendations", [])
     taste_vector = result.get("taste_vector", {})
     top_genres = result.get("top_genres", [])
-    if taste_vector:
-        _save_taste_profile(current_user.id, taste_vector, top_genres, [], session)
+    top_artists = result.get("top_artists", [])
+
+    if not mood and recs:
+        _save_taste_profile(
+            current_user.id,
+            taste_vector,
+            top_genres,
+            seed_tracks=[],
+            cached_recommendations=recs,
+            top_artists=top_artists,
+            session=session,
+        )
 
     return {
         "engine": "nox_cosine_similarity",
         "algorithm": "content-based (tag vector cosine similarity)",
-        "count": len(result.get("recommendations", [])),
-        "recommendations": result.get("recommendations", []),
+        "count": len(recs),
+        "recommendations": recs,
         "taste_summary": {
             "top_genres": top_genres[:5],
             "vector_dimensions": len(taste_vector),

@@ -98,12 +98,16 @@ def _top_shared_tags(user_vec: dict, track_vec: dict, n: int = 3) -> list[str]:
 # Last.fm fetchers (raw data, not recommendations)
 # ---------------------------------------------------------------------------
 
+_lastfm_semaphore = asyncio.Semaphore(5)
+_artist_tags_cache: dict[str, dict] = {}
+
 async def _lastfm_get(params: dict, client: httpx.AsyncClient) -> dict:
     params = {**params, "api_key": settings.lastfm_api_key, "format": "json"}
     try:
-        r = await client.get(LASTFM_API_BASE, params=params, timeout=8.0)
-        if r.status_code == 200:
-            return r.json()
+        async with _lastfm_semaphore:
+            r = await client.get(LASTFM_API_BASE, params=params, timeout=5.0)
+            if r.status_code == 200:
+                return r.json()
     except Exception:
         pass
     return {}
@@ -113,7 +117,14 @@ async def _get_artist_tags(artist: str, client: httpx.AsyncClient) -> dict:
     """
     Fetch top tags for an artist from Last.fm.
     Returns {tag_name: tag_weight} where weight is Last.fm's 0-100 relevance score.
+    Caches results in memory to avoid redundant calls.
     """
+    if not artist:
+        return {}
+    key = artist.lower().strip()
+    if key in _artist_tags_cache:
+        return _artist_tags_cache[key]
+
     data = await _lastfm_get({"method": "artist.getTopTags", "artist": artist}, client)
     tags = data.get("toptags", {}).get("tag", [])
     result = {}
@@ -122,6 +133,7 @@ async def _get_artist_tags(artist: str, client: httpx.AsyncClient) -> dict:
         count = int(tag.get("count", 0))
         if name and name not in GENRE_BLOCKLIST and count > 5:
             result[name] = count
+    _artist_tags_cache[key] = result
     return result
 
 
@@ -252,12 +264,12 @@ async def _get_track_similar_lastfm(track: str, artist: str, client: httpx.Async
 
 
 async def _get_deezer_preview(track: str, artist: str, client: httpx.AsyncClient) -> Optional[str]:
-    """Fetch a 30s Deezer preview URL for a track."""
+    """Fetch a 30s Deezer preview URL for a track with strict 2.0s timeout."""
     try:
         r = await client.get(
             "https://api.deezer.com/search",
             params={"q": f"{artist} {track}", "limit": 1},
-            timeout=5.0,
+            timeout=2.0,
         )
         if r.status_code == 200:
             items = r.json().get("data", [])
@@ -287,19 +299,19 @@ async def build_taste_vector(lastfm_username: str) -> dict:
     Build the user's taste vector from their Last.fm listening history.
 
     Algorithm:
-    1. Fetch top 30 artists (ordered by playcount = listening rank)
+    1. Fetch top 15 artists (ordered by playcount = listening rank)
     2. For each artist, fetch their top tags from Last.fm
     3. Weight each tag by: tag_relevance_score * artist_rank_weight
-       (artist ranked #1 contributes 30x more than artist ranked #30)
+       (artist ranked #1 contributes 15x more than artist ranked #15)
     4. Sum across all artists → normalize by max score
     5. Return {tag: normalized_score}
 
     Returns a dict like: {"dream-pop": 0.95, "shoegaze": 0.82, "4ad": 0.61, ...}
     """
     async with httpx.AsyncClient(verify=False) as client:
-        # Step 1: Get top 30 artists
+        # Step 1: Get top 15 artists (captures primary soundscape without excessive latency)
         artists_data = await _lastfm_get(
-            {"method": "user.getTopArtists", "user": lastfm_username, "period": "overall", "limit": 30},
+            {"method": "user.getTopArtists", "user": lastfm_username, "period": "overall", "limit": 15},
             client,
         )
         artists = artists_data.get("topartists", {}).get("artist", [])
@@ -310,7 +322,7 @@ async def build_taste_vector(lastfm_username: str) -> dict:
             return {}
 
         # Step 2 + 3: Fetch tags for each artist concurrently, apply rank weights
-        total_artists = min(len(artists), 30)
+        total_artists = min(len(artists), 15)
         tag_tasks = [
             _get_artist_tags(
                 a.get("name", "") if isinstance(a, dict) else a,
@@ -342,56 +354,53 @@ async def get_candidates(
     top_genres: list[str],
     top_artists: list[str],
     mood: Optional[str] = None,
+    limit: int = 30,
 ) -> tuple[list[dict], set[str]]:
     """
     Build a rich, diverse candidate pool from THREE sources:
+    1. TAG TRACKS (anti-mainstream random pages)
+    2. ARTIST ORBIT (similar artist catalog cuts)
+    3. MOOD SOURCING (if requested)
 
-    1. TAG TRACKS (anti-mainstream): tag.getTopTracks at random page offsets
-       for the top 5 genres in the taste vector. Random pages = less mainstream.
-
-    2. ARTIST ORBIT: artist.getSimilar for the user's top 3 artists, then
-       artist.getTopTracks for each similar artist. This gives artist-specific
-       picks from the user's musical orbit — not just global popularity charts.
-
-    3. MOOD SOURCING: if a mood is requested, also pull tag.getTopTracks for
-       that mood tag directly, so the pool actually contains mood-appropriate tracks.
-
-    Returns (candidates, orbit_artist_set) where orbit_artist_set is the set of
-    artist names in the user's orbit (used later for artist affinity scoring).
+    Scaled efficiently based on desired limit to ensure fast response times.
     """
-    genres = top_genres[:5]  # top 5 genres, not 3
-    artists = top_artists[:3]
+    is_compact = limit <= 10
+    genre_count = 3 if is_compact else 4
+    per_genre = 12 if is_compact else 16
+    orbit_artist_cap = 5 if is_compact else 8
+    per_orbit = 4 if is_compact else 5
+
+    genres = top_genres[:genre_count]
+    artists = top_artists[:2 if is_compact else 3]
 
     async with httpx.AsyncClient(verify=False) as client:
         tasks = []
 
-        # Source 1: Tag tracks (randomized pages across top 5 genres)
+        # Source 1: Tag tracks (randomized pages across top genres)
         for genre in genres:
-            tasks.append(_get_tag_top_tracks(genre, client, limit=25))
+            tasks.append(_get_tag_top_tracks(genre, client, limit=per_genre))
 
         # Source 3: Mood-specific sourcing (if mood requested)
         if mood:
-            tasks.append(_get_tag_top_tracks(mood, client, limit=20, page=1))
-            tasks.append(_get_tag_top_tracks(mood, client, limit=20, page=2))
+            tasks.append(_get_tag_top_tracks(mood, client, limit=15, page=1))
 
         tag_results = await asyncio.gather(*tasks)
 
-        # Source 2: Artist orbit — find similar artists for user's top 3
-        similar_tasks = [_get_similar_artists(a, client, limit=4) for a in artists if a]
+        # Source 2: Artist orbit — find similar artists for user's top artists
+        similar_tasks = [_get_similar_artists(a, client, limit=3) for a in artists if a]
         similar_artist_batches = await asyncio.gather(*similar_tasks)
 
         # Flatten similar artists into a deduplicated set
         orbit_artists: set[str] = set()
         for batch in similar_artist_batches:
             orbit_artists.update(a.lower() for a in batch if a)
-        # Also include the user's own top artists in their orbit
         for a in artists:
             orbit_artists.add(a.lower())
 
         # Fetch top tracks for each orbit artist concurrently
         orbit_track_tasks = [
-            _get_artist_top_tracks(a, client, limit=6)
-            for a in list(orbit_artists)[:12]  # cap at 12 artists
+            _get_artist_top_tracks(a, client, limit=per_orbit)
+            for a in list(orbit_artists)[:orbit_artist_cap]
         ]
         orbit_track_batches = await asyncio.gather(*orbit_track_tasks)
 
@@ -424,27 +433,15 @@ async def score_candidates(
     limit: int = 30,
 ) -> list[dict]:
     """
-    Multi-dimensional scoring for each candidate track.
-
-    Score = weighted sum of:
-      - cosine_similarity(user_taste_vec, track_tag_vec)  [0.55 weight]
-        → How much do this track's tags overlap with the user's taste dimensions?
-      - artist_affinity_bonus                             [0.20 weight]
-        → Is this track by an artist in the user's musical orbit?
-        → Binary: 1.0 if in orbit, 0.0 if not
-      - mood_match_bonus                                  [0.15 weight, only if mood set]
-        → Does the track's tag set include the requested mood?
-        → Proportional to the mood tag's weight in the track vector
-      - novelty_bonus                                     [0.10 weight]
-        → Inverse log-popularity: log(1 + listeners_max) - log(1 + track_listeners)
-        → Pushes down mega-popular tracks, surfaces deeper cuts
-
-    This means a track with 75% tag match + artist orbit match + right mood
-    beats a track with 90% tag match that's by a mega-popular mainstream artist.
+    Multi-dimensional scoring for candidate tracks.
+    Optimized: fetches tags only for unique artists (10-15 calls, cached),
+    rather than making 180+ individual track tag requests to Last.fm.
     """
+    unique_artists = list({t["artist"].strip() for t in candidates if t.get("artist")})
     async with httpx.AsyncClient(verify=False) as client:
-        tag_tasks = [_get_track_tags(t["name"], t["artist"], client) for t in candidates]
-        track_tag_vectors = await asyncio.gather(*tag_tasks)
+        tag_tasks = [_get_artist_tags(a, client) for a in unique_artists]
+        artist_tags_list = await asyncio.gather(*tag_tasks)
+    artist_tags_map = {a.lower(): tags for a, tags in zip(unique_artists, artist_tags_list)}
 
     # Find listeners max for novelty normalization
     listeners_vals = [t.get("listeners", 0) for t in candidates if t.get("listeners", 0) > 0]
@@ -453,7 +450,19 @@ async def score_candidates(
     mood_lower = mood.lower() if mood else None
     scored = []
 
-    for track, track_vec in zip(candidates, track_tag_vectors):
+    for track in candidates:
+        artist_lower = track.get("artist", "").lower().strip()
+        track_vec = dict(artist_tags_map.get(artist_lower, {}))
+
+        # Add the tag the track was discovered under (e.g. tag:soul:p1 -> "soul": 90)
+        source = track.get("source", "")
+        if source.startswith("tag:"):
+            parts = source.split(":")
+            if len(parts) >= 2:
+                discovered_tag = parts[1].lower().strip()
+                if discovered_tag:
+                    track_vec[discovered_tag] = max(track_vec.get(discovered_tag, 0), 90)
+
         if not track_vec:
             continue
 
@@ -463,7 +472,6 @@ async def score_candidates(
             continue
 
         # --- Dimension 2: Artist affinity bonus ---
-        artist_lower = track.get("artist", "").lower()
         in_orbit = any(artist_lower == a or artist_lower in a or a in artist_lower
                        for a in orbit_artists)
         artist_bonus = 1.0 if in_orbit else 0.0
@@ -471,7 +479,6 @@ async def score_candidates(
         # --- Dimension 3: Mood match bonus ---
         mood_bonus = 0.0
         if mood_lower and track_vec:
-            # Check if any track tag matches the mood
             mood_score = max(
                 (v / 100.0 for k, v in track_vec.items() if mood_lower in k.lower()),
                 default=0.0,
@@ -481,14 +488,12 @@ async def score_candidates(
         # --- Dimension 4: Novelty bonus (inverse popularity) ---
         listeners = track.get("listeners", 0)
         if listeners > 0 and max_listeners > 1:
-            # Log-normalize: very popular tracks get 0, obscure tracks get 1
             novelty = 1.0 - (math.log(1 + listeners) / math.log(1 + max_listeners))
         else:
-            novelty = 0.5  # unknown popularity → neutral
+            novelty = 0.5
 
         # --- Weighted composite score ---
         if mood_lower:
-            # Redistribute mood weight
             composite = (
                 WEIGHT_COSINE * cos_score +
                 WEIGHT_ARTIST_AFF * artist_bonus +
@@ -496,7 +501,6 @@ async def score_candidates(
                 WEIGHT_NOVELTY * novelty
             )
         else:
-            # No mood requested — redistribute mood weight to cosine
             composite = (
                 (WEIGHT_COSINE + WEIGHT_MOOD) * cos_score +
                 WEIGHT_ARTIST_AFF * artist_bonus +
@@ -532,50 +536,50 @@ async def score_candidates(
         if len(diverse) >= limit:
             break
 
-    return diverse
-
-
+    # Enrich ONLY the final top picks with previews (not all candidates)
+    enriched = await _enrich_with_previews(diverse)
+    return enriched
 
 
 async def get_nox_recommendations(
     lastfm_username: str,
     limit: int = 30,
     mood: Optional[str] = None,
+    existing_taste_vector: Optional[dict] = None,
+    existing_top_genres: Optional[list[str]] = None,
+    existing_top_artists: Optional[list[str]] = None,
 ) -> dict:
     """
     Full pipeline: build taste vector → multi-source candidates → multi-dim score → enrich.
-
-    Returns:
-    {
-      "taste_vector": {tag: score},
-      "top_genres": [str],
-      "top_artists": [str],
-      "recommendations": [ScoredTrack]  ← each has score_breakdown + matching_tags + in_orbit
-    }
+    Supports using existing taste vector & top artists to bypass redundant Last.fm API hits.
     """
-    taste_vector = await build_taste_vector(lastfm_username)
+    if existing_taste_vector:
+        taste_vector = existing_taste_vector
+    else:
+        taste_vector = await build_taste_vector(lastfm_username)
+
     if not taste_vector:
         return {"taste_vector": {}, "top_genres": [], "top_artists": [], "recommendations": []}
 
-    # Derive top genres (excluding mood tags)
-    top_genres = [
+    top_genres = existing_top_genres or [
         tag for tag, _ in sorted(taste_vector.items(), key=lambda x: -x[1])
         if tag not in MOOD_TAGS
     ][:10]
 
-    # Derive top artists from the taste vector build step — we need them for the orbit
-    async with httpx.AsyncClient(verify=False) as client:
-        artists_data = await _lastfm_get(
-            {"method": "user.getTopArtists", "user": lastfm_username, "period": "overall", "limit": 10},
-            client,
-        )
-    raw_artists = artists_data.get("topartists", {}).get("artist", [])
-    if isinstance(raw_artists, dict):
-        raw_artists = [raw_artists]
-    top_artists = [
-        a.get("name", "") if isinstance(a, dict) else a
-        for a in raw_artists[:10]
-    ]
+    top_artists = existing_top_artists
+    if not top_artists:
+        async with httpx.AsyncClient(verify=False) as client:
+            artists_data = await _lastfm_get(
+                {"method": "user.getTopArtists", "user": lastfm_username, "period": "overall", "limit": 10},
+                client,
+            )
+        raw_artists = artists_data.get("topartists", {}).get("artist", [])
+        if isinstance(raw_artists, dict):
+            raw_artists = [raw_artists]
+        top_artists = [
+            a.get("name", "") if isinstance(a, dict) else a
+            for a in raw_artists[:10]
+        ]
 
     # Multi-source candidate pool
     candidates, orbit_artists = await get_candidates(
@@ -583,21 +587,20 @@ async def get_nox_recommendations(
         top_genres=top_genres,
         top_artists=top_artists,
         mood=mood,
+        limit=limit,
     )
 
     if not candidates:
         return {"taste_vector": taste_vector, "top_genres": top_genres, "top_artists": top_artists, "recommendations": []}
 
-    # Multi-dimensional scoring
-    scored = await score_candidates(
+    # Multi-dimensional scoring & preview enrichment
+    enriched = await score_candidates(
         taste_vector=taste_vector,
         candidates=candidates,
         orbit_artists=orbit_artists,
         mood=mood,
         limit=limit,
     )
-
-    enriched = await _enrich_with_previews(scored)
 
     return {
         "taste_vector": taste_vector,

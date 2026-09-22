@@ -157,8 +157,25 @@ export default function ForYouSection() {
             <span className="font-mono text-[9px] text-text-dim">Computing taste vector...</span>
           </div>
         ) : error ? (
-          <div className="p-4">
-            <p className="font-sans text-xs text-text-dim">{error}</p>
+          <div className="p-4 space-y-2 text-center">
+            <p className="font-sans text-xs text-text-dim">
+              {error.includes("Last.fm")
+                ? "Connect Last.fm to get personalized recommendations."
+                : error}
+            </p>
+            <button
+              onClick={() => {
+                setLoading(true);
+                setError(null);
+                getRecommendations(6)
+                  .then(setData)
+                  .catch((e) => setError(e.message))
+                  .finally(() => setLoading(false));
+              }}
+              className="text-[10px] font-mono text-accent hover:underline cursor-pointer"
+            >
+              Retry
+            </button>
           </div>
         ) : !data?.recommendations?.length ? (
           <div className="p-4 text-center">

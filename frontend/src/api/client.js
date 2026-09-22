@@ -20,15 +20,33 @@ export async function apiRequest(path, options = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const timeoutMs = options.timeout ?? 10000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.detail || `Request failed: ${response.status}`);
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      signal: options.signal || controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.detail || `Request failed: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error(`Request to ${path} timed out. Please retry.`);
+    }
+    throw err;
   }
-
-  return response.json();
 }
+
 
 export async function login(email, password) {
   const body = new URLSearchParams();
