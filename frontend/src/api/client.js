@@ -182,18 +182,18 @@ export async function connectLastfm() {
 }
 
 export async function getTopAlbums(period = "overall") {
-  return apiRequest(`/lastfm/top-albums?period=${period}`);
+  return apiRequest(`/lastfm/top-albums?period=${period}`, { timeout: 30000 });
 }
 
 export async function generateQuilt(period = "overall", quiltType = "albums", gridSize = 3) {
   return apiRequest(
     `/quilts/generate?period=${period}&quilt_type=${quiltType}&grid_size=${gridSize}`,
-    { method: "POST" }
+    { method: "POST", timeout: 60000 }
   );
 }
 
 export async function getTopArtists(period = "overall") {
-  return apiRequest(`/lastfm/top-artists?period=${period}`);
+  return apiRequest(`/lastfm/top-artists?period=${period}`, { timeout: 30000 });
 }
 
 export async function getQuilts() {
@@ -259,12 +259,12 @@ export async function getUserReplies(userId) {
 
 /** Get (or rebuild) the current user's taste vector + top tags */
 export async function getTasteVector(refresh = false) {
-  return apiRequest(`/curation/taste-vector${refresh ? "?refresh=true" : ""}`);
+  return apiRequest(`/curation/taste-vector${refresh ? "?refresh=true" : ""}`, { timeout: 30000 });
 }
 
 /** Get NOX's content-based recommendations (cosine similarity scored) */
 export async function getRecommendations(limit = 30) {
-  return apiRequest(`/curation/recommendations?limit=${limit}`);
+  return apiRequest(`/curation/recommendations?limit=${limit}`, { timeout: 30000 });
 }
 
 /**
@@ -272,7 +272,7 @@ export async function getRecommendations(limit = 30) {
  * Returns overlap, nox_only, lastfm_only, overlap_pct, taste_vector, top_tags.
  */
 export async function getEngineComparison() {
-  return apiRequest("/curation/compare");
+  return apiRequest("/curation/compare", { timeout: 60000 });
 }
 
 /**
@@ -283,6 +283,7 @@ export async function generatePlaylist(options = {}) {
   return apiRequest("/curation/playlist/generate", {
     method: "POST",
     body: JSON.stringify(options),
+    timeout: 30000,
   });
 }
 
@@ -294,6 +295,7 @@ export async function saveGeneratedPlaylist(options = {}) {
   return apiRequest("/curation/playlist/save", {
     method: "POST",
     body: JSON.stringify(options),
+    timeout: 30000,
   });
 }
 
