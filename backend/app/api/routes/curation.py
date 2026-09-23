@@ -17,6 +17,7 @@ from app.services.taste_engine import (
     compare_engines,
     generate_playlist,
     get_nox_recommendations,
+    _enrich_with_previews,
 )
 
 router = APIRouter(prefix="/curation", tags=["curation"])
@@ -168,6 +169,20 @@ async def get_recommendations(
         try:
             cached_recs = json.loads(cached.cached_recommendations)
             if isinstance(cached_recs, list) and len(cached_recs) > 0 and not _is_taste_profile_stale(cached):
+                # If cached recs lack valid cover art or have the Last.fm star placeholder, enrich them!
+                needs_enrichment = any(
+                    not r.get("image_url") or "2a96cbd8b46e442fc41c2b86b821562f" in (r.get("image_url") or "")
+                    for r in cached_recs
+                )
+                if needs_enrichment:
+                    try:
+                        cached_recs = await _enrich_with_previews(cached_recs)
+                        cached.cached_recommendations = json.dumps(cached_recs)
+                        session.add(cached)
+                        session.commit()
+                    except Exception:
+                        pass
+
                 top_genres = json.loads(cached.top_genres or "[]")
                 taste_vector = json.loads(cached.taste_vector or "{}")
                 return {

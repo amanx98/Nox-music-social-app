@@ -6,7 +6,7 @@
  * ("why this?"). 30s Deezer preview plays on hover if available.
  */
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Loader2, Play, Pause, Info } from "lucide-react";
+import { Sparkles, Loader2, Play, Pause, Info, Disc } from "lucide-react";
 import { getRecommendations } from "../../api/client";
 
 function ScoreBadge({ score }) {
@@ -25,6 +25,7 @@ function ScoreBadge({ score }) {
 function TrackCard({ track, index }) {
   const [playing, setPlaying] = useState(false);
   const [showTags, setShowTags] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const audioRef = useRef(null);
 
   function togglePlay(e) {
@@ -49,6 +50,7 @@ function TrackCard({ track, index }) {
   }, []);
 
   const image = track.image_url;
+  const isValidImage = image && !image.includes("2a96cbd8b46e442fc41c2b86b821562f") && !imgError;
   const delay = `${index * 60}ms`;
 
   return (
@@ -58,11 +60,16 @@ function TrackCard({ track, index }) {
     >
       {/* Album art + play button */}
       <div className="relative w-9 h-9 rounded bg-surface-raised border border-border shrink-0 overflow-hidden">
-        {image ? (
-          <img src={image} alt="" className="w-full h-full object-cover" />
+        {isValidImage ? (
+          <img
+            src={image}
+            alt=""
+            onError={() => setImgError(true)}
+            className="w-full h-full object-cover"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-text-dim">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="w-full h-full flex items-center justify-center text-text-dim bg-surface-sunken">
+            <Disc className="w-4 h-4 text-text-dim/60" />
           </div>
         )}
         {track.preview_url && (

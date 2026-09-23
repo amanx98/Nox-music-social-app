@@ -54,7 +54,7 @@ function TrackRow({ track, index }) {
 
       {/* Art */}
       <div className="relative w-8 h-8 rounded bg-surface-raised shrink-0 overflow-hidden">
-        {track.image_url ? (
+        {track.image_url && !track.image_url.includes("2a96cbd8b46e442fc41c2b86b821562f") ? (
           <img src={track.image_url} alt="" className="w-full h-full object-cover" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

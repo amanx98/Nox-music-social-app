@@ -23,6 +23,7 @@ import asyncio
 import json
 import math
 import random
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -186,10 +187,10 @@ async def _get_tag_top_tracks(
                 if isinstance(t.get("artist"), dict)
                 else t.get("artist", "")
             ),
-            "image_url": next(
+            "image_url": _clean_img_url(next(
                 (img.get("#text") for img in t.get("image", []) if img.get("size") == "extralarge"),
                 None,
-            ),
+            )),
             "source": f"tag:{tag}:p{page}",  # track where this candidate came from
         }
         for t in tracks
@@ -227,10 +228,10 @@ async def _get_artist_top_tracks(artist: str, client: httpx.AsyncClient, limit: 
         {
             "name": t.get("name", ""),
             "artist": artist,
-            "image_url": next(
+            "image_url": _clean_img_url(next(
                 (img.get("#text") for img in t.get("image", []) if img.get("size") == "large"),
                 None,
-            ),
+            )),
             "listeners": int(t.get("listeners", 0)),
             "source": f"artist:{artist}",
         }
@@ -253,49 +254,98 @@ async def _get_track_similar_lastfm(track: str, artist: str, client: httpx.Async
             "name": t.get("name", ""),
             "artist": t.get("artist", {}).get("name", "") if isinstance(t.get("artist"), dict) else t.get("artist", ""),
             "match": float(t.get("match", 0)),
-            "image_url": next(
+            "image_url": _clean_img_url(next(
                 (img.get("#text") for img in t.get("image", []) if img.get("size") == "extralarge"),
                 None,
-            ),
+            )),
         }
         for t in tracks
         if isinstance(t, dict) and t.get("name")
     ]
 
 
+def _clean_img_url(url: Optional[str]) -> Optional[str]:
+    if not url or "2a96cbd8b46e442fc41c2b86b821562f" in url:
+        return None
+    return url
+
+
 async def _get_deezer_preview(track: str, artist: str, client: httpx.AsyncClient) -> dict:
-    """Fetch a 30s Deezer preview URL and album art for a track with strict 2.0s timeout."""
+    """
+    Fetch high-res album cover art and 30s audio preview for a track.
+    Tries Deezer first with full and cleaned track queries, then falls back to iTunes Search API.
+    """
     result = {"preview": None, "image_url": None}
+    
+    # Clean track title: strip (feat. ...), [feat. ...], (Remastered...), version tags
+    clean_track = re.sub(
+        r'[\(\[][^\)\]]*(?:feat|ft\.|remaster|version|deluxe|anniversary|radio edit)[^\)\]]*[\)\]]',
+        '',
+        track,
+        flags=re.IGNORECASE
+    ).strip()
+
+    # Try Deezer search queries
+    queries = [f"{artist} {clean_track}" if clean_track != track else None, f"{artist} {track}"]
+    queries = [q for q in queries if q]
+
+    for q in queries:
+        try:
+            r = await client.get(
+                "https://api.deezer.com/search",
+                params={"q": q, "limit": 1},
+                timeout=3.5,
+            )
+            if r.status_code == 200:
+                items = r.json().get("data", [])
+                if items:
+                    album = items[0].get("album", {})
+                    img = album.get("cover_big") or album.get("cover_medium") or album.get("cover_small")
+                    if img:
+                        result["image_url"] = img
+                    if items[0].get("preview"):
+                        result["preview"] = items[0].get("preview")
+                    if result["image_url"] and result["preview"]:
+                        return result
+        except Exception:
+            pass
+
+    # If still missing image or preview, query iTunes Search API as fallback
     try:
-        r = await client.get(
-            "https://api.deezer.com/search",
-            params={"q": f"{artist} {track}", "limit": 1},
-            timeout=2.0,
+        itunes_q = f"{artist} {clean_track or track}"
+        ir = await client.get(
+            "https://itunes.apple.com/search",
+            params={"term": itunes_q, "entity": "song", "limit": 1},
+            timeout=3.5,
         )
-        if r.status_code == 200:
-            items = r.json().get("data", [])
-            if items:
-                result["preview"] = items[0].get("preview")
-                result["image_url"] = items[0].get("album", {}).get("cover_medium") or items[0].get("album", {}).get("cover_small")
+        if ir.status_code == 200:
+            results = ir.json().get("results", [])
+            if results:
+                art = results[0].get("artworkUrl100")
+                if art and not result["image_url"]:
+                    result["image_url"] = art.replace("100x100bb.jpg", "300x300bb.jpg")
+                if not result["preview"]:
+                    result["preview"] = results[0].get("previewUrl")
     except Exception:
         pass
+
     return result
 
 
 async def _enrich_with_previews(tracks: list[dict]) -> list[dict]:
-    """Fetch Deezer preview URLs and album art for a batch of tracks concurrently."""
-    async with httpx.AsyncClient(verify=False) as client:
-        tasks = [_get_deezer_preview(t["name"], t["artist"], client) for t in tracks]
-        deezer_data = await asyncio.gather(*tasks)
+    """Fetch preview URLs and album cover art for a batch of tracks concurrently."""
+    headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
+    async with httpx.AsyncClient(verify=False, headers=headers) as client:
+        tasks = [_get_deezer_preview(t.get("name", ""), t.get("artist", ""), client) for t in tracks]
+        enrichment_data = await asyncio.gather(*tasks)
         
-    for track, data in zip(tracks, deezer_data):
-        track["preview_url"] = data["preview"]
+    for track, data in zip(tracks, enrichment_data):
+        if data.get("preview"):
+            track["preview_url"] = data["preview"]
         
-        # Overwrite missing or default Last.fm star with Deezer's cover art
-        current_img = track.get("image_url", "")
-        if not current_img or "2a96cbd8b46e442fc41c2b86b821562f" in current_img:
-            if data["image_url"]:
-                track["image_url"] = data["image_url"]
+        # Overwrite missing, empty, or default Last.fm star placeholder with resolved cover art
+        current_img = _clean_img_url(track.get("image_url"))
+        track["image_url"] = data.get("image_url") or current_img
                 
     return tracks
 

@@ -22,7 +22,7 @@ function TrackPill({ track, isOverlap, showScore = false }) {
           : "border-border bg-surface-raised"
       }`}
     >
-      {track.image_url ? (
+      {track.image_url && !track.image_url.includes("2a96cbd8b46e442fc41c2b86b821562f") ? (
         <img src={track.image_url} alt="" className="w-7 h-7 rounded shrink-0 object-cover" />
       ) : (
         <div className="w-7 h-7 rounded shrink-0 bg-surface-sunken border border-border" />
