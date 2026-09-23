@@ -245,3 +245,120 @@ async def get_artist_details(artist_name: str) -> dict:
             pass
 
     return result
+
+
+async def get_now_playing(lastfm_username: str) -> dict:
+    """
+    Fetch the currently playing (or most recently scrobbled) track for a user.
+    Enriches with landscape artist artwork (TheAudioDB 16:9 fanart) and high-res album cover.
+    """
+    result = {
+        "name": None,
+        "artist": None,
+        "album": None,
+        "is_now_playing": False,
+        "album_art": None,
+        "landscape_art": None,
+        "preview_url": None,
+    }
+
+    if not lastfm_username:
+        return result
+
+    headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
+    try:
+        async with httpx.AsyncClient(verify=False, timeout=8.0, headers=headers) as client:
+            # 1. Fetch recent tracks from Last.fm
+            r = await client.get(
+                LASTFM_API_BASE,
+                params={
+                    "method": "user.getRecentTracks",
+                    "user": lastfm_username,
+                    "api_key": settings.lastfm_api_key,
+                    "limit": 2,
+                    "format": "json",
+                },
+            )
+            if r.status_code != 200:
+                return result
+
+            recent_tracks = r.json().get("recenttracks", {}).get("track", [])
+            if isinstance(recent_tracks, dict):
+                recent_tracks = [recent_tracks]
+            if not recent_tracks:
+                return result
+
+            track = recent_tracks[0]
+            name = track.get("name", "")
+            artist = track.get("artist", {}).get("#text") if isinstance(track.get("artist"), dict) else track.get("artist", "")
+            album = track.get("album", {}).get("#text") if isinstance(track.get("album"), dict) else track.get("album", "")
+            attr = track.get("@attr", {})
+            is_now_playing = attr.get("nowplaying") == "true" if isinstance(attr, dict) else False
+
+            result["name"] = name
+            result["artist"] = artist
+            result["album"] = album
+            result["is_now_playing"] = is_now_playing
+
+            # Check for Last.fm image (filtering out the placeholder star hash)
+            lfm_img = next(
+                (img.get("#text") for img in track.get("image", []) if isinstance(img, dict) and img.get("size") == "extralarge"),
+                None
+            )
+            if lfm_img and "2a96cbd8b46e442fc41c2b86b821562f" not in lfm_img:
+                result["album_art"] = lfm_img
+
+            # 2. Enrich with Deezer for album cover + 30s audio preview
+            if artist and name:
+                clean_name = re.sub(
+                    r'[\(\[][^\)\]]*(?:feat|ft\.|remaster|version|deluxe|anniversary)[^\)\]]*[\)\]]',
+                    '',
+                    name,
+                    flags=re.IGNORECASE
+                ).strip()
+                try:
+                    dz_resp = await client.get(
+                        "https://api.deezer.com/search",
+                        params={"q": f"{artist} {clean_name or name}", "limit": 1},
+                        timeout=3.5,
+                    )
+                    if dz_resp.status_code == 200:
+                        dz_items = dz_resp.json().get("data", [])
+                        if dz_items:
+                            dz_track = dz_items[0]
+                            result["preview_url"] = dz_track.get("preview")
+                            alb = dz_track.get("album", {})
+                            cover = alb.get("cover_xl") or alb.get("cover_big") or alb.get("cover_medium")
+                            if cover and not result["album_art"]:
+                                result["album_art"] = cover
+                except Exception:
+                    pass
+
+            # 3. Fetch landscape artist fanart from TheAudioDB (wide 16:9 banner)
+            if artist:
+                try:
+                    tadb_resp = await client.get(
+                        "https://www.theaudiodb.com/api/v1/json/2/search.php",
+                        params={"s": artist},
+                        timeout=4.0,
+                    )
+                    if tadb_resp.status_code == 200:
+                        artists = tadb_resp.json().get("artists") or []
+                        if artists:
+                            target = re.sub(r'[^a-z0-9]', '', artist.lower())
+                            artist_obj = next(
+                                (item for item in artists if re.sub(r'[^a-z0-9]', '', item.get("strArtist", "").lower()) == target),
+                                artists[0]
+                            )
+                            # Wide landscape fanart fields
+                            for key in ["strArtistFanart", "strArtistFanart2", "strArtistFanart3", "strArtistFanart4"]:
+                                fanart = artist_obj.get(key)
+                                if fanart:
+                                    result["landscape_art"] = fanart
+                                    break
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    return result

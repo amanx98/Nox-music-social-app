@@ -183,6 +183,43 @@ async def lastfm_top_artists(
         if isinstance(a, dict)
     ]
 
+from app.services.lastfm_client import get_now_playing
+
 @router.get("/artist-details")
 async def lastfm_artist_details(artist: str):
     return await get_artist_details(artist)
+
+@router.get("/now-playing")
+async def lastfm_now_playing(
+    username: Optional[str] = None,
+    session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    lfm_username = None
+
+    if username:
+        # Check if username belongs to an app user
+        app_user = session.exec(select(User).where(User.username == username)).first()
+        if app_user:
+            profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)).first()
+            if profile:
+                lfm_username = profile.lastfm_username
+        if not lfm_username:
+            lfm_username = username
+    elif current_user:
+        profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
+        if profile:
+            lfm_username = profile.lastfm_username
+
+    if not lfm_username:
+        return {
+            "name": None,
+            "artist": None,
+            "album": None,
+            "is_now_playing": False,
+            "album_art": None,
+            "landscape_art": None,
+            "preview_url": None,
+        }
+
+    return await get_now_playing(lfm_username)

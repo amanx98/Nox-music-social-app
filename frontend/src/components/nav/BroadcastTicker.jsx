@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Radio, Disc, Flame, Sparkles, Volume2 } from "lucide-react";
+import { getNowPlaying } from "../../api/client";
 
 const DEFAULT_SIGNALS = [
   {
@@ -39,14 +40,40 @@ const DEFAULT_SIGNALS = [
   },
 ];
 
-export default function BroadcastTicker({ signals = DEFAULT_SIGNALS }) {
+export default function BroadcastTicker({ signals = DEFAULT_SIGNALS, user }) {
   const [items, setItems] = useState(signals);
+
+  const fetchLiveTrack = useCallback(async () => {
+    if (!user?.username) return;
+    try {
+      const data = await getNowPlaying(user.username);
+      if (data?.name && data?.artist) {
+        const liveSignal = {
+          id: "user_now_playing",
+          type: "on_air",
+          icon: Volume2,
+          badge: data.is_now_playing ? "LIVE ON-AIR" : "RECENT SCROBBLE",
+          text: `${data.is_now_playing ? "NOW PLAYING" : "LAST PLAYED"}: ${data.artist} — ${data.name} [@${user.username}]`,
+          isUserLive: true,
+        };
+        setItems((prev) => {
+          const filtered = prev.filter((s) => s.id !== "user_now_playing");
+          return [liveSignal, ...filtered];
+        });
+      }
+    } catch {
+      // Ignore
+    }
+  }, [user?.username]);
 
   useEffect(() => {
     if (signals && signals.length > 0) {
       setItems(signals);
     }
-  }, [signals]);
+    fetchLiveTrack();
+    const interval = setInterval(fetchLiveTrack, 30000);
+    return () => clearInterval(interval);
+  }, [signals, fetchLiveTrack]);
 
   return (
     <div
@@ -74,11 +101,17 @@ export default function BroadcastTicker({ signals = DEFAULT_SIGNALS }) {
                   key={`${signal.id}-${idx}`}
                   className="inline-flex items-center gap-2 font-mono text-[11px] text-text-muted hover:text-text transition-colors cursor-default"
                 >
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] bg-surface-raised border border-border text-[9px] font-bold text-accent tracking-wider">
+                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-[3px] border text-[9px] font-bold tracking-wider ${
+                    signal.isUserLive
+                      ? "bg-accent/15 border-accent/60 text-accent ring-1 ring-accent/30"
+                      : "bg-surface-raised border-border text-accent"
+                  }`}>
                     <Icon className="w-2.5 h-2.5 stroke-[2]" />
                     <span>{signal.badge}</span>
                   </span>
-                  <span className="tracking-tight text-text/90 font-sans text-xs">
+                  <span className={`tracking-tight font-sans text-xs ${
+                    signal.isUserLive ? "text-text font-semibold" : "text-text/90"
+                  }`}>
                     {signal.text}
                   </span>
                   <span className="text-text-dim px-2" aria-hidden="true">

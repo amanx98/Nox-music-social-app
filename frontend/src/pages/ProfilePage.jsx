@@ -22,6 +22,12 @@ import {
   Camera,
   Upload,
   Trash2,
+  Radio,
+  Disc,
+  Volume2,
+  Play,
+  Pause,
+  Music2,
 } from "lucide-react";
 import QuiltGallery from "../QuiltGallery";
 import TopAlbums from "../TopAlbums";
@@ -41,6 +47,7 @@ import {
   uploadBanner,
   updateProfile,
   resolveImageUrl,
+  getNowPlaying,
 } from "../api/client";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
@@ -164,6 +171,55 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
   const [bannerUrlInput, setBannerUrlInput] = useState("");
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  // Banner mode: "custom" vs "now_playing"
+  const [bannerMode, setBannerMode] = useState(() => {
+    return localStorage.getItem(`nox_banner_mode_${userId}`) || "custom";
+  });
+  const [nowPlaying, setNowPlaying] = useState(null);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const previewAudioRef = useRef(null);
+
+  const fetchNowPlaying = useCallback(async () => {
+    try {
+      const data = await getNowPlaying(username);
+      if (data?.name && data?.artist) {
+        setNowPlaying(data);
+      }
+    } catch {
+      // Ignore
+    }
+  }, [username]);
+
+  useEffect(() => {
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, 20000);
+    return () => clearInterval(interval);
+  }, [fetchNowPlaying]);
+
+  function handleSetBannerMode(mode) {
+    setBannerMode(mode);
+    localStorage.setItem(`nox_banner_mode_${userId}`, mode);
+    if (username) localStorage.setItem(`nox_banner_mode_${username}`, mode);
+    if (mode === "now_playing") {
+      fetchNowPlaying();
+      addToast("Live Now Playing banner active!");
+    } else {
+      addToast("Custom banner active!");
+    }
+  }
+
+  function togglePreview(e) {
+    e?.stopPropagation();
+    if (!nowPlaying?.preview_url) return;
+    if (isPlayingPreview) {
+      previewAudioRef.current?.pause();
+    } else {
+      document.querySelectorAll("audio").forEach((a) => a !== previewAudioRef.current && a.pause());
+      previewAudioRef.current?.play();
+    }
+    setIsPlayingPreview(!isPlayingPreview);
+  }
 
   useEffect(() => {
     if (user?.avatar_url !== undefined) {
@@ -539,29 +595,108 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
   return (
     <div className="space-y-6 max-w-[960px] mx-auto w-full">
       {/* Profile Banner */}
-      <div
-        className="profile-banner rounded-md relative group overflow-hidden border border-border"
-        style={
-          bannerUrl
-            ? {
-                backgroundImage: `url("${resolveImageUrl(bannerUrl)}")`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }
-            : undefined
-        }
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent pointer-events-none" />
-        <button
-          type="button"
-          onClick={() => setShowBannerModal(true)}
-          className="absolute top-3 right-3 px-3 py-1.5 rounded-md bg-surface/85 hover:bg-accent hover:text-black text-text border border-border/80 backdrop-blur-md font-heading font-semibold text-xs flex items-center gap-1.5 transition-all shadow-2 cursor-pointer z-10"
-          title="Customize Profile Banner"
-        >
-          <Camera className="w-3.5 h-3.5" />
-          <span>{bannerUrl ? "Change Banner" : "Add Banner"}</span>
-        </button>
-      </div>
+      {(() => {
+        const isNowPlayingMode = bannerMode === "now_playing" && nowPlaying?.name;
+        const activeBg = isNowPlayingMode
+          ? (nowPlaying.landscape_art || nowPlaying.album_art || bannerUrl)
+          : bannerUrl;
+
+        return (
+          <div
+            className="profile-banner rounded-md relative group overflow-hidden border border-border min-h-[140px] sm:min-h-[160px]"
+            style={
+              activeBg
+                ? {
+                    backgroundImage: `url("${resolveImageUrl(activeBg)}")`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : undefined
+            }
+          >
+            {/* Atmospheric dark gradient for contrast and readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/25 pointer-events-none" />
+
+            {isNowPlayingMode ? (
+              <>
+                {/* Top-left: Live On-Air Pill */}
+                <div className="absolute top-3.5 left-3.5 z-10 flex items-center gap-2 px-2.5 py-1 rounded-full bg-black/70 border border-accent/40 backdrop-blur-md shadow-2">
+                  <span className={`w-2 h-2 rounded-full ${nowPlaying.is_now_playing ? "bg-accent animate-pulse" : "bg-text-dim"}`} />
+                  <span className="font-mono text-[9px] font-bold tracking-widest text-accent uppercase">
+                    {nowPlaying.is_now_playing ? "LIVE ON-AIR" : "RECENT SCROBBLE"}
+                  </span>
+                  {nowPlaying.is_now_playing && (
+                    <div className="flex items-end gap-0.5 h-2.5 ml-0.5" aria-hidden="true">
+                      <span className="w-0.5 h-2 bg-accent animate-bounce" />
+                      <span className="w-0.5 h-3 bg-accent animate-bounce [animation-delay:150ms]" />
+                      <span className="w-0.5 h-1.5 bg-accent animate-bounce [animation-delay:300ms]" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom-left: Compact floating track card */}
+                <div className="absolute bottom-3.5 left-3.5 right-14 sm:right-auto z-10 flex items-center gap-3 p-2.5 rounded-lg bg-surface/85 border border-border/80 backdrop-blur-md max-w-sm sm:max-w-md shadow-4">
+                  <div className="relative w-12 h-12 rounded bg-surface-raised border border-border/60 shrink-0 overflow-hidden shadow-2 group/play">
+                    {nowPlaying.album_art ? (
+                      <img src={nowPlaying.album_art} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-surface-sunken">
+                        <Disc className="w-5 h-5 text-text-dim" />
+                      </div>
+                    )}
+                    {nowPlaying.preview_url && (
+                      <button
+                        type="button"
+                        onClick={togglePreview}
+                        className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/play:opacity-100 transition-opacity cursor-pointer"
+                        title={isPlayingPreview ? "Pause preview" : "Play 30s preview"}
+                      >
+                        {isPlayingPreview ? (
+                          <Pause className="w-4 h-4 text-white" />
+                        ) : (
+                          <Play className="w-4 h-4 text-white fill-white" />
+                        )}
+                      </button>
+                    )}
+                    {nowPlaying.preview_url && (
+                      <audio
+                        ref={previewAudioRef}
+                        src={nowPlaying.preview_url}
+                        onEnded={() => setIsPlayingPreview(false)}
+                        preload="none"
+                      />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="font-heading font-black text-xs sm:text-sm text-text truncate leading-tight">
+                      {nowPlaying.name}
+                    </div>
+                    <div className="font-sans text-[11px] sm:text-xs text-accent font-medium truncate mt-0.5">
+                      {nowPlaying.artist}
+                    </div>
+                    {nowPlaying.album && (
+                      <div className="font-mono text-[9px] sm:text-[10px] text-text-dim truncate">
+                        {nowPlaying.album}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={() => setShowBannerModal(true)}
+              className="absolute top-3 right-3 px-3 py-1.5 rounded-md bg-surface/85 hover:bg-accent hover:text-black text-text border border-border/80 backdrop-blur-md font-heading font-semibold text-xs flex items-center gap-1.5 transition-all shadow-2 cursor-pointer z-10"
+              title="Customize Profile Banner"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>{bannerMode === "now_playing" ? "Live Banner" : bannerUrl ? "Change Banner" : "Add Banner"}</span>
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Profile Header Card */}
       <div className="profile-header-card rounded-md border border-border bg-surface-raised p-5 sm:p-6 shadow-2">
@@ -1429,81 +1564,193 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
               </button>
             </div>
 
-            {/* Banner Preview */}
-            <div
-              className="h-28 rounded-md border border-border overflow-hidden relative"
-              style={
-                bannerUrl
-                  ? {
-                      backgroundImage: `url("${resolveImageUrl(bannerUrl)}")`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                    }
-                  : {
-                      background: "linear-gradient(135deg, #24201a 0%, #171512 50%, #2b251d 100%)",
-                    }
-              }
-            >
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
-                <span className="font-mono text-[10px] text-text-muted">
-                  {bannerUrl ? "Custom banner preview" : "Default atmospheric desk background"}
-                </span>
-              </div>
-            </div>
-
-            {/* File Upload */}
-            <div>
-              <label className="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-md border border-dashed border-border hover:border-accent bg-surface hover:bg-surface-hover text-xs font-heading font-semibold text-text transition-colors">
-                <Upload className="w-4 h-4 text-accent" />
-                <span>{uploadingBanner ? "Uploading banner..." : "Upload banner image"}</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleBannerFileUpload}
-                  disabled={uploadingBanner}
-                />
-              </label>
-              <p className="font-mono text-[10px] text-text-dim text-center mt-1">
-                Recommended: 1200x300 or wide panorama (up to 8MB)
-              </p>
-            </div>
-
-            {/* URL Input */}
-            <form onSubmit={handleBannerUrlSubmit} className="space-y-2 pt-2 border-t border-border/60">
-              <label className="block font-mono text-2xs text-text-dim uppercase tracking-wider">
-                Or paste image link:
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  placeholder="https://images.example.com/banner.jpg"
-                  value={bannerUrlInput}
-                  onChange={(e) => setBannerUrlInput(e.target.value)}
-                  className="flex-1 h-8 rounded-md border border-border bg-surface px-2.5 text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
-                />
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="sm"
-                  disabled={uploadingBanner || !bannerUrlInput.trim()}
-                >
-                  Set URL
-                </Button>
-              </div>
-            </form>
-
-            {/* Remove Banner if present */}
-            {bannerUrl && (
+            {/* Mode Tabs: Custom vs Live Now Playing */}
+            <div className="flex rounded-md bg-surface p-1 border border-border gap-1">
               <button
                 type="button"
-                onClick={handleRemoveBanner}
-                disabled={uploadingBanner}
-                className="w-full h-8 flex items-center justify-center gap-1.5 rounded-md text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 transition-colors cursor-pointer"
+                onClick={() => handleSetBannerMode("custom")}
+                className={cn(
+                  "flex-1 py-1.5 px-3 rounded text-xs font-heading font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+                  bannerMode === "custom"
+                    ? "bg-accent text-black shadow-1"
+                    : "text-text-muted hover:text-text"
+                )}
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span>Reset to Default Banner</span>
+                <Camera className="w-3.5 h-3.5" />
+                <span>Custom Image</span>
               </button>
+              <button
+                type="button"
+                onClick={() => handleSetBannerMode("now_playing")}
+                className={cn(
+                  "flex-1 py-1.5 px-3 rounded text-xs font-heading font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5",
+                  bannerMode === "now_playing"
+                    ? "bg-accent text-black shadow-1"
+                    : "text-text-muted hover:text-text"
+                )}
+              >
+                <Radio className="w-3.5 h-3.5" />
+                <span>Live Now Playing</span>
+              </button>
+            </div>
+
+            {bannerMode === "now_playing" ? (
+              /* Live Now Playing Mode Configuration */
+              <div className="space-y-4">
+                {/* Banner Preview */}
+                <div
+                  className="h-32 rounded-md border border-border overflow-hidden relative"
+                  style={
+                    (nowPlaying?.landscape_art || nowPlaying?.album_art || bannerUrl)
+                      ? {
+                          backgroundImage: `url("${resolveImageUrl(nowPlaying?.landscape_art || nowPlaying?.album_art || bannerUrl)}")`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : {
+                          background: "linear-gradient(135deg, #24201a 0%, #171512 50%, #2b251d 100%)",
+                        }
+                  }
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+                  
+                  {/* Floating Live Card Preview */}
+                  {nowPlaying?.name ? (
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center gap-2.5 p-2 rounded bg-surface/90 border border-border/80 backdrop-blur-md">
+                      <div className="w-9 h-9 rounded bg-surface-raised border border-border/60 shrink-0 overflow-hidden">
+                        {nowPlaying.album_art ? (
+                          <img src={nowPlaying.album_art} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-surface-sunken">
+                            <Disc className="w-4 h-4 text-text-dim" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${nowPlaying.is_now_playing ? "bg-accent animate-pulse" : "bg-text-dim"}`} />
+                          <span className="font-mono text-[8px] font-bold text-accent uppercase">
+                            {nowPlaying.is_now_playing ? "LIVE ON-AIR" : "RECENT SCROBBLE"}
+                          </span>
+                        </div>
+                        <div className="font-heading font-bold text-xs text-text truncate">
+                          {nowPlaying.name}
+                        </div>
+                        <div className="font-sans text-[10px] text-text-muted truncate">
+                          {nowPlaying.artist}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center p-3 text-center">
+                      <p className="font-sans text-xs text-text-muted">
+                        No active scrobbles detected on Last.fm. Start playing music to broadcast live!
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-3 rounded-md bg-surface border border-border space-y-1">
+                  <div className="flex items-center gap-1.5 text-accent font-heading font-bold text-xs">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Real-Time Broadcast Banner</span>
+                  </div>
+                  <p className="font-sans text-xs text-text-muted">
+                    When active, your profile banner dynamically displays your currently playing music with wide 16:9 artist landscape photography and album cover art.
+                  </p>
+                </div>
+
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={() => {
+                    handleSetBannerMode("now_playing");
+                    setShowBannerModal(false);
+                  }}
+                >
+                  Confirm Live Banner
+                </Button>
+              </div>
+            ) : (
+              /* Custom Banner Upload Mode */
+              <div className="space-y-4">
+                {/* Banner Preview */}
+                <div
+                  className="h-28 rounded-md border border-border overflow-hidden relative"
+                  style={
+                    bannerUrl
+                      ? {
+                          backgroundImage: `url("${resolveImageUrl(bannerUrl)}")`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "center",
+                        }
+                      : {
+                          background: "linear-gradient(135deg, #24201a 0%, #171512 50%, #2b251d 100%)",
+                        }
+                  }
+                >
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-3">
+                    <span className="font-mono text-[10px] text-text-muted">
+                      {bannerUrl ? "Custom banner preview" : "Default atmospheric desk background"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* File Upload */}
+                <div>
+                  <label className="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-md border border-dashed border-border hover:border-accent bg-surface hover:bg-surface-hover text-xs font-heading font-semibold text-text transition-colors">
+                    <Upload className="w-4 h-4 text-accent" />
+                    <span>{uploadingBanner ? "Uploading banner..." : "Upload banner image"}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleBannerFileUpload}
+                      disabled={uploadingBanner}
+                    />
+                  </label>
+                  <p className="font-mono text-[10px] text-text-dim text-center mt-1">
+                    Recommended: 1200x300 or wide panorama (up to 8MB)
+                  </p>
+                </div>
+
+                {/* URL Input */}
+                <form onSubmit={handleBannerUrlSubmit} className="space-y-2 pt-2 border-t border-border/60">
+                  <label className="block font-mono text-2xs text-text-dim uppercase tracking-wider">
+                    Or paste image link:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      placeholder="https://images.example.com/banner.jpg"
+                      value={bannerUrlInput}
+                      onChange={(e) => setBannerUrlInput(e.target.value)}
+                      className="flex-1 h-8 rounded-md border border-border bg-surface px-2.5 text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+                    />
+                    <Button
+                      type="submit"
+                      variant="primary"
+                      size="sm"
+                      disabled={uploadingBanner || !bannerUrlInput.trim()}
+                    >
+                      Set URL
+                    </Button>
+                  </div>
+                </form>
+
+                {/* Remove Banner if present */}
+                {bannerUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBanner}
+                    disabled={uploadingBanner}
+                    className="w-full h-8 flex items-center justify-center gap-1.5 rounded-md text-xs font-medium text-danger hover:bg-danger/10 border border-danger/20 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Reset to Default Banner</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

@@ -225,6 +225,25 @@ export async function getArtistDetails(artistName) {
   }
 }
 
+export async function getNowPlaying(username) {
+  try {
+    const url = username
+      ? `/lastfm/now-playing?username=${encodeURIComponent(username)}`
+      : `/lastfm/now-playing`;
+    return await apiRequest(url, { timeout: 10000 });
+  } catch {
+    return {
+      name: null,
+      artist: null,
+      album: null,
+      is_now_playing: false,
+      album_art: null,
+      landscape_art: null,
+      preview_url: null,
+    };
+  }
+}
+
 export async function likeThread(threadId) {
   return apiRequest(`/threads/${threadId}/like`, { method: "POST" });
 }

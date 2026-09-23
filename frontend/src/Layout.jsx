@@ -22,7 +22,7 @@ export default function Layout({ user, onLogout }) {
       />
 
       {/* 2. Live Broadcast Community Ticker directly beneath header */}
-      <BroadcastTicker />
+      <BroadcastTicker user={user} />
 
       {/* Accessible Mobile Navigation Drawer */}
       <MobileDrawer
