@@ -31,203 +31,327 @@ ALLOWED_MEDIA_EXTENSIONS = {
     "video": {".mp4", ".webm", ".mov"},
 }
 
-STOPWORDS = {
-    'fav', 'favorite', 'favourites', 'favourite', 'album', 'albums', 'ep', 'lp', 'project', 'projects',
-    'song', 'songs', 'track', 'tracks', 'record', 'records', 'discography', 'discog',
-    'what', 'whats', "what's", 'is', 'are', 'your', 'the', 'a', 'an', 'of', 'on', 'in', 'for', 'to',
-    'with', 'and', 'or', 'by', 'at', 'about', 'from', 'as', 'how', 'why', 'who', 'when',
-    'think', 'thinks', 'thought', 'thoughts', 'opinion', 'opinions', 'take', 'takes', 'best', 'worst',
-    'better', 'ranking', 'rankings', 'ranked', 'rate', 'listen', 'listened', 'listening', 'imo', 'imho',
-    'drop', 'dropped', 'release', 'released', 'new', 'classic', 'classics', 'underrated', 'overrated',
-    'goat', 'discussion', 'discuss', 'review', 'reviews', 'recommendation', 'recommendations',
-    'sound', 'built', 'modern', 'music', 'anyone', 'any', 'my', 'me', 'i', 'you', 'we', 'they', 'it',
-    'timeless', 'masterpiece', 'incredible', 'amazing', 'great', 'mid', 'trash', 'fire',
-    'bus', 'london', 'night', 'south', 'years', 'later'
+COMMON_WORDS = {
+    'the', 'a', 'an', 'and', 'or', 'but', 'is', 'are', 'was', 'were', 'to', 'in', 'on', 'at', 'by', 'for', 'with', 'about',
+    'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'from', 'up', 'down', 'of',
+    'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all',
+    'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same',
+    'so', 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now', 'morning', 'night', 'coffee',
+    'outside', 'rain', 'rains', 'raining', 'day', 'days', 'life', 'good', 'bad', 'great', 'love', 'hate', 'think', 'thought',
+    'really', 'taste', 'tastes', 'today', 'tomorrow', 'yesterday', 'people', 'person', 'time', 'times', 'feel', 'feeling',
+    'look', 'looks', 'looking', 'see', 'seeing', 'make', 'makes', 'making', 'get', 'gets', 'getting', 'go', 'going',
+    'come', 'coming', 'tell', 'telling', 'ask', 'asking', 'work', 'works', 'working', 'seem', 'seems', 'trying', 'try',
+    'much', 'many', 'lot', 'lots', 'thing', 'things', 'post', 'thread', 'posts', 'threads', 'comment', 'comments'
 }
 
-def _extract_music_candidates(text: str, tag: Optional[str] = None) -> list[str]:
+STOP_VERBS = {
+    'is', 'was', 'are', 'were', 'has', 'have', 'had', 'will', 'would', 'could', 'should', 'can', 'on', 'in', 'at',
+    'with', 'for', 'about', 'from', 'to', 'and', 'or', 'but', 'all', 'still', 'one', 'of', 'the'
+}
+
+MUSIC_INDICATORS = {
+    'album', 'albums', 'track', 'tracks', 'song', 'songs', 'record', 'records', 'ep', 'lp', 'vinyl', 'discography',
+    'discog', 'producer', 'produced', 'listen', 'listened', 'listening', 'soundtrack', 'sample', 'sampled', 'bass',
+    'vocals', 'sound', 'dubstep', 'ambient', 'rock', 'hiphop', 'rap', 'jazz', 'metal', 'electronic', 'synth', 'drums',
+    'guitar', 'singer', 'artist', 'band', 'tunes', 'vibes', 'release', 'released', 'single', 'banger', 'masterpiece',
+    'underrated', 'overrated', 'drop', 'dropped', 'playing', 'melody', 'riff', 'beat', 'beats', 'cover', 'covers', 'genre',
+    'musician', 'chords', 'lyrics', 'flow', 'bars', 'feature', 'feat', 'ft'
+}
+
+def _clean_phrase(phrase: str) -> str:
+    words = phrase.strip('\"\'` ,.-—:').split()
+    clean_words = []
+    for w in words:
+        if clean_words and w.lower() in STOP_VERBS:
+            break
+        clean_words.append(w)
+    return ' '.join(clean_words).strip('\"\'` ,.-—:')
+
+def _extract_considerate_candidates(text: str, tag: Optional[str] = None) -> list[dict]:
     candidates = []
     clean = re.sub(r'\[.*?\]', '', text or '').strip()
-    if not clean:
-        return [tag] if tag else []
 
-    # 1. Any quoted text e.g. "Pray for Haiti", 'In Rainbows'
-    quotes = re.findall(r'["\'`“]([^"\'`“”]{2,40})["\'`”]', clean)
-    candidates.extend([q.strip() for q in quotes if q.strip()])
+    # 0. Explicit Track Reference (e.g. from Composer [TRACK] mode)
+    ref_match = re.search(r'Track Reference:\s*([^\n\r]+)', text, re.IGNORECASE)
+    if ref_match:
+        candidates.append({'query': ref_match.group(1).strip(), 'tier': 'explicit_ref', 'weight': 100})
 
-    # 2. Before / after hyphen or colon (e.g. "Kendrick Lamar - GNX" or "Burial: Untrue")
-    parts = re.split(r'[-—:]', clean)
-    if len(parts) > 1:
-        first_part = parts[0].strip()
-        second_part = parts[1].strip()
-        if 2 <= len(first_part) <= 40:
-            candidates.append(first_part)
-        if 2 <= len(second_part) <= 40:
-            candidates.append(second_part)
-        if 4 <= len(first_part) + len(second_part) <= 60:
-            candidates.append(f"{first_part} {second_part}")
+    # 1. Pattern: <Title> by <Artist>
+    by_matches = re.finditer(r'([\"\'\w\s]{2,30}?)\s+by\s+([A-Z][a-zA-Z0-9\s\.\,\']{1,30})', clean, re.IGNORECASE)
+    for m in by_matches:
+        tit = _clean_phrase(m.group(1))
+        art = _clean_phrase(m.group(2))
+        if len(tit) >= 2 and len(art) >= 2 and art.lower() not in COMMON_WORDS:
+            candidates.append({
+                'query': f'{art} {tit}',
+                'artist_hint': art,
+                'title_hint': tit,
+                'tier': 'pattern_by',
+                'weight': 95
+            })
 
-    # 3. Capitalized or all-caps music names (e.g. 'Radiohead In Rainbows', 'MIKE', 'Earl Sweatshirt')
-    caps_matches = re.findall(r'\b(?:[A-Z][a-z0-9]+(?:\s+[A-Z][a-z0-9]+)*|[A-Z0-9]{2,})\b', clean)
-    for c in caps_matches:
-        c_clean = c.strip()
-        if c_clean.lower() not in STOPWORDS and len(c_clean) >= 2 and c_clean not in candidates:
-            candidates.append(c_clean)
+    # 2. Pattern: <Artist>'s <Title> or <Artist>'s new album <Title>
+    possessive = re.finditer(r'([A-Z][a-zA-Z0-9\s]{1,25})\'s\s+(?:new\s+)?(?:album|track|song|record|lp|ep)?\s*([\"\'\w\s]{2,25})?', clean)
+    for m in possessive:
+        art = _clean_phrase(m.group(1))
+        tit = _clean_phrase(m.group(2) or '')
+        if len(art) >= 2 and art.lower() not in COMMON_WORDS:
+            q = f'{art} {tit}'.strip() if tit else art
+            candidates.append({
+                'query': q,
+                'artist_hint': art,
+                'title_hint': tit,
+                'tier': 'pattern_possessive',
+                'weight': 90
+            })
 
-    # 4. Words filtering out stopwords
-    words = re.findall(r'[A-Za-z0-9]+', clean)
-    filtered = [w for w in words if w.lower() not in STOPWORDS]
-    if filtered:
-        joined_salient = " ".join(filtered[:3])
-        if joined_salient not in candidates:
-            candidates.append(joined_salient)
+    # 3. Pattern: <Artist> [-—:] <Title>
+    dash_matches = re.finditer(r'([A-Z0-9][a-zA-Z0-9\s\.\,\']{1,25})\s*[-—:]\s*([A-Za-z0-9\s\.\,\']{2,25})', clean)
+    for m in dash_matches:
+        p1 = _clean_phrase(m.group(1))
+        p2 = _clean_phrase(m.group(2))
+        if len(p1) >= 2 and len(p2) >= 2 and p1.lower() not in COMMON_WORDS and p2.lower() not in COMMON_WORDS:
+            candidates.append({
+                'query': f'{p1} {p2}',
+                'artist_hint': p1,
+                'title_hint': p2,
+                'tier': 'pattern_dash',
+                'weight': 90
+            })
 
-    if tag and tag not in candidates:
-        candidates.append(tag)
+    # 4. Phrases like: album <Title>, song <Title>, listening to <Artist/Album>
+    context_matches = re.finditer(r'(?:listening to|album|track|song|record)\s+([A-Z][a-zA-Z0-9\s\.\,\']{2,30})', clean, re.IGNORECASE)
+    for m in context_matches:
+        phr = _clean_phrase(m.group(1))
+        if len(phr) >= 2 and phr.lower() not in COMMON_WORDS:
+            candidates.append({
+                'query': phr,
+                'tier': 'music_phrase',
+                'weight': 82
+            })
 
-    return candidates
+    # 5. Quoted phrases
+    quotes = re.findall(r'[\"\'`“]([^\"\'`“”]{2,30})[\"\'`”]', clean)
+    for q in quotes:
+        clean_q = _clean_phrase(q)
+        if clean_q.lower() not in COMMON_WORDS and len(clean_q) >= 2:
+            candidates.append({
+                'query': clean_q,
+                'title_hint': clean_q,
+                'tier': 'quoted',
+                'weight': 78
+            })
 
-def _lookup_music_art(query: str) -> Optional[dict]:
-    if not query or len(query.strip()) < 2:
+    # 6. Multi-word capitalized names (e.g. Radiohead In Rainbows, Boards of Canada, Frank Ocean)
+    caps = re.findall(r'\b[A-Z][a-z0-9]+(?:\s+[A-Z][a-z0-9]+)+\b', clean)
+    for c in caps:
+        clean_c = _clean_phrase(c)
+        words = clean_c.lower().split()
+        if len(words) >= 2 and not all(w in COMMON_WORDS for w in words):
+            candidates.append({
+                'query': clean_c,
+                'tier': 'capitalized_multi',
+                'weight': 72
+            })
+
+    # 7. Single capitalized names ONLY if the post has music context
+    has_music_context = any(w.lower() in MUSIC_INDICATORS for w in re.findall(r'[a-zA-Z]+', clean))
+    if has_music_context:
+        singles = re.findall(r'\b[A-Z][a-zA-Z0-9]{2,}\b', clean)
+        for s in singles:
+            if s.lower() not in COMMON_WORDS and len(s) >= 3:
+                candidates.append({
+                    'query': s,
+                    'artist_hint': s,
+                    'tier': 'capitalized_single_context',
+                    'weight': 60
+                })
+
+    # 8. Tag synergy (if artist tag or specific topic)
+    if tag and tag.lower() not in COMMON_WORDS:
+        candidates.append({
+            'query': tag,
+            'artist_hint': tag,
+            'tier': 'tag',
+            'weight': 50
+        })
+
+    # Deduplicate while preserving highest weight
+    seen = {}
+    for c in candidates:
+        norm = c['query'].lower()
+        if norm not in seen or c['weight'] > seen[norm]['weight']:
+            seen[norm] = c
+
+    # Sort descending by weight
+    return sorted(seen.values(), key=lambda x: x['weight'], reverse=True)
+
+def _score_music_match(candidate: dict, item: dict, original_text: str) -> tuple[int, list[str]]:
+    text_lower = original_text.lower()
+    artist_name = (item.get('artist', {}).get('name') or '').lower()
+    track_title = (item.get('title') or '').lower()
+    album_title = (item.get('album', {}).get('title') or '').lower()
+    rank = item.get('rank') or 0
+
+    score = 0
+    reasons = []
+
+    # 1. Artist matching
+    art_hint = (candidate.get('artist_hint') or '').lower()
+    if art_hint and (art_hint in artist_name or artist_name in art_hint):
+        score += 45
+        reasons.append(f"artist_hint_matched ({artist_name})")
+    elif artist_name and len(artist_name) >= 3 and artist_name in text_lower:
+        score += 35
+        reasons.append(f"artist_in_text ({artist_name})")
+
+    # 2. Title / Album matching
+    tit_hint = (candidate.get('title_hint') or '').lower()
+    if tit_hint and (tit_hint in track_title or tit_hint in album_title):
+        score += 40
+        reasons.append(f"title_hint_matched ({tit_hint})")
+    elif track_title and len(track_title) >= 3 and track_title in text_lower:
+        score += 30
+        reasons.append(f"track_in_text ({track_title})")
+    elif album_title and len(album_title) >= 3 and album_title in text_lower:
+        score += 30
+        reasons.append(f"album_in_text ({album_title})")
+
+    # 3. Candidate weight contribution
+    score += int(candidate.get('weight', 50) * 0.2)
+
+    # 4. Popularity / Rank confidence
+    if rank > 200000:
+        score += 10
+        reasons.append("high_rank")
+    elif rank > 50000:
+        score += 5
+
+    # 5. Penalties for false positives
+    # If NEITHER artist nor title is anywhere in the original text, penalize heavily
+    found_any = (artist_name and artist_name in text_lower) or (track_title and track_title in text_lower) or (album_title and album_title in text_lower)
+    if not found_any:
+        score -= 60
+        reasons.append("neither_artist_nor_title_in_text_penalty")
+
+    # If candidate is just a single common word
+    if candidate['query'].lower() in COMMON_WORDS:
+        score -= 50
+        reasons.append("common_word_penalty")
+
+    return score, reasons
+
+def _lookup_considerate_music(candidate: dict, original_text: str) -> Optional[dict]:
+    query = candidate.get('query', '').strip()
+    if not query or len(query) < 2:
         return None
-    enc = urllib.parse.quote(query.strip())
-    
-    # 1. Deezer General Search (track/album with 30s preview)
+    enc = urllib.parse.quote(query)
+
+    best_match = None
+    best_score = 0
+
+    # 1. Deezer General Search (Tracks & Albums with preview)
     try:
         url = f"https://api.deezer.com/search?q={enc}&limit=5"
         req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
         with urllib.request.urlopen(req, timeout=3) as res:
             data = json.loads(res.read().decode())
             items = data.get("data", [])
-            # Check for exact artist match first
             for item in items:
-                art_name = item.get("artist", {}).get("name", "").lower()
-                if art_name == query.lower():
-                    art = (
-                        item.get("album", {}).get("cover_xl")
-                        or item.get("album", {}).get("cover_big")
-                        or item.get("album", {}).get("cover_medium")
-                    )
-                    if art:
-                        return {
-                            "artwork_url": art,
-                            "artist": item.get("artist", {}).get("name"),
-                            "title": item.get("title"),
-                            "album": item.get("album", {}).get("title"),
-                            "preview_url": item.get("preview"),
-                            "source": "deezer_exact"
-                        }
-            if items:
-                first = items[0]
                 art = (
-                    first.get("album", {}).get("cover_xl")
-                    or first.get("album", {}).get("cover_big")
-                    or first.get("album", {}).get("cover_medium")
+                    item.get("album", {}).get("cover_xl")
+                    or item.get("album", {}).get("cover_big")
+                    or item.get("album", {}).get("cover_medium")
                 )
-                if art:
-                    return {
+                if not art:
+                    continue
+                sc, reasons = _score_music_match(candidate, item, original_text)
+                if sc > best_score:
+                    best_score = sc
+                    best_match = {
                         "artwork_url": art,
-                        "artist": first.get("artist", {}).get("name"),
-                        "title": first.get("title"),
-                        "album": first.get("album", {}).get("title"),
-                        "preview_url": first.get("preview"),
-                        "source": "deezer"
+                        "artist": item.get("artist", {}).get("name"),
+                        "title": item.get("title"),
+                        "album": item.get("album", {}).get("title"),
+                        "preview_url": item.get("preview"),
+                        "source": "deezer_track",
+                        "score": sc,
+                        "reasons": reasons
                     }
     except Exception:
         pass
 
-    # 2. Deezer Album Search
-    try:
-        url = f"https://api.deezer.com/search/album?q={enc}&limit=5"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as res:
-            data = json.loads(res.read().decode())
-            items = data.get("data", [])
-            for item in items:
-                art_name = item.get("artist", {}).get("name", "").lower()
-                if art_name == query.lower():
+    # 2. Deezer Album Search if score is not high
+    if best_score < 75:
+        try:
+            url = f"https://api.deezer.com/search/album?q={enc}&limit=4"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=3) as res:
+                data = json.loads(res.read().decode())
+                items = data.get("data", [])
+                for item in items:
                     art = item.get("cover_xl") or item.get("cover_big") or item.get("cover_medium")
-                    if art:
-                        return {
+                    if not art:
+                        continue
+                    dummy_item = {
+                        "artist": item.get("artist", {}),
+                        "title": item.get("title"),
+                        "album": {"title": item.get("title")},
+                        "rank": 100000
+                    }
+                    sc, reasons = _score_music_match(candidate, dummy_item, original_text)
+                    if sc > best_score:
+                        best_score = sc
+                        best_match = {
                             "artwork_url": art,
                             "artist": item.get("artist", {}).get("name"),
                             "title": item.get("title"),
                             "album": item.get("title"),
                             "preview_url": None,
-                            "source": "deezer_album_exact"
+                            "source": "deezer_album",
+                            "score": sc,
+                            "reasons": reasons
                         }
-            if items:
-                first = items[0]
-                art = first.get("cover_xl") or first.get("cover_big") or first.get("cover_medium")
-                if art:
-                    return {
-                        "artwork_url": art,
-                        "artist": first.get("artist", {}).get("name"),
-                        "title": first.get("title"),
-                        "album": first.get("title"),
-                        "preview_url": None,
-                        "source": "deezer_album"
-                    }
-    except Exception:
-        pass
+        except Exception:
+            pass
 
-    # 3. Deezer Artist Search (Artist portrait photography)
-    try:
-        url = f"https://api.deezer.com/search/artist?q={enc}&limit=5"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as res:
-            data = json.loads(res.read().decode())
-            items = data.get("data", [])
-            for item in items:
-                art_name = item.get("name", "").lower()
-                if art_name == query.lower():
-                    pic = item.get("picture_xl") or item.get("picture_big") or item.get("picture_medium")
-                    if pic:
-                        return {
-                            "artwork_url": pic,
-                            "artist": item.get("name"),
-                            "title": item.get("name"),
-                            "album": None,
-                            "preview_url": None,
-                            "source": "deezer_artist_exact"
+    # 3. iTunes Search Fallback
+    if best_score < 65:
+        try:
+            url = f"https://itunes.apple.com/search?term={enc}&entity=album&limit=2"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=3) as res:
+                data = json.loads(res.read().decode())
+                results = data.get("results", [])
+                if results:
+                    first = results[0]
+                    art = first.get("artworkUrl100", "").replace("100x100bb", "600x600bb")
+                    if art:
+                        dummy_item = {
+                            "artist": {"name": first.get("artistName")},
+                            "title": first.get("collectionName"),
+                            "album": {"title": first.get("collectionName")},
+                            "rank": 80000
                         }
-            if items:
-                first = items[0]
-                pic = first.get("picture_xl") or first.get("picture_big") or first.get("picture_medium")
-                if pic:
-                    return {
-                        "artwork_url": pic,
-                        "artist": first.get("name"),
-                        "title": first.get("name"),
-                        "album": None,
-                        "preview_url": None,
-                        "source": "deezer_artist"
-                    }
-    except Exception:
-        pass
+                        sc, reasons = _score_music_match(candidate, dummy_item, original_text)
+                        if sc > best_score:
+                            best_score = sc
+                            best_match = {
+                                "artwork_url": art,
+                                "artist": first.get("artistName"),
+                                "title": first.get("collectionName"),
+                                "album": first.get("collectionName"),
+                                "preview_url": None,
+                                "source": "itunes",
+                                "score": sc,
+                                "reasons": reasons
+                            }
+        except Exception:
+            pass
 
-    # 4. iTunes Search Fallback
-    try:
-        url = f"https://itunes.apple.com/search?term={enc}&entity=album&limit=2"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as res:
-            data = json.loads(res.read().decode())
-            results = data.get("results", [])
-            if results:
-                first = results[0]
-                art = first.get("artworkUrl100", "").replace("100x100bb", "600x600bb")
-                if art:
-                    return {
-                        "artwork_url": art,
-                        "artist": first.get("artistName"),
-                        "title": first.get("collectionName"),
-                        "album": first.get("collectionName"),
-                        "preview_url": None,
-                        "source": "itunes"
-                    }
-    except Exception:
-        pass
-
+    # Accept only if confidence meets considerate threshold
+    if best_match and best_score >= 60:
+        return best_match
     return None
 
 def _enrich_thread(
@@ -331,16 +455,20 @@ def resolve_music_art(
     text: str = "",
     tag: Optional[str] = None,
 ):
-    candidates = _extract_music_candidates(text, tag)
-    for cand in candidates:
-        art_data = _lookup_music_art(cand)
-        if art_data and art_data.get("artwork_url"):
-            return art_data
+    candidates = _extract_considerate_candidates(text, tag)
+    best_result = None
+    best_score = 0
 
-    if tag:
-        art_data = _lookup_music_art(tag)
-        if art_data and art_data.get("artwork_url"):
-            return art_data
+    for cand in candidates[:5]:
+        result = _lookup_considerate_music(cand, text)
+        if result and result.get("score", 0) > best_score:
+            best_score = result["score"]
+            best_result = result
+            if best_score >= 85:
+                break
+
+    if best_result and best_score >= 60:
+        return best_result
 
     return {
         "artwork_url": "/assets/editorial/vinyl-desk.svg",
