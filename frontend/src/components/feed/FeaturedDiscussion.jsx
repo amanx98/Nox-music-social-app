@@ -36,17 +36,12 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
   const audioRef = useRef(null);
 
   useEffect(() => {
-    if (thread?.image_url) {
-      setResolvedArt(null);
-      return;
-    }
-
     let isMounted = true;
     const sampleText = `${title} ${cleanBody}`.slice(0, 140);
 
     resolveMusicArt(sampleText, tagName)
       .then((data) => {
-        if (isMounted && data && data.artwork_url) {
+        if (isMounted && data) {
           setResolvedArt(data);
         }
       })
@@ -58,7 +53,7 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
         audioRef.current.pause();
       }
     };
-  }, [thread?.id, thread?.image_url, title, cleanBody, tagName]);
+  }, [thread?.id, title, cleanBody, tagName]);
 
   function togglePreviewAudio(e) {
     e.stopPropagation();
