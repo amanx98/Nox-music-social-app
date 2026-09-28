@@ -2,13 +2,14 @@ export const API_BASE = import.meta.env?.VITE_API_URL || import.meta.env?.VITE_A
 
 export function resolveImageUrl(url) {
   if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:") || url.startsWith("blob:")) {
-    return url;
+  const normalized = url.replace(/\\/g, "/");
+  if (normalized.startsWith("http://") || normalized.startsWith("https://") || normalized.startsWith("data:") || normalized.startsWith("blob:")) {
+    return normalized;
   }
-  if (url.startsWith("/")) {
-    return `${API_BASE}${url}`;
+  if (normalized.startsWith("/")) {
+    return `${API_BASE}${normalized}`;
   }
-  return `${API_BASE}/${url}`;
+  return `${API_BASE}/${normalized}`;
 }
 
 export async function apiRequest(path, options = {}) {
@@ -198,6 +199,20 @@ export async function resolveMusicArt(text, tag = "") {
   return apiRequest(`/threads/resolve-music-art?${params.toString()}`);
 }
 
+export async function updateThread(threadId, { title, body, imageUrl, mediaType, tagId } = {}) {
+  const payload = {};
+  if (title !== undefined) payload.title = title;
+  if (body !== undefined) payload.body = body;
+  if (imageUrl !== undefined) payload.image_url = imageUrl;
+  if (mediaType !== undefined) payload.media_type = mediaType;
+  if (tagId !== undefined) payload.tag_id = tagId;
+
+  return apiRequest(`/threads/${threadId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getPosts(threadId) {
   return apiRequest(`/posts/?thread_id=${threadId}`);
 }
@@ -209,6 +224,13 @@ export async function createPost(threadId, body) {
   });
 }
 
+export async function updatePost(postId, body) {
+  return apiRequest(`/posts/${postId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ body }),
+  });
+}
+
 export async function connectLastfm() {
   const data = await apiRequest("/lastfm/login");
   if (data?.login_url) {
@@ -217,8 +239,15 @@ export async function connectLastfm() {
   return data;
 }
 
-export async function getTopAlbums(period = "overall") {
-  return apiRequest(`/lastfm/top-albums?period=${period}`, { timeout: 30000 });
+export async function getLastfmStatus() {
+  return apiRequest("/lastfm/status");
+}
+
+export async function getTopAlbums(period = "overall", username = null) {
+  const url = username
+    ? `/lastfm/top-albums?period=${period}&username=${encodeURIComponent(username)}`
+    : `/lastfm/top-albums?period=${period}`;
+  return apiRequest(url, { timeout: 30000 });
 }
 
 export async function generateQuilt(period = "overall", quiltType = "albums", gridSize = 3) {
@@ -228,8 +257,11 @@ export async function generateQuilt(period = "overall", quiltType = "albums", gr
   );
 }
 
-export async function getTopArtists(period = "overall") {
-  return apiRequest(`/lastfm/top-artists?period=${period}`, { timeout: 30000 });
+export async function getTopArtists(period = "overall", username = null) {
+  const url = username
+    ? `/lastfm/top-artists?period=${period}&username=${encodeURIComponent(username)}`
+    : `/lastfm/top-artists?period=${period}`;
+  return apiRequest(url, { timeout: 30000 });
 }
 
 export async function getQuilts() {

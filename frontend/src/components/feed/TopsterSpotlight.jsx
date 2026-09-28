@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LayoutGrid, ArrowRight, ExternalLink, Sparkles, Clock } from "lucide-react";
-import { getQuilts, getTopAlbums } from "../../api/client";
+import { getQuilts, getTopAlbums, resolveImageUrl } from "../../api/client";
 import { cn } from "../../lib/cn";
 
 const PERIOD_NAMES = {
@@ -66,7 +66,7 @@ export default function TopsterSpotlight({ user }) {
     if (quilts.length > 0) return;
     let isMounted = true;
     const albumPeriod = mode === "latest" ? "7day" : "overall";
-    getTopAlbums(albumPeriod)
+    getTopAlbums(albumPeriod, user?.username)
       .then((data) => {
         if (isMounted && Array.isArray(data) && data.length > 0) {
           setFallbackAlbums(data);
@@ -79,7 +79,7 @@ export default function TopsterSpotlight({ user }) {
     return () => {
       isMounted = false;
     };
-  }, [quilts.length, mode]);
+  }, [quilts.length, mode, user?.username]);
 
   function handleModeChange(newMode) {
     if (newMode === mode) return;
@@ -197,7 +197,7 @@ export default function TopsterSpotlight({ user }) {
           <div className="w-full h-full bg-surface-raised animate-pulse" />
         ) : (
           <img
-            src={imageSrc}
+            src={resolveImageUrl(imageSrc)}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             onError={(e) => {

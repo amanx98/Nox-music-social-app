@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Heart, Flame, ArrowUpRight, Play, Pause, Disc3 } from "lucide-react";
+import { MessageSquare, Heart, Flame, ArrowUpRight, Play, Pause, Disc3, Pencil } from "lucide-react";
 import { resolveMusicArt } from "../../api/client";
 import Avatar from "../Avatar";
 
@@ -15,7 +15,7 @@ function formatTimeAgo(dateString) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag }) {
+export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag, onEdit, currentUser }) {
   // If no thread exists yet in database, provide an authentic broadcast editorial showcase
   const title = thread?.title || "Untrue at 20: How South London's Night Bus Sound Built Modern Dubstep";
   const rawBody = thread?.body || "Burial's vinyl hiss, pitched vocal fragments, and rain recordings weren't aesthetic quirks—they were forensic evidence of late-night club migration across London.";
@@ -197,18 +197,41 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
                 <span className="font-mono text-[11px] text-text-dim">
                   {thread ? formatTimeAgo(thread.created_at) : "Tonight // 01:45"}
                 </span>
+                {thread?.updated_at && (
+                  <span className="font-mono text-[10px] text-text-dim/60 italic">
+                    (edited)
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Resolved Music Badge */}
-            {resolvedArt?.artist && (
-              <div className="inline-flex items-center gap-1.5 font-mono text-[10px] text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
-                <Disc3 className={`w-3 h-3 ${isPlayingPreview ? "animate-spin" : ""}`} />
-                <span className="truncate max-w-[180px]">
-                  {resolvedArt.artist} {resolvedArt.album ? `— ${resolvedArt.album}` : (resolvedArt.title ? `— ${resolvedArt.title}` : "")}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Author Edit Button */}
+              {thread && currentUser && (currentUser.id === thread.user_id || currentUser.username === thread.author_username) && onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(thread);
+                  }}
+                  title="Edit featured post"
+                  className="inline-flex items-center gap-1 font-mono text-[10px] text-text-dim hover:text-accent hover:bg-surface px-2 py-0.5 rounded border border-border/80 hover:border-accent/40 transition-colors cursor-pointer"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                  <span>Edit</span>
+                </button>
+              )}
+
+              {/* Resolved Music Badge */}
+              {resolvedArt?.artist && (
+                <div className="inline-flex items-center gap-1.5 font-mono text-[10px] text-accent font-semibold px-2 py-0.5 rounded bg-accent/10 border border-accent/20">
+                  <Disc3 className={`w-3 h-3 ${isPlayingPreview ? "animate-spin" : ""}`} />
+                  <span className="truncate max-w-[180px]">
+                    {resolvedArt.artist} {resolvedArt.album ? `— ${resolvedArt.album}` : (resolvedArt.title ? `— ${resolvedArt.title}` : "")}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Bold Editorial Headline */}

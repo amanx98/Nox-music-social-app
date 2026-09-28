@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
@@ -5,11 +6,19 @@ from app.db.session import get_session
 from app.models.album_quilt import AlbumQuilt
 from app.models.lastfm_profile import LastfmProfile
 from app.models.user import User
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, get_optional_current_user
 from app.services.lastfm_client import get_top_albums, get_top_tracks, get_track_album_art
 from app.services.quilt_generator import generate_quilt
 
 router = APIRouter(prefix="/quilts", tags=["quilts"])
+
+def _format_quilt_url(image_path: str) -> str:
+    if not image_path:
+        return ""
+    clean = image_path.replace("\\", "/").lstrip("/")
+    if not clean.startswith("static/"):
+        clean = f"static/quilts/{clean}"
+    return f"/{clean}"
 
 @router.post("/generate")
 async def create_quilt(
@@ -88,7 +97,7 @@ async def create_quilt(
 
     return {
         "id": quilt.id,
-        "image_url": f"http://127.0.0.1:8000/{quilt.image_path}",
+        "image_url": _format_quilt_url(quilt.image_path),
         "quilt_type": quilt.quilt_type,
         "period": quilt.period,
         "created_at": quilt.created_at,
@@ -97,17 +106,32 @@ async def create_quilt(
 @router.get("/")
 def list_quilts(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    quilts = session.exec(
-        select(AlbumQuilt)
-        .where(AlbumQuilt.user_id == current_user.id)
-        .order_by(AlbumQuilt.created_at.desc(), AlbumQuilt.id.desc())
-    ).all()
+    if current_user:
+        quilts = session.exec(
+            select(AlbumQuilt)
+            .where(AlbumQuilt.user_id == current_user.id)
+            .order_by(AlbumQuilt.created_at.desc(), AlbumQuilt.id.desc())
+        ).all()
+        # If the logged-in user hasn't generated any quilts yet, provide public quilts
+        if not quilts:
+            quilts = session.exec(
+                select(AlbumQuilt)
+                .order_by(AlbumQuilt.created_at.desc(), AlbumQuilt.id.desc())
+                .limit(20)
+            ).all()
+    else:
+        quilts = session.exec(
+            select(AlbumQuilt)
+            .order_by(AlbumQuilt.created_at.desc(), AlbumQuilt.id.desc())
+            .limit(20)
+        ).all()
+
     return [
         {
             "id": q.id,
-            "image_url": f"http://127.0.0.1:8000/{q.image_path}",
+            "image_url": _format_quilt_url(q.image_path),
             "quilt_type": q.quilt_type,
             "period": q.period,
             "created_at": q.created_at,

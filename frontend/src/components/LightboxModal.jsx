@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Download, Trash2, Folder } from "lucide-react";
 import { useToast } from "./Toast";
 import Button from "./ui/Button";
+import { resolveImageUrl } from "../api/client";
 
 export default function LightboxModal({
   quilt,
@@ -16,8 +17,10 @@ export default function LightboxModal({
 
   if (!quilt) return null;
 
+  const resolvedUrl = resolveImageUrl(quilt.image_url);
+
   function handleDownload() {
-    fetch(quilt.image_url)
+    fetch(resolvedUrl)
       .then((res) => res.blob())
       .then((blob) => {
         const url = window.URL.createObjectURL(blob);
@@ -31,7 +34,7 @@ export default function LightboxModal({
         addToast("Quilt downloaded");
       })
       .catch(() => {
-        window.open(quilt.image_url, "_blank");
+        window.open(resolvedUrl, "_blank");
       });
   }
 
@@ -69,7 +72,7 @@ export default function LightboxModal({
 
         <div className="bg-surface-sunken p-2.5 rounded-lg mb-4 flex items-center justify-center">
           <img
-            src={quilt.image_url}
+            src={resolvedUrl}
             alt="Quilt preview"
             className="max-h-[60vh] max-w-full object-contain rounded shadow-2"
           />

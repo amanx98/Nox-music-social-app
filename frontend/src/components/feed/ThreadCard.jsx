@@ -1,4 +1,4 @@
-import { Mic, Hash, Repeat2 } from "lucide-react";
+import { Mic, Hash, Repeat2, Pencil } from "lucide-react";
 import Avatar from "../Avatar";
 import SocialActions from "../SocialActions";
 import { cn } from "../../lib/cn";
@@ -21,11 +21,20 @@ export default function ThreadCard({
   tag,
   onSelect,
   onSelectTag,
+  onEdit,
+  currentUser,
   className,
 }) {
   const authorName = thread.author_name || thread.username || `audiphile_${thread.user_id || 1}`;
   const authorHandle = authorName.toLowerCase().replace(/\s+/g, "_");
   const tagInfo = tag || (thread.tag_name ? { id: thread.tag_id, name: thread.tag_name, type: thread.tag_type } : null);
+
+  const isAuthor = Boolean(
+    currentUser && (
+      (currentUser.id && thread.user_id && currentUser.id === thread.user_id) ||
+      (currentUser.username && (thread.author_username === currentUser.username || thread.author_name === currentUser.username))
+    )
+  );
 
   // Extract flair if present in [Flair] format
   const flairMatch = thread.body?.match(/^\[(.*?)\]\s*(.*)/s);
@@ -92,28 +101,51 @@ export default function ThreadCard({
               <span className="font-mono text-xs text-text-dim flex-shrink-0">
                 {formatTimeAgo(thread.created_at)}
               </span>
+              {thread.updated_at && (
+                <span className="font-mono text-[10px] text-text-dim/60 italic" title={new Date(thread.updated_at).toLocaleString()}>
+                  (edited)
+                </span>
+              )}
             </div>
 
-            {/* Tag Badge */}
-            {tagInfo && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  if (onSelectTag) {
+            <div className="flex items-center gap-1.5">
+              {/* Author Edit Button */}
+              {isAuthor && onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
                     e.stopPropagation();
-                    onSelectTag(tagInfo);
-                  }
-                }}
-                className="inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-wider px-2 py-0.5 rounded-full border border-border bg-surface-sunken hover:border-accent hover:text-accent text-text-muted transition-colors cursor-pointer"
-              >
-                {tagInfo.type === "artist" ? (
-                  <Mic className="w-2.5 h-2.5 stroke-[2] text-accent" />
-                ) : (
-                  <Hash className="w-2.5 h-2.5 stroke-[2] text-secondary" />
-                )}
-                <span>{tagInfo.name}</span>
-              </button>
-            )}
+                    onEdit(thread);
+                  }}
+                  title="Edit post"
+                  className="inline-flex items-center gap-1 font-mono text-[10px] text-text-dim hover:text-accent hover:bg-surface-raised px-1.5 py-0.5 rounded transition-colors cursor-pointer border border-transparent hover:border-border"
+                >
+                  <Pencil className="w-2.5 h-2.5" />
+                  <span>Edit</span>
+                </button>
+              )}
+
+              {/* Tag Badge */}
+              {tagInfo && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    if (onSelectTag) {
+                      e.stopPropagation();
+                      onSelectTag(tagInfo);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-wider px-2 py-0.5 rounded-full border border-border bg-surface-sunken hover:border-accent hover:text-accent text-text-muted transition-colors cursor-pointer"
+                >
+                  {tagInfo.type === "artist" ? (
+                    <Mic className="w-2.5 h-2.5 stroke-[2] text-accent" />
+                  ) : (
+                    <Hash className="w-2.5 h-2.5 stroke-[2] text-secondary" />
+                  )}
+                  <span>{tagInfo.name}</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Title and Body */}

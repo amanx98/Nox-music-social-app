@@ -19,6 +19,7 @@ import {
   getTopAlbums,
   getTopArtists,
   getArtistDetails,
+  resolveImageUrl,
 } from "./api/client";
 import { useToast } from "./components/Toast";
 import LightboxModal from "./components/LightboxModal";
@@ -46,7 +47,7 @@ const DIMENSION_PRESETS = [
   { size: 6, label: "6×6 (36)" },
 ];
 
-export default function QuiltGallery() {
+export default function QuiltGallery({ user }) {
   const { addToast } = useToast();
 
   // Mode: 'bento' or 'quilts'
@@ -117,7 +118,7 @@ export default function QuiltGallery() {
   async function loadBentoAlbums(period) {
     setBentoLoading(true);
     try {
-      const data = await getTopAlbums(period);
+      const data = await getTopAlbums(period, user?.username);
       setBentoAlbums(Array.isArray(data) ? data : []);
     } catch {
       setBentoAlbums([]);
@@ -129,7 +130,7 @@ export default function QuiltGallery() {
   async function loadBentoArtists(period) {
     setBentoLoading(true);
     try {
-      const data = await getTopArtists(period);
+      const data = await getTopArtists(period, user?.username);
       const list = Array.isArray(data) ? data : [];
       // Hydrate top 9 artists with photography
       const top9 = list.slice(0, 9);
@@ -254,7 +255,8 @@ export default function QuiltGallery() {
 
   function handleDownloadQuick(quilt, e) {
     e.stopPropagation();
-    fetch(quilt.image_url)
+    const resolved = resolveImageUrl(quilt.image_url);
+    fetch(resolved)
       .then((res) => res.blob())
       .then((blob) => {
         const url = window.URL.createObjectURL(blob);
@@ -268,7 +270,7 @@ export default function QuiltGallery() {
         addToast("Download started");
       })
       .catch(() => {
-        window.open(quilt.image_url, "_blank");
+        window.open(resolved, "_blank");
       });
   }
 
@@ -589,10 +591,13 @@ export default function QuiltGallery() {
                   >
                     <div className="relative aspect-square overflow-hidden bg-surface-sunken">
                       <img
-                        src={quilt.image_url}
+                        src={resolveImageUrl(quilt.image_url)}
                         alt={`Quilt ${quilt.id}`}
                         loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          e.currentTarget.src = "/assets/editorial/topster-nine.svg";
+                        }}
                       />
                     </div>
 

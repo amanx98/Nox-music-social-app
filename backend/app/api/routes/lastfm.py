@@ -66,7 +66,43 @@ async def lastfm_callback(token: str, session: Session = Depends(get_session)):
 
     session.commit()
 
-    return RedirectResponse(url="http://localhost:5173/?lastfm=connected")
+    return RedirectResponse(url="http://localhost:5173/?lastfm=connected&lastfm_success=true")
+
+def _resolve_lastfm_profile(
+    session: Session,
+    current_user: Optional[User] = None,
+    username: Optional[str] = None,
+) -> Optional[LastfmProfile]:
+    if current_user:
+        p = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
+        if p:
+            return p
+
+    if username:
+        app_user = session.exec(select(User).where(User.username == username)).first()
+        if app_user:
+            p = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)).first()
+            if p:
+                return p
+        p = session.exec(select(LastfmProfile).where(LastfmProfile.lastfm_username == username)).first()
+        if p:
+            return p
+
+    # Fallback to the first active LastfmProfile so topsters never show empty
+    return session.exec(select(LastfmProfile)).first()
+
+@router.get("/status")
+def get_lastfm_status(
+    session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    if not current_user:
+        return {"connected": False, "username": None}
+    profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
+    return {
+        "connected": profile is not None,
+        "username": profile.lastfm_username if profile else None,
+    }
 
 from app.services.lastfm_client import get_lastfm_login_url, get_session_key, get_top_albums
 from sqlmodel import select
@@ -74,15 +110,13 @@ from sqlmodel import select
 @router.get("/top-albums")
 async def lastfm_top_albums(
     period: str = "overall",
+    username: Optional[str] = None,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    profile = session.exec(
-        select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)
-    ).first()
-
+    profile = _resolve_lastfm_profile(session, current_user, username)
     if not profile:
-        raise HTTPException(status_code=404, detail="Last.fm not connected for this user")
+        raise HTTPException(status_code=404, detail="Last.fm not connected")
 
     data = await get_top_albums(profile.lastfm_username, period=period)
     albums = data.get("topalbums", {}).get("album", [])
@@ -99,15 +133,24 @@ async def lastfm_top_albums(
             return art
         return ""
 
+    def _extract_image(alb):
+        images = alb.get("image", [])
+        if not isinstance(images, list):
+            return None
+        for size in ["extralarge", "large", "medium", "small"]:
+            for img in images:
+                if isinstance(img, dict) and img.get("size") == size:
+                    url = img.get("#text")
+                    if url and "2a96cbd8b46e442fc41c2b86b821562f" not in url:
+                        return url
+        return None
+
     return [
         {
             "name": album.get("name", "Unknown Record"),
             "artist": _extract_artist(album),
             "playcount": album.get("playcount", 0),
-            "image_url": next(
-                (img.get("#text") for img in album.get("image", []) if isinstance(img, dict) and img.get("size") == "extralarge"),
-                None,
-            ),
+            "image_url": _extract_image(album),
         }
         for album in albums
         if isinstance(album, dict)
@@ -118,14 +161,13 @@ from app.services.lastfm_client import get_lastfm_login_url, get_session_key, ge
 @router.get("/top-tracks")
 async def lastfm_top_tracks(
     period: str = "overall",
+    username: Optional[str] = None,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    profile = session.exec(
-        select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)
-    ).first()
+    profile = _resolve_lastfm_profile(session, current_user, username)
     if not profile:
-        raise HTTPException(status_code=404, detail="Last.fm not connected for this user")
+        raise HTTPException(status_code=404, detail="Last.fm not connected")
 
     data = await get_top_tracks(profile.lastfm_username, period=period)
     tracks = data.get("toptracks", {}).get("track", [])
@@ -161,14 +203,13 @@ from app.services.lastfm_client import get_top_artists, get_artist_details
 @router.get("/top-artists")
 async def lastfm_top_artists(
     period: str = "overall",
+    username: Optional[str] = None,
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    profile = session.exec(
-        select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)
-    ).first()
+    profile = _resolve_lastfm_profile(session, current_user, username)
     if not profile:
-        raise HTTPException(status_code=404, detail="Last.fm not connected for this user")
+        raise HTTPException(status_code=404, detail="Last.fm not connected")
 
     data = await get_top_artists(profile.lastfm_username, period=period)
     artists = data.get("topartists", {}).get("artist", [])

@@ -9,7 +9,7 @@ import TopsterSpotlight from "../components/feed/TopsterSpotlight";
 import ForYouSection from "../components/feed/ForYouSection";
 import ThreadView from "../ThreadView";
 import ComposerModal from "../components/composer/ComposerModal";
-
+import EditPostModal from "../components/composer/EditPostModal";
 
 export default function FeedPage({ user: propUser }) {
   const context = useOutletContext?.() || {};
@@ -22,8 +22,9 @@ export default function FeedPage({ user: propUser }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Local Composer Modal state
+  // Local Composer Modal & Edit Post Modal state
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [editingThread, setEditingThread] = useState(null);
 
   const loadFeedData = useCallback(async () => {
     setLoading(true);
@@ -42,6 +43,16 @@ export default function FeedPage({ user: propUser }) {
     loadFeedData();
   }, [loadFeedData]);
 
+  function handleThreadUpdated(updatedThread) {
+    if (!updatedThread) return;
+    setThreads((prev) =>
+      prev.map((t) => (t.id === updatedThread.id ? { ...t, ...updatedThread } : t))
+    );
+    if (selectedThread && selectedThread.id === updatedThread.id) {
+      setSelectedThread((prev) => ({ ...prev, ...updatedThread }));
+    }
+  }
+
   // If a thread is selected, render ThreadView
   if (selectedThread) {
     return (
@@ -50,6 +61,14 @@ export default function FeedPage({ user: propUser }) {
           thread={selectedThread}
           onBack={() => setSelectedThread(null)}
           user={user}
+          onThreadUpdated={handleThreadUpdated}
+        />
+        <EditPostModal
+          isOpen={Boolean(editingThread)}
+          thread={editingThread}
+          user={user}
+          onClose={() => setEditingThread(null)}
+          onSuccess={handleThreadUpdated}
         />
       </div>
     );
@@ -102,6 +121,8 @@ export default function FeedPage({ user: propUser }) {
             thread={featuredThread}
             onSelectThread={(t) => setSelectedThread(t || featuredThread)}
             onSelectTag={setSelectedTag}
+            onEdit={(t) => setEditingThread(t || featuredThread)}
+            currentUser={user}
           />
 
           {/* 5. Community Feed Section */}
@@ -207,6 +228,8 @@ export default function FeedPage({ user: propUser }) {
                     tag={selectedTag}
                     onSelect={() => setSelectedThread(t)}
                     onSelectTag={setSelectedTag}
+                    onEdit={(threadToEdit) => setEditingThread(threadToEdit)}
+                    currentUser={user}
                   />
                 ))
               )}
@@ -252,6 +275,15 @@ export default function FeedPage({ user: propUser }) {
         onSuccess={() => {
           loadFeedData();
         }}
+      />
+
+      {/* Edit Post Modal */}
+      <EditPostModal
+        isOpen={Boolean(editingThread)}
+        thread={editingThread}
+        user={user}
+        onClose={() => setEditingThread(null)}
+        onSuccess={handleThreadUpdated}
       />
     </div>
   );

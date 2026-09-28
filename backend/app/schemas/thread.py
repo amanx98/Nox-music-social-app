@@ -9,6 +9,13 @@ class ThreadCreate(BaseModel):
     image_url: Optional[str] = None
     media_type: Optional[str] = None
 
+class ThreadUpdate(BaseModel):
+    title: Optional[str] = None
+    body: Optional[str] = None
+    image_url: Optional[str] = None
+    media_type: Optional[str] = None
+    tag_id: Optional[int] = None
+
 class ThreadRead(BaseModel):
     id: int
     user_id: int
@@ -18,6 +25,7 @@ class ThreadRead(BaseModel):
     image_url: Optional[str] = None
     media_type: Optional[str] = None
     created_at: datetime
+    updated_at: Optional[datetime] = None
     # Enriched fields
     author_name: Optional[str] = None
     author_username: Optional[str] = None

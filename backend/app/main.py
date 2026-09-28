@@ -47,9 +47,11 @@ async def add_private_network_access_headers(request, call_next):
 import os
 from pathlib import Path
 
-BACKEND_DIR = Path(__file__).resolve().parents[2]
+BACKEND_DIR = Path(__file__).resolve().parent.parent
 STATIC_DIR = str(BACKEND_DIR / "static")
 os.makedirs(STATIC_DIR, exist_ok=True)
+os.makedirs(os.path.join(STATIC_DIR, "quilts"), exist_ok=True)
+os.makedirs(os.path.join(STATIC_DIR, "uploads"), exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -60,6 +62,8 @@ def on_startup():
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
         conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS media_type VARCHAR;"))
+        conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
+        conn.execute(text("ALTER TABLE post ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
 
 app.include_router(auth_router)
 

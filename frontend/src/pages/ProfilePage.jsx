@@ -48,6 +48,7 @@ import {
   updateProfile,
   resolveImageUrl,
   getNowPlaying,
+  getLastfmStatus,
 } from "../api/client";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
@@ -292,11 +293,20 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("lastfm_success") === "true") {
+    if (urlParams.get("lastfm_success") === "true" || urlParams.get("lastfm") === "connected") {
       setLastfmConnected(true);
       localStorage.setItem("lastfm_connected", "true");
       addToast("Last.fm account connected");
       window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      getLastfmStatus()
+        .then((res) => {
+          if (res?.connected) {
+            setLastfmConnected(true);
+            localStorage.setItem("lastfm_connected", "true");
+          }
+        })
+        .catch(() => {});
     }
   }, [addToast]);
 
@@ -1232,7 +1242,7 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
       {/* CONTENT FOR TAB: QUILTS */}
       {activeTab === "quilts" && (
         <div className="space-y-4">
-          <QuiltGallery />
+          <QuiltGallery user={user} />
         </div>
       )}
 

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from datetime import datetime
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from app.db.session import get_session
 from app.models.post import Post
 from app.models.thread import Thread
 from app.models.user import User
-from app.schemas.post import PostCreate, PostRead
+from app.schemas.post import PostCreate, PostRead, PostUpdate
 from app.core.deps import get_current_user
 
 router = APIRouter(prefix="/posts", tags=["posts"])
@@ -25,12 +26,36 @@ def _enrich_post(post: Post, session: Session) -> PostRead:
         user_id=post.user_id,
         body=post.body,
         created_at=post.created_at,
+        updated_at=post.updated_at,
         author_name=author_name,
         author_username=author_name,
         author_avatar_url=author_avatar_url,
         thread_title=thread_title,
         thread_author=thread_author,
     )
+
+@router.patch("/{post_id}", response_model=PostRead)
+def update_post(
+    post_id: int,
+    post_update: PostUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    post = session.get(Post, post_id)
+    if not post:
+        raise HTTPException(status_code=404, detail="Reply not found")
+    if post.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this reply")
+
+    if not post_update.body or not post_update.body.strip():
+        raise HTTPException(status_code=400, detail="Reply content cannot be empty")
+
+    post.body = post_update.body.strip()
+    post.updated_at = datetime.utcnow()
+    session.add(post)
+    session.commit()
+    session.refresh(post)
+    return _enrich_post(post, session)
 
 @router.post("/", response_model=PostRead)
 def create_post(

@@ -61,6 +61,6 @@ async def generate_quilt(albums: list[dict], grid_size: int = 3) -> str:
                 continue
 
     filename = f"{uuid.uuid4().hex}.png"
-    filepath = os.path.join(QUILT_OUTPUT_DIR, filename)
+    filepath = f"{QUILT_OUTPUT_DIR}/{filename}"
     canvas.save(filepath)
     return filepath

@@ -120,7 +120,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
                 <Route index element={<FeedPage user={user} />} />
-                <Route path="topsters" element={<TopstersPage />} />
+                <Route path="topsters" element={<TopstersPage user={user} />} />
                 <Route path="discover" element={<DiscoverPage />} />
                 <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />

@@ -15,7 +15,7 @@ from app.models.post import Post
 from app.models.tag import Tag
 from app.models.user import User
 from app.models.social import ThreadLike, ThreadRepost, ThreadBookmark
-from app.schemas.thread import ThreadCreate, ThreadRead
+from app.schemas.thread import ThreadCreate, ThreadRead, ThreadUpdate
 from app.core.deps import get_current_user, get_optional_current_user
 
 router = APIRouter(prefix="/threads", tags=["threads"])
@@ -292,6 +292,7 @@ def _enrich_thread(
         is_repost=is_repost,
         reposted_by=reposted_by,
         reposted_at=reposted_at,
+        updated_at=thread.updated_at,
     )
 
 @router.post("/upload-media")
@@ -364,6 +365,36 @@ def create_thread(
         image_url=thread_in.image_url,
         media_type=thread_in.media_type,
     )
+    session.add(thread)
+    session.commit()
+    session.refresh(thread)
+    return _enrich_thread(thread, session, current_user)
+
+@router.patch("/{thread_id}", response_model=ThreadRead)
+def update_thread(
+    thread_id: int,
+    thread_update: ThreadUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    thread = session.get(Thread, thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    if thread.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to edit this post")
+
+    if thread_update.title is not None and thread_update.title.strip():
+        thread.title = thread_update.title.strip()
+    if thread_update.body is not None and thread_update.body.strip():
+        thread.body = thread_update.body.strip()
+    if thread_update.image_url is not None:
+        thread.image_url = thread_update.image_url if thread_update.image_url.strip() else None
+    if thread_update.media_type is not None:
+        thread.media_type = thread_update.media_type if thread_update.media_type.strip() else None
+    if thread_update.tag_id is not None:
+        thread.tag_id = thread_update.tag_id
+
+    thread.updated_at = datetime.utcnow()
     session.add(thread)
     session.commit()
     session.refresh(thread)
