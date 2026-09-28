@@ -6,6 +6,8 @@ class ThreadCreate(BaseModel):
     tag_id: int
     title: str
     body: str
+    image_url: Optional[str] = None
+    media_type: Optional[str] = None
 
 class ThreadRead(BaseModel):
     id: int
@@ -13,6 +15,8 @@ class ThreadRead(BaseModel):
     tag_id: int
     title: str
     body: str
+    image_url: Optional[str] = None
+    media_type: Optional[str] = None
     created_at: datetime
     # Enriched fields
     author_name: Optional[str] = None

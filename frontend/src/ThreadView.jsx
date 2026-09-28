@@ -111,6 +111,28 @@ export default function ThreadView({ thread, onBack, user }) {
           </p>
         </div>
 
+        {/* Attached Media (Photo, Video, GIF) */}
+        {thread.image_url && (
+          <div className="mt-3 rounded-xl overflow-hidden border border-border bg-surface-sunken">
+            {thread.media_type === "video" ? (
+              <video
+                src={thread.image_url}
+                controls
+                className="w-full max-h-[500px] object-contain bg-black"
+              />
+            ) : (
+              <img
+                src={thread.image_url}
+                alt={thread.title || "Attached media"}
+                className="w-full max-h-[500px] object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            )}
+          </div>
+        )}
+
         {/* Action Bar */}
         <div className="pt-3 border-t border-border/60">
           <SocialActions

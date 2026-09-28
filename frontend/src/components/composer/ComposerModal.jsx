@@ -1,6 +1,17 @@
 import { useState, useEffect, useRef } from "react";
-import { X, MessageSquare, Music, LayoutGrid, AlertCircle, Loader2 } from "lucide-react";
-import { createThread, getTags } from "../../api/client";
+import {
+  X,
+  MessageSquare,
+  Music,
+  LayoutGrid,
+  AlertCircle,
+  Loader2,
+  Image as ImageIcon,
+  Video,
+  Film,
+  Link2,
+} from "lucide-react";
+import { createThread, uploadThreadMedia, getTags } from "../../api/client";
 import { useToast } from "../Toast";
 import Avatar from "../Avatar";
 
@@ -23,6 +34,16 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
   const [tags, setTags] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
+
+  // Media attachment states (photo, video, GIF)
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [mediaPreview, setMediaPreview] = useState(null);
+  const [mediaType, setMediaType] = useState(null); // 'image' | 'video' | 'gif'
+  const [mediaUrlInput, setMediaUrlInput] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
+  const [fileAccept, setFileAccept] = useState("image/*");
+  const fileInputRef = useRef(null);
 
   const modalRef = useRef(null);
   const titleInputRef = useRef(null);
@@ -62,6 +83,75 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
 
   if (!isOpen) return null;
 
+  function triggerFileInput(type) {
+    if (type === "video") {
+      setFileAccept("video/mp4,video/webm,video/quicktime");
+    } else if (type === "gif") {
+      setFileAccept("image/gif");
+    } else {
+      setFileAccept("image/png,image/jpeg,image/webp,image/svg+xml");
+    }
+    setTimeout(() => fileInputRef.current?.click(), 10);
+  }
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    let detectedType = "image";
+    const name = file.name.toLowerCase();
+    if (file.type.startsWith("video/") || name.endsWith(".mp4") || name.endsWith(".webm") || name.endsWith(".mov")) {
+      detectedType = "video";
+    } else if (file.type === "image/gif" || name.endsWith(".gif")) {
+      detectedType = "gif";
+    }
+
+    setMediaType(detectedType);
+    const localUrl = URL.createObjectURL(file);
+    setMediaPreview(localUrl);
+    setShowUrlInput(false);
+
+    setUploadingMedia(true);
+    try {
+      const res = await uploadThreadMedia(file);
+      setMediaUrl(res.url);
+      setMediaType(res.media_type);
+    } catch (err) {
+      addToast(err.message || "Failed to upload file", "error");
+      handleRemoveMedia();
+    } finally {
+      setUploadingMedia(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  function handleAttachUrl() {
+    const trimmed = mediaUrlInput.trim();
+    if (!trimmed) return;
+
+    let detectedType = "image";
+    const lower = trimmed.toLowerCase();
+    if (lower.includes(".mp4") || lower.includes(".webm") || lower.includes(".mov")) {
+      detectedType = "video";
+    } else if (lower.includes(".gif") || lower.includes("giphy.com") || lower.includes("tenor.com")) {
+      detectedType = "gif";
+    }
+
+    setMediaUrl(trimmed);
+    setMediaPreview(trimmed);
+    setMediaType(detectedType);
+    setShowUrlInput(false);
+  }
+
+  function handleRemoveMedia() {
+    setMediaUrl("");
+    setMediaPreview(null);
+    setMediaType(null);
+    setMediaUrlInput("");
+    setShowUrlInput(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function handleTransmit(e) {
     e.preventDefault();
     setErrorMessage(null);
@@ -90,12 +180,19 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
 
     setSubmitting(true);
     try {
-      const created = await createThread(tagIdToUse, cleanTitle, formattedBody);
+      const created = await createThread(
+        tagIdToUse,
+        cleanTitle,
+        formattedBody,
+        mediaUrl || null,
+        mediaType || null
+      );
       addToast("Transmission broadcast to community feed");
       // Reset form only on success
       setTitle("");
       setBody("");
       setTrackRef("");
+      handleRemoveMedia();
       setErrorMessage(null);
       onSuccess?.(created);
       onClose();
@@ -109,7 +206,12 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
 
   const charCount = body.length;
   const isOverLimit = charCount > MAX_CHARS;
-  const isReady = title.trim().length > 0 && body.trim().length > 0 && !isOverLimit && !submitting;
+  const isReady =
+    title.trim().length > 0 &&
+    body.trim().length > 0 &&
+    !isOverLimit &&
+    !submitting &&
+    !uploadingMedia;
 
   return (
     <div
@@ -263,6 +365,161 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
               required
               className="w-full p-3 rounded-md bg-surface-sunken border border-border text-xs sm:text-sm font-sans text-text placeholder:text-text-dim focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors resize-y min-h-[100px]"
             />
+          </div>
+
+          {/* Media Attachment Preview */}
+          {mediaPreview && (
+            <div className="relative rounded-md border border-border bg-surface-sunken overflow-hidden group">
+              {mediaType === "video" ? (
+                <video
+                  src={mediaPreview}
+                  controls
+                  className="w-full max-h-56 bg-black object-contain"
+                />
+              ) : (
+                <img
+                  src={mediaPreview}
+                  alt="Attached media preview"
+                  className="w-full max-h-56 object-cover"
+                />
+              )}
+
+              {/* Type Badge */}
+              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 border border-white/10 font-mono text-[9px] uppercase tracking-wider text-accent font-bold">
+                {mediaType || "media"}
+              </div>
+
+              {/* Remove Media Button */}
+              <button
+                type="button"
+                onClick={handleRemoveMedia}
+                disabled={submitting}
+                className="absolute top-2 right-2 p-1 rounded-full bg-black/75 hover:bg-black text-text-dim hover:text-white border border-white/10 transition-colors cursor-pointer"
+                title="Remove media"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Uploading Progress Overlay */}
+              {uploadingMedia && (
+                <div className="absolute inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center gap-2 font-mono text-xs text-text">
+                  <Loader2 className="w-4 h-4 animate-spin text-accent" />
+                  <span>Uploading media...</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Media URL Input Box (if open) */}
+          {showUrlInput && (
+            <div className="flex items-center gap-2 p-2 rounded-md bg-surface-sunken border border-border">
+              <input
+                type="url"
+                placeholder="Paste direct image, GIF, or video URL..."
+                value={mediaUrlInput}
+                onChange={(e) => setMediaUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAttachUrl();
+                  }
+                }}
+                disabled={submitting}
+                className="flex-1 h-8 px-2.5 rounded bg-surface border border-border font-mono text-xs text-text placeholder:text-text-dim focus:border-accent outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAttachUrl}
+                disabled={!mediaUrlInput.trim() || submitting}
+                className="h-8 px-3 rounded bg-accent text-black font-heading font-bold text-xs hover:bg-accent-hover transition-colors disabled:opacity-40 cursor-pointer"
+              >
+                Attach
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowUrlInput(false)}
+                className="h-8 px-2 text-text-dim hover:text-text text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
+          {/* Media Attachment Toolbar */}
+          <div className="flex items-center justify-between py-1">
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-[10px] uppercase text-text-dim mr-1">
+                Attach:
+              </span>
+
+              {/* Photo Button */}
+              <button
+                type="button"
+                onClick={() => triggerFileInput("photo")}
+                disabled={submitting || uploadingMedia}
+                title="Attach photo (.png, .jpg, .webp, .svg)"
+                className="h-7 px-2.5 rounded flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-accent hover:bg-surface border border-border/60 hover:border-accent/40 transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-accent" />
+                <span>Photo</span>
+              </button>
+
+              {/* Video Button */}
+              <button
+                type="button"
+                onClick={() => triggerFileInput("video")}
+                disabled={submitting || uploadingMedia}
+                title="Attach video (.mp4, .webm, .mov)"
+                className="h-7 px-2.5 rounded flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-secondary hover:bg-surface border border-border/60 hover:border-secondary/40 transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <Video className="w-3.5 h-3.5 text-secondary" />
+                <span>Video</span>
+              </button>
+
+              {/* GIF Button */}
+              <button
+                type="button"
+                onClick={() => triggerFileInput("gif")}
+                disabled={submitting || uploadingMedia}
+                title="Attach animated GIF"
+                className="h-7 px-2.5 rounded flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-accent hover:bg-surface border border-border/60 hover:border-accent/40 transition-colors cursor-pointer disabled:opacity-40"
+              >
+                <Film className="w-3.5 h-3.5 text-accent" />
+                <span>GIF</span>
+              </button>
+
+              {/* URL Link Button */}
+              <button
+                type="button"
+                onClick={() => setShowUrlInput(!showUrlInput)}
+                disabled={submitting || uploadingMedia}
+                title="Attach media from URL"
+                className={`h-7 px-2 rounded flex items-center gap-1 text-xs font-mono border transition-colors cursor-pointer disabled:opacity-40 ${
+                  showUrlInput
+                    ? "text-accent bg-accent/10 border-accent/40"
+                    : "text-text-muted hover:text-text hover:bg-surface border-border/60"
+                }`}
+              >
+                <Link2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Link</span>
+              </button>
+
+              {/* Hidden Native File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={fileAccept}
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+            </div>
+
+            {uploadingMedia && (
+              <span className="flex items-center gap-1.5 font-mono text-2xs text-accent">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Uploading...</span>
+              </span>
+            )}
           </div>
 
           {/* Bottom Bar: Character Count + Actions */}

@@ -33,7 +33,7 @@ export default function ThreadCard({
   const cleanBody = flairMatch ? flairMatch[2] : thread.body;
 
   // Get artwork thumbnail based on tag or thread
-  const thumbnailSrc = thread.image_url || (
+  const thumbnailSrc = (thread.image_url && thread.media_type !== "video") ? thread.image_url : (
     tagInfo?.name?.toLowerCase().includes("ambient")
       ? "/assets/editorial/ambient.svg"
       : tagInfo?.name?.toLowerCase().includes("industrial")
@@ -133,6 +133,36 @@ export default function ThreadCard({
               <p className="font-sans text-sm text-text-muted leading-relaxed line-clamp-3 m-0">
                 {cleanBody}
               </p>
+            )}
+
+            {/* User Attached Media Embed (Image, Video, GIF) */}
+            {thread.image_url && (
+              <div
+                className="mt-2.5 rounded-lg overflow-hidden border border-border bg-surface-sunken max-h-80 flex items-center justify-center"
+                onClick={(e) => {
+                  // Prevent card expansion if clicking on media controls
+                  e.stopPropagation();
+                }}
+              >
+                {thread.media_type === "video" ? (
+                  <video
+                    src={thread.image_url}
+                    controls
+                    preload="metadata"
+                    className="max-h-80 w-full object-contain bg-black"
+                  />
+                ) : (
+                  <img
+                    src={thread.image_url}
+                    alt={thread.title || "Attached media"}
+                    loading="lazy"
+                    className="max-h-80 w-full object-cover hover:scale-[1.01] transition-transform duration-300"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
             )}
           </div>
 

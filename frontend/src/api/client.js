@@ -159,11 +159,43 @@ export async function getThreads(tagId = null) {
   return apiRequest(`/threads/${query}`);
 }
 
-export async function createThread(tagId, title, body) {
+export async function createThread(tagId, title, body, imageUrl = null, mediaType = null) {
   return apiRequest("/threads/", {
     method: "POST",
-    body: JSON.stringify({ tag_id: tagId, title, body }),
+    body: JSON.stringify({
+      tag_id: tagId,
+      title,
+      body,
+      image_url: imageUrl || null,
+      media_type: mediaType || null,
+    }),
   });
+}
+
+export async function uploadThreadMedia(file) {
+  const token = localStorage.getItem("access_token");
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/threads/upload-media`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to upload media");
+  }
+
+  return response.json();
+}
+
+export async function resolveMusicArt(text, tag = "") {
+  const params = new URLSearchParams();
+  if (text) params.append("text", text);
+  if (tag) params.append("tag", tag);
+  return apiRequest(`/threads/resolve-music-art?${params.toString()}`);
 }
 
 export async function getPosts(threadId) {

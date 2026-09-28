@@ -44,12 +44,22 @@ async def add_private_network_access_headers(request, call_next):
         response.headers["Access-Control-Allow-Private-Network"] = "true"
     return response
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+import os
+from pathlib import Path
+
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+STATIC_DIR = str(BACKEND_DIR / "static")
+os.makedirs(STATIC_DIR, exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.on_event("startup")
 def on_startup():
-    from sqlmodel import SQLModel
+    from sqlmodel import SQLModel, text
     SQLModel.metadata.create_all(engine)
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
+        conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS media_type VARCHAR;"))
 
 app.include_router(auth_router)
 
