@@ -179,7 +179,7 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
 
         {/* Attached Media (Photo, Video, GIF) */}
         {thread.image_url && (
-          <div className="mt-3 rounded-xl overflow-hidden border border-border bg-surface-sunken">
+          <div className="mt-3 rounded-xl overflow-hidden border border-border bg-surface-sunken relative group/media">
             {thread.media_type === "video" ? (
               <video
                 src={thread.image_url}
@@ -187,14 +187,24 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
                 className="w-full max-h-[500px] object-contain bg-black"
               />
             ) : (
-              <img
-                src={thread.image_url}
-                alt={thread.title || "Attached media"}
-                className="w-full max-h-[500px] object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
+              <>
+                <img
+                  src={thread.image_url}
+                  alt={thread.title || "Attached media"}
+                  className="w-full max-h-[500px] object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                {(thread.media_type === "gif" ||
+                  thread.image_url.toLowerCase().includes(".gif") ||
+                  thread.image_url.toLowerCase().includes("giphy") ||
+                  thread.image_url.toLowerCase().includes("tenor")) && (
+                  <span className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-xs font-mono font-bold text-[10px] uppercase tracking-wider text-accent border border-white/10 pointer-events-none shadow-md">
+                    GIF
+                  </span>
+                )}
+              </>
             )}
           </div>
         )}

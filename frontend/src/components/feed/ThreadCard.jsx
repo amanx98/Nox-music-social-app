@@ -170,7 +170,7 @@ export default function ThreadCard({
             {/* User Attached Media Embed (Image, Video, GIF) */}
             {thread.image_url && (
               <div
-                className="mt-2.5 rounded-lg overflow-hidden border border-border bg-surface-sunken max-h-80 flex items-center justify-center"
+                className="mt-2.5 rounded-lg overflow-hidden border border-border bg-surface-sunken max-h-80 flex items-center justify-center relative group/media"
                 onClick={(e) => {
                   // Prevent card expansion if clicking on media controls
                   e.stopPropagation();
@@ -184,15 +184,25 @@ export default function ThreadCard({
                     className="max-h-80 w-full object-contain bg-black"
                   />
                 ) : (
-                  <img
-                    src={thread.image_url}
-                    alt={thread.title || "Attached media"}
-                    loading="lazy"
-                    className="max-h-80 w-full object-cover hover:scale-[1.01] transition-transform duration-300"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
+                  <>
+                    <img
+                      src={thread.image_url}
+                      alt={thread.title || "Attached media"}
+                      loading="lazy"
+                      className="max-h-80 w-full object-cover hover:scale-[1.01] transition-transform duration-300"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                    {(thread.media_type === "gif" ||
+                      thread.image_url.toLowerCase().includes(".gif") ||
+                      thread.image_url.toLowerCase().includes("giphy") ||
+                      thread.image_url.toLowerCase().includes("tenor")) && (
+                      <span className="absolute bottom-2 left-2 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs font-mono font-bold text-[9px] uppercase tracking-wider text-accent border border-white/10 pointer-events-none shadow-sm">
+                        GIF
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
             )}

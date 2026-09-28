@@ -14,6 +14,7 @@ import {
 import { createThread, uploadThreadMedia, getTags } from "../../api/client";
 import { useToast } from "../Toast";
 import Avatar from "../Avatar";
+import GifPickerModal from "./GifPickerModal";
 
 const POST_TYPES = [
   { id: "discussion", label: "Discussion", icon: MessageSquare, prefix: "[DISCUSSION]" },
@@ -41,6 +42,7 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
   const [mediaType, setMediaType] = useState(null); // 'image' | 'video' | 'gif'
   const [mediaUrlInput, setMediaUrlInput] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [fileAccept, setFileAccept] = useState("image/*");
   const fileInputRef = useRef(null);
@@ -476,12 +478,12 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
                 <span>Video</span>
               </button>
 
-              {/* GIF Button */}
+              {/* GIF Button (Online Search & Curated Picker) */}
               <button
                 type="button"
-                onClick={() => triggerFileInput("gif")}
+                onClick={() => setShowGifPicker(true)}
                 disabled={submitting || uploadingMedia}
-                title="Attach animated GIF"
+                title="Search and attach online GIF (Twitter-style)"
                 className="h-7 px-2.5 rounded flex items-center gap-1.5 text-xs font-mono text-text-muted hover:text-accent hover:bg-surface border border-border/60 hover:border-accent/40 transition-colors cursor-pointer disabled:opacity-40"
               >
                 <Film className="w-3.5 h-3.5 text-accent" />
@@ -560,6 +562,19 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
           </div>
         </form>
       </div>
+
+      {/* Online GIF Picker (Twitter/X style) */}
+      <GifPickerModal
+        isOpen={showGifPicker}
+        onClose={() => setShowGifPicker(false)}
+        onSelectGif={(gif) => {
+          setMediaUrl(gif.url);
+          setMediaPreview(gif.previewUrl || gif.url);
+          setMediaType("gif");
+          setShowUrlInput(false);
+        }}
+        onUploadLocal={() => triggerFileInput("gif")}
+      />
     </div>
   );
 }
