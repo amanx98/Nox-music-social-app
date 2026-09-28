@@ -129,12 +129,22 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
             {/* 2. Headline Album Cover Sleeve / Artist Photo (Front & Sharp) */}
             <div
               onClick={() => onSelectThread?.(thread)}
-              className="relative w-40 sm:w-48 aspect-square rounded-md overflow-hidden border border-border bg-surface-sunken cursor-pointer shadow-4 group-hover:border-accent group-hover:scale-105 transition-all duration-300 desk-diagonal z-10 -ml-16 sm:-ml-20"
+              className="relative w-40 sm:w-48 aspect-square rounded-md overflow-hidden border border-border bg-surface-sunken cursor-pointer shadow-4 group-hover:border-accent group-hover:scale-105 transition-all duration-300 desk-diagonal z-10 -ml-16 sm:-ml-20 flex items-center justify-center"
             >
+              {(thread?.media_type === "gif" || thread?.image_url) && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center filter blur-md opacity-30 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${artworkSrc})` }}
+                />
+              )}
               <img
                 src={artworkSrc}
                 alt={resolvedArt?.title || title}
-                className="w-full h-full object-cover transition-transform duration-500"
+                className={`relative z-10 ${
+                  thread?.media_type === "gif"
+                    ? "w-full h-full object-contain"
+                    : "w-full h-full object-cover"
+                } transition-transform duration-500`}
                 onError={(e) => {
                   e.currentTarget.src = "/assets/editorial/vinyl-desk.svg";
                 }}
@@ -243,7 +253,7 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
           </h2>
 
           {/* Short Discussion Summary */}
-          <p className="font-sans text-xs sm:text-sm text-text-muted leading-relaxed line-clamp-3 m-0">
+          <p className="font-sans text-xs sm:text-sm text-text-muted leading-relaxed line-clamp-4 whitespace-pre-line m-0">
             {cleanBody}
           </p>
 

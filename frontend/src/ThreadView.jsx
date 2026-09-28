@@ -177,21 +177,26 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
           </p>
         </div>
 
-        {/* Attached Media (Photo, Video, GIF) */}
+        {/* Attached Media (Photo, Video, GIF - True Aspect Ratio) */}
         {thread.image_url && (
-          <div className="mt-3 rounded-xl overflow-hidden border border-border bg-surface-sunken relative group/media">
+          <div className="mt-3 rounded-xl overflow-hidden border border-border bg-surface-sunken/80 relative group/media flex items-center justify-center max-h-[560px] w-full">
             {thread.media_type === "video" ? (
               <video
                 src={thread.image_url}
                 controls
-                className="w-full max-h-[500px] object-contain bg-black"
+                className="max-h-[560px] w-auto max-w-full object-contain bg-black rounded-lg"
               />
             ) : (
               <>
+                {/* Subtle ambient backdrop for letterboxed areas (vertical/square media) */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-20 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${thread.image_url})` }}
+                />
                 <img
                   src={thread.image_url}
                   alt={thread.title || "Attached media"}
-                  className="w-full max-h-[500px] object-cover"
+                  className="relative z-10 max-h-[560px] w-auto max-w-full object-contain mx-auto block"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
@@ -200,7 +205,7 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
                   thread.image_url.toLowerCase().includes(".gif") ||
                   thread.image_url.toLowerCase().includes("giphy") ||
                   thread.image_url.toLowerCase().includes("tenor")) && (
-                  <span className="absolute bottom-3 left-3 px-2 py-0.5 rounded bg-black/80 backdrop-blur-xs font-mono font-bold text-[10px] uppercase tracking-wider text-accent border border-white/10 pointer-events-none shadow-md">
+                  <span className="absolute bottom-3 left-3 z-20 px-2 py-0.5 rounded bg-black/80 backdrop-blur-xs font-mono font-bold text-[10px] uppercase tracking-wider text-accent border border-white/10 pointer-events-none shadow-md">
                     GIF
                   </span>
                 )}

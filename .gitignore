@@ -9,6 +9,8 @@ backend/static/uploads/avatars/*
 !backend/static/uploads/avatars/.gitkeep
 backend/static/uploads/banners/*
 !backend/static/uploads/banners/.gitkeep
+backend/static/uploads/threads/*
+!backend/static/uploads/threads/.gitkeep
 *.db
 *.sqlite3
 

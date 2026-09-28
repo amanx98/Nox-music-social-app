@@ -49,6 +49,17 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
 
   const modalRef = useRef(null);
   const titleInputRef = useRef(null);
+  const bodyTextareaRef = useRef(null);
+
+  // Dynamically auto-fit textarea height to content and media presence
+  useEffect(() => {
+    const el = bodyTextareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const baseMin = mediaPreview ? 74 : 100;
+    const target = Math.max(el.scrollHeight, baseMin);
+    el.style.height = `${Math.min(target, 200)}px`;
+  }, [body, mediaPreview]);
 
   // Load available tags
   useEffect(() => {
@@ -227,7 +238,7 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
     >
       <div
         ref={modalRef}
-        className="w-full max-w-lg rounded-md bg-surface-raised border border-border p-5 sm:p-6 shadow-5 text-left flex flex-col gap-4 animate-slide-up relative"
+        className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-surface-raised border border-border p-4 sm:p-5 shadow-5 text-left flex flex-col gap-3.5 animate-slide-up relative"
       >
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-3 border-b border-border">
@@ -352,42 +363,50 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
             </div>
           )}
 
-          {/* Body Textarea */}
+          {/* Body Textarea (Auto-fits content, adapts when media is attached) */}
           <div className="space-y-1">
             <label htmlFor="composer-body" className="sr-only">
               Discussion Content
             </label>
             <textarea
               id="composer-body"
-              rows={4}
+              ref={bodyTextareaRef}
+              rows={mediaPreview ? 2 : 4}
               placeholder="What are your arguments, record notes, or sound observations?"
               value={body}
               onChange={(e) => setBody(e.target.value)}
               disabled={submitting}
               required
-              className="w-full p-3 rounded-md bg-surface-sunken border border-border text-xs sm:text-sm font-sans text-text placeholder:text-text-dim focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-colors resize-y min-h-[100px]"
+              className="w-full p-3 rounded-md bg-surface-sunken border border-border text-xs sm:text-sm font-sans text-text placeholder:text-text-dim focus:border-accent focus:ring-1 focus:ring-accent outline-none transition-all resize-none overflow-y-auto"
             />
           </div>
 
-          {/* Media Attachment Preview */}
+          {/* Media Attachment Preview (True Aspect Ratio, No Cropping into Landscape) */}
           {mediaPreview && (
-            <div className="relative rounded-md border border-border bg-surface-sunken overflow-hidden group">
+            <div className="relative rounded-xl border border-border bg-surface-sunken/80 overflow-hidden group flex items-center justify-center max-h-60 sm:max-h-72 w-full">
+              {/* Subtle ambient backdrop for letterboxed areas */}
+              {mediaType !== "video" && (
+                <div
+                  className="absolute inset-0 bg-cover bg-center filter blur-xl opacity-20 scale-110 pointer-events-none"
+                  style={{ backgroundImage: `url(${mediaPreview})` }}
+                />
+              )}
               {mediaType === "video" ? (
                 <video
                   src={mediaPreview}
                   controls
-                  className="w-full max-h-56 bg-black object-contain"
+                  className="max-h-60 sm:max-h-72 w-auto max-w-full object-contain bg-black rounded-lg"
                 />
               ) : (
                 <img
                   src={mediaPreview}
                   alt="Attached media preview"
-                  className="w-full max-h-56 object-cover"
+                  className="relative z-10 max-h-60 sm:max-h-72 w-auto max-w-full object-contain mx-auto block"
                 />
               )}
 
               {/* Type Badge */}
-              <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded bg-black/80 border border-white/10 font-mono text-[9px] uppercase tracking-wider text-accent font-bold">
+              <div className="absolute top-2 left-2 z-20 px-1.5 py-0.5 rounded bg-black/80 backdrop-blur-xs border border-white/10 font-mono text-[9px] uppercase tracking-wider text-accent font-bold shadow-sm">
                 {mediaType || "media"}
               </div>
 
