@@ -16,6 +16,7 @@ class UserUpdate(BaseModel):
     banner_url: Optional[str] = None
 
 class UserRead(BaseModel):
+    model_config = {"from_attributes": True}
     id: int
     username: str
     email: str
@@ -74,4 +75,5 @@ class FriendshipActionResponse(BaseModel):
 
 class Token(BaseModel):
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"
+    user: Optional[UserRead] = None

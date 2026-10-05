@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Form, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select, func
 
@@ -26,15 +26,24 @@ os.makedirs(BANNER_DIR, exist_ok=True)
 
 @router.post("/register", response_model=UserRead)
 def register(user_in: UserCreate, session: Session = Depends(get_session)):
+    clean_username = user_in.username.strip()
+    clean_email = user_in.email.strip().lower()
+
     existing = session.exec(
-        select(User).where((User.email == user_in.email) | (User.username == user_in.username))
+        select(User).where(
+            (func.lower(User.email) == clean_email) |
+            (func.lower(User.username) == clean_username.lower())
+        )
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Username or email already taken")
+        if existing.username.lower() == clean_username.lower():
+            raise HTTPException(status_code=400, detail=f"Username @{clean_username} is already taken")
+        else:
+            raise HTTPException(status_code=400, detail="An account with this email address already exists")
 
     user = User(
-        username=user_in.username,
-        email=user_in.email,
+        username=clean_username,
+        email=clean_email,
         password_hash=hash_password(user_in.password),
     )
     session.add(user)
@@ -43,19 +52,55 @@ def register(user_in: UserCreate, session: Session = Depends(get_session)):
     return user
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
-    login_id = form_data.username.strip().lower()
+async def login(request: Request, session: Session = Depends(get_session)):
+    content_type = request.headers.get("content-type", "")
+    username = ""
+    password = ""
+    if "application/json" in content_type:
+        try:
+            body = await request.json()
+            username = body.get("username") or body.get("email") or ""
+            password = body.get("password") or ""
+        except Exception:
+            pass
+    else:
+        try:
+            form = await request.form()
+            username = form.get("username") or form.get("email") or ""
+            password = form.get("password") or ""
+        except Exception:
+            pass
+
+    login_id = str(username).strip().lower()
+    plain_password = str(password)
+
+    if not login_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter your email or username")
+    if not plain_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Please enter your password")
+
     user = session.exec(
         select(User).where(
             (func.lower(User.email) == login_id) |
             (func.lower(User.username) == login_id)
         )
     ).first()
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Account not found. Please check your username/email or create a new account."
+        )
+
+    if not verify_password(plain_password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password. (Tip: Demo accounts use 'password123')"
+        )
 
     token = create_access_token({"sub": str(user.id)})
-    return Token(access_token=token)
+    user_read = UserRead.model_validate(user)
+    return Token(access_token=token, user=user_read)
 
 @router.get("/me", response_model=UserRead)
 def read_me(current_user: User = Depends(get_current_user)):

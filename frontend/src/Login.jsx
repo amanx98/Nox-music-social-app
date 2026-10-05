@@ -7,18 +7,22 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function handleSubmit(e, overrideEmail, overridePassword) {
+    if (e) e.preventDefault();
     setError("");
     setLoading(true);
+    const targetEmail = overrideEmail !== undefined ? overrideEmail : email;
+    const targetPassword = overridePassword !== undefined ? overridePassword : password;
     try {
-      await login(email, password);
-      let user;
-      try {
-        user = await getMe();
-      } catch {
-        await new Promise((r) => setTimeout(r, 400));
-        user = await getMe();
+      const loginRes = await login(targetEmail, targetPassword);
+      let user = loginRes?.user;
+      if (!user) {
+        try {
+          user = await getMe();
+        } catch {
+          await new Promise((r) => setTimeout(r, 400));
+          user = await getMe();
+        }
       }
       onLoginSuccess(user);
     } catch (err) {
@@ -26,6 +30,12 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleQuickLogin(accountUsername) {
+    setEmail(accountUsername);
+    setPassword("password123");
+    handleSubmit(null, accountUsername, "password123");
   }
 
   return (
@@ -85,6 +95,51 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
         <button type="submit" className="btn-primary" disabled={loading} style={{ height: "42px", marginTop: "8px" }}>
           {loading ? "Signing in..." : "Enter Nox →"}
         </button>
+
+        {/* Quick Demo Personas */}
+        <div style={{ marginTop: "12px", paddingTop: "12px", borderTop: "1px dashed var(--border)", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <span className="meta" style={{ fontSize: "10px", letterSpacing: "0.06em", color: "var(--cream-text-dim)", textAlign: "center" }}>
+            QUICK SIGN-IN (PASSWORD: password123)
+          </span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: "11px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+              onClick={() => handleQuickLogin("amanx98")}
+              disabled={loading}
+            >
+              <span>✦</span> <span>@amanx98</span>
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: "11px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+              onClick={() => handleQuickLogin("miles_ahead")}
+              disabled={loading}
+            >
+              <span>🎷</span> <span>@miles_ahead</span>
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: "11px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+              onClick={() => handleQuickLogin("shoegaze_queen")}
+              disabled={loading}
+            >
+              <span>🎸</span> <span>@shoegaze_queen</span>
+            </button>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: "11px", padding: "6px 8px", border: "1px solid var(--border)", borderRadius: "var(--radius)", textAlign: "left", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+              onClick={() => handleQuickLogin("audiophile_dan")}
+              disabled={loading}
+            >
+              <span>🎧</span> <span>@audiophile_dan</span>
+            </button>
+          </div>
+        </div>
       </form>
 
       <div style={{ textAlign: "center", marginTop: "20px" }}>

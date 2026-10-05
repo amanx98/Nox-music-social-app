@@ -106,6 +106,7 @@ function App() {
             <Register
               onRegisterSuccess={() => setShowRegister(false)}
               onSwitchToLogin={() => setShowRegister(false)}
+              onLoginSuccess={setUser}
             />
           ) : (
             <Login

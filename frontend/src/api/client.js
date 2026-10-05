@@ -59,27 +59,41 @@ export async function apiRequest(path, options = {}) {
 
 
 export async function login(email, password) {
-  const body = new URLSearchParams();
-  body.append("username", email); // OAuth2 spec quirk — same as in Swagger
-  body.append("password", password);
+  const cleanEmail = String(email || "").trim();
+  const cleanPassword = String(password || "");
 
   const response = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: cleanEmail, password: cleanPassword }),
   });
 
-  if (!response.ok) throw new Error("Login failed");
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    let msg = errorBody.detail;
+    if (Array.isArray(msg)) {
+      msg = msg.map((m) => m.msg || m).join(", ");
+    }
+    const err = new Error(msg || `Login failed (${response.status})`);
+    err.status = response.status;
+    throw err;
+  }
 
   const data = await response.json();
-  localStorage.setItem("access_token", data.access_token);
+  if (data?.access_token) {
+    localStorage.setItem("access_token", data.access_token);
+  }
   return data;
 }
 
 export async function register(username, email, password) {
+  const cleanUsername = String(username || "").trim();
+  const cleanEmail = String(email || "").trim();
+  const cleanPassword = String(password || "");
+
   return apiRequest("/auth/register", {
     method: "POST",
-    body: JSON.stringify({ username, email, password }),
+    body: JSON.stringify({ username: cleanUsername, email: cleanEmail, password: cleanPassword }),
   });
 }
 

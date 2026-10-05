@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { register } from "./api/client";
+import { register, login, getMe } from "./api/client";
 
-export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
+export default function Register({ onRegisterSuccess, onSwitchToLogin, onLoginSuccess }) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -13,7 +13,18 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
     setError("");
     setLoading(true);
     try {
-      await register(username, email, password);
+      await register(username.trim(), email.trim(), password);
+      try {
+        const loginRes = await login(username.trim(), password);
+        let user = loginRes?.user;
+        if (!user) user = await getMe();
+        if (onLoginSuccess && user) {
+          onLoginSuccess(user);
+          return;
+        }
+      } catch {
+        // fallback if auto-login fails
+      }
       onRegisterSuccess();
     } catch (err) {
       setError(err.message || "Registration failed. Please try again.");
