@@ -123,6 +123,7 @@ function App() {
                 <Route path="topsters" element={<TopstersPage user={user} />} />
                 <Route path="discover" element={<DiscoverPage />} />
                 <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
+                <Route path="profile/:username" element={<ProfilePage user={user} onLogout={handleLogout} />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>

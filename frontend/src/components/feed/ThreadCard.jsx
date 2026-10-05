@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Mic, Hash, Repeat2, Pencil } from "lucide-react";
 import Avatar from "../Avatar";
 import SocialActions from "../SocialActions";
@@ -83,7 +84,14 @@ export default function ThreadCard({
               }}
             />
           </div>
-          <Avatar username={authorName} src={thread.author_avatar_url || thread.avatar_url} size={22} />
+          <Link
+            to={`/profile/${thread.author_username || authorName}`}
+            onClick={(e) => e.stopPropagation()}
+            className="hover:scale-110 transition-transform cursor-pointer"
+            title={`View @${authorHandle}'s profile`}
+          >
+            <Avatar username={authorName} src={thread.author_avatar_url || thread.avatar_url} size={22} />
+          </Link>
         </div>
 
         {/* Right Column: Content & Controls */}
@@ -91,12 +99,20 @@ export default function ThreadCard({
           {/* Header: Name, Handle, Timestamp, Tag Badge */}
           <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
             <div className="flex items-baseline gap-1.5 min-w-0">
-              <span className="font-sans font-semibold text-sm text-text truncate group-hover:underline">
+              <Link
+                to={`/profile/${thread.author_username || authorName}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-sans font-semibold text-sm text-text truncate hover:text-accent hover:underline cursor-pointer"
+              >
                 {authorName}
-              </span>
-              <span className="font-mono text-xs text-text-dim truncate">
+              </Link>
+              <Link
+                to={`/profile/${thread.author_username || authorName}`}
+                onClick={(e) => e.stopPropagation()}
+                className="font-mono text-xs text-text-dim truncate hover:text-accent cursor-pointer"
+              >
                 @{authorHandle}
-              </span>
+              </Link>
               <span className="text-text-dim text-xs" aria-hidden="true">&middot;</span>
               <span className="font-mono text-xs text-text-dim flex-shrink-0">
                 {formatTimeAgo(thread.created_at)}

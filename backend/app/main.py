@@ -7,7 +7,7 @@ from app.api.routes.auth import router as auth_router
 from app.models.post import Post
 from app.models.lastfm_profile import LastfmProfile
 from app.models.album_quilt import AlbumQuilt
-from app.models.social import ThreadLike, ThreadRepost, ThreadBookmark
+from app.models.social import ThreadLike, ThreadRepost, ThreadBookmark, UserFollow, Friendship
 
 app = FastAPI()
 
@@ -57,13 +57,24 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 @app.on_event("startup")
 def on_startup():
-    from sqlmodel import SQLModel, text
+    from sqlmodel import SQLModel, Session, text
     SQLModel.metadata.create_all(engine)
-    with engine.begin() as conn:
-        conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
-        conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS media_type VARCHAR;"))
-        conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
-        conn.execute(text("ALTER TABLE post ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
+            conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS media_type VARCHAR;"))
+            conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
+            conn.execute(text("ALTER TABLE post ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
+    except Exception:
+        # SQLite doesn't support IF NOT EXISTS in ALTER TABLE; columns already created by create_all
+        pass
+
+    try:
+        from app.db.seed import seed_database
+        with Session(engine) as session:
+            seed_database(session, force=False)
+    except Exception as e:
+        print(f"[Startup] Seed database check skipped: {e}")
 
 app.include_router(auth_router)
 
@@ -76,19 +87,26 @@ from app.models.thread import Thread
 
 from app.api.routes.tags import router as tags_router
 from app.api.routes.threads import router as threads_router
+from app.api.routes.posts import router as posts_router
+from app.api.routes.lastfm import router as lastfm_router
+from app.api.routes.quilts import router as quilts_router
+from app.api.routes.curation import router as curation_router
+from app.api.routes.users import router as users_router
+from app.api.routes.friends import router as friends_router
 
 app.include_router(tags_router)
 app.include_router(threads_router)
-
-from app.api.routes.posts import router as posts_router
-
 app.include_router(posts_router)
-
-from app.api.routes.lastfm import router as lastfm_router
 app.include_router(lastfm_router)
-
-from app.api.routes.quilts import router as quilts_router
 app.include_router(quilts_router)
+app.include_router(curation_router)
+app.include_router(users_router)
+app.include_router(friends_router)
 
-from app.api.routes.curation import router as curation_router
-app.include_router(curation_router)
+@app.post("/dev/seed")
+def dev_seed():
+    from sqlmodel import Session
+    from app.db.seed import seed_database
+    with Session(engine) as session:
+        seed_database(session, force=True)
+    return {"status": "seeded"}

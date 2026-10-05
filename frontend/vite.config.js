@@ -18,6 +18,8 @@ export default defineConfig({
       '/lastfm': 'http://127.0.0.1:8000',
       '/quilts': 'http://127.0.0.1:8000',
       '/curation': 'http://127.0.0.1:8000',
+      '/users': 'http://127.0.0.1:8000',
+      '/friends': 'http://127.0.0.1:8000',
       '/static': 'http://127.0.0.1:8000',
       '/health': 'http://127.0.0.1:8000',
     },

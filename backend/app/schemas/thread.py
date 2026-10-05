@@ -30,6 +30,7 @@ class ThreadRead(BaseModel):
     author_name: Optional[str] = None
     author_username: Optional[str] = None
     author_avatar_url: Optional[str] = None
+    author_bio: Optional[str] = None
     tag_name: Optional[str] = None
     tag_type: Optional[str] = None
     likes_count: int = 0

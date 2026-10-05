@@ -394,4 +394,74 @@ export async function getPlaylists() {
 /** Delete a saved playlist */
 export async function deletePlaylist(playlistId) {
   return apiRequest(`/curation/playlists/${playlistId}`, { method: "DELETE" });
-}
+}
+
+// ---------------------------------------------------------------------------
+// User Profiles & Social Graph API (Follows & Friendships)
+// ---------------------------------------------------------------------------
+
+/** Get public profile for a user by username */
+export async function getUserProfile(username) {
+  return apiRequest(`/users/${encodeURIComponent(username)}`);
+}
+
+/** Get followers of a user */
+export async function getUserFollowers(username) {
+  return apiRequest(`/users/${encodeURIComponent(username)}/followers`);
+}
+
+/** Get accounts followed by a user */
+export async function getUserFollowing(username) {
+  return apiRequest(`/users/${encodeURIComponent(username)}/following`);
+}
+
+/** Get accepted friends of a user */
+export async function getUserFriends(username) {
+  return apiRequest(`/users/${encodeURIComponent(username)}/friends`);
+}
+
+/** Search users by query string */
+export async function searchUsers(query) {
+  return apiRequest(`/users/search?q=${encodeURIComponent(query)}`);
+}
+
+/** Follow a user by user_id */
+export async function followUser(userId) {
+  return apiRequest(`/users/${userId}/follow`, { method: "POST" });
+}
+
+/** Unfollow a user by user_id */
+export async function unfollowUser(userId) {
+  return apiRequest(`/users/${userId}/unfollow`, { method: "POST" });
+}
+
+/** Send a friend request to user_id */
+export async function sendFriendRequest(userId) {
+  return apiRequest(`/friends/request/${userId}`, { method: "POST" });
+}
+
+/** Accept an incoming friend request by request_id */
+export async function acceptFriendRequest(requestId) {
+  return apiRequest(`/friends/accept/${requestId}`, { method: "POST" });
+}
+
+/** Decline an incoming friend request by request_id */
+export async function declineFriendRequest(requestId) {
+  return apiRequest(`/friends/decline/${requestId}`, { method: "POST" });
+}
+
+/** Cancel a pending outgoing friend request by request_id */
+export async function cancelFriendRequest(requestId) {
+  return apiRequest(`/friends/cancel/${requestId}`, { method: "POST" });
+}
+
+/** Remove an existing friend (unfriend) by user_id */
+export async function removeFriend(userId) {
+  return apiRequest(`/friends/${userId}`, { method: "DELETE" });
+}
+
+/** Get all pending friend requests for current user (incoming & outgoing) */
+export async function getFriendRequests() {
+  return apiRequest("/friends/requests");
+}
+

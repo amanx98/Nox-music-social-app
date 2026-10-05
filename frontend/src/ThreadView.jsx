@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { ArrowLeft, Send, Heart, MessageSquare, Pencil } from "lucide-react";
 import { getPosts, createPost, updatePost } from "./api/client";
 import { useToast } from "./components/Toast";
@@ -133,16 +134,32 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
         {/* Author Line */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <Avatar username={threadAuthor} src={thread.author_avatar_url || thread.avatar_url} size={42} />
+            <Link
+              to={`/profile/${thread.author_username || threadAuthor}`}
+              className="hover:scale-105 transition-transform"
+              title={`View @${authorHandle}'s profile`}
+            >
+              <Avatar username={threadAuthor} src={thread.author_avatar_url || thread.avatar_url} size={42} />
+            </Link>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-sans font-semibold text-sm text-text">{threadAuthor}</span>
+                <Link
+                  to={`/profile/${thread.author_username || threadAuthor}`}
+                  className="font-sans font-semibold text-sm text-text hover:text-accent hover:underline"
+                >
+                  {threadAuthor}
+                </Link>
                 <span className="font-mono text-2xs uppercase tracking-wider px-1.5 py-0.2 rounded bg-accent/15 text-accent border border-accent/30 font-semibold">
                   OP
                 </span>
               </div>
               <div className="flex items-baseline gap-1 text-xs text-text-dim font-mono">
-                <span>@{authorHandle}</span>
+                <Link
+                  to={`/profile/${thread.author_username || threadAuthor}`}
+                  className="hover:text-accent"
+                >
+                  @{authorHandle}
+                </Link>
                 <span>&middot;</span>
                 <span>{formatTimeAgo(thread.created_at)}</span>
                 {thread.updated_at && (
@@ -276,7 +293,7 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
         ) : (
           <div className="rounded-xl border border-border/80 bg-surface overflow-hidden divide-y divide-border/60">
             {posts.map((post) => {
-              const replyAuthor = post.username || `user_${post.user_id}`;
+              const replyAuthor = post.author_username || post.username || post.author_name || (user?.id === post.user_id ? user.username : null) || `audiophile_${post.user_id}`;
               const isOP = post.user_id === thread.user_id;
               const isPostAuthor = Boolean(
                 user && (
@@ -289,13 +306,29 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
               return (
                 <div key={post.id} className="p-3.5 flex gap-3 text-left hover:bg-surface-raised/30 transition-colors">
                   <div className="flex-shrink-0 pt-0.5">
-                    <Avatar username={replyAuthor} src={post.author_avatar_url || post.avatar_url} size={32} />
+                    <Link
+                      to={`/profile/${replyAuthor}`}
+                      className="hover:scale-105 transition-transform inline-block"
+                      title={`View @${replyAuthor.toLowerCase()}'s profile`}
+                    >
+                      <Avatar username={replyAuthor} src={post.author_avatar_url || post.avatar_url} size={32} />
+                    </Link>
                   </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-baseline gap-1.5 flex-wrap">
-                        <span className="font-sans font-semibold text-xs text-text">{replyAuthor}</span>
-                        <span className="font-mono text-2xs text-text-dim">@{replyAuthor.toLowerCase()}</span>
+                        <Link
+                          to={`/profile/${replyAuthor}`}
+                          className="font-sans font-semibold text-xs text-text hover:text-accent hover:underline"
+                        >
+                          {replyAuthor}
+                        </Link>
+                        <Link
+                          to={`/profile/${replyAuthor}`}
+                          className="font-mono text-2xs text-text-dim hover:text-accent"
+                        >
+                          @{replyAuthor.toLowerCase()}
+                        </Link>
                         {isOP && (
                           <span className="font-mono text-[9px] uppercase px-1 py-0.2 rounded bg-accent/15 text-accent border border-accent/25">
                             OP

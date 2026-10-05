@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useOutletContext, useSearchParams, Link } from "react-router-dom";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useOutletContext, useSearchParams, Link, useParams } from "react-router-dom";
 import {
   User,
   LayoutGrid,
@@ -28,6 +28,11 @@ import {
   Play,
   Pause,
   Music2,
+  UserPlus,
+  UserCheck,
+  UserX,
+  Users,
+  Send,
 } from "lucide-react";
 import QuiltGallery from "../QuiltGallery";
 import TopAlbums from "../TopAlbums";
@@ -49,6 +54,18 @@ import {
   resolveImageUrl,
   getNowPlaying,
   getLastfmStatus,
+  getUserProfile,
+  getUserFollowers,
+  getUserFollowing,
+  getUserFriends,
+  followUser,
+  unfollowUser,
+  sendFriendRequest,
+  acceptFriendRequest,
+  declineFriendRequest,
+  cancelFriendRequest,
+  removeFriend,
+  getFriendRequests,
 } from "../api/client";
 import { useToast } from "../components/Toast";
 import Button from "../components/ui/Button";
@@ -115,6 +132,32 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
   const user = propUser || outlet.user || {};
   const userId = user?.id ?? "guest";
   const username = user?.username || "Listener";
+
+  const { username: routeUsername } = useParams();
+  const isSelf = !routeUsername || Boolean(user?.username && routeUsername.toLowerCase() === user.username.toLowerCase());
+  const displayUsername = isSelf ? (user?.username || "Listener") : routeUsername;
+
+  // Real database profile & social graph state
+  const [profileData, setProfileData] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+
+  // Community lists
+  const [friendsList, setFriendsList] = useState([]);
+  const [friendsListLoading, setFriendsListLoading] = useState(false);
+  const [followersList, setFollowersList] = useState([]);
+  const [followersListLoading, setFollowersListLoading] = useState(false);
+  const [followingList, setFollowingList] = useState([]);
+  const [followingListLoading, setFollowingListLoading] = useState(false);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [friendRequestsLoading, setFriendRequestsLoading] = useState(false);
+
+  const incomingRequests = useMemo(() => {
+    return friendRequests.filter((r) => r.receiver_id === user?.id);
+  }, [friendRequests, user?.id]);
+
+  const outgoingRequests = useMemo(() => {
+    return friendRequests.filter((r) => r.sender_id === user?.id);
+  }, [friendRequests, user?.id]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
@@ -183,14 +226,14 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
 
   const fetchNowPlaying = useCallback(async () => {
     try {
-      const data = await getNowPlaying(username);
+      const data = await getNowPlaying(displayUsername);
       if (data?.name && data?.artist) {
         setNowPlaying(data);
       }
     } catch {
       // Ignore
     }
-  }, [username]);
+  }, [displayUsername]);
 
   useEffect(() => {
     fetchNowPlaying();
@@ -312,57 +355,60 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
 
   // Social data fetchers
   const loadPosts = useCallback(async () => {
-    if (!userId || userId === "guest") return;
+    const targetUid = isSelf ? userId : profileData?.id;
+    if (!targetUid || targetUid === "guest") return;
     setUserThreadsLoading(true);
     try {
-      // include_reposts=true ensures retweets appear in the main posts stream just like Twitter
-      const data = await getUserThreads(userId, true);
+      const data = await getUserThreads(targetUid, true);
       setUserThreads(Array.isArray(data) ? data : []);
     } catch {
       setUserThreads([]);
     } finally {
       setUserThreadsLoading(false);
     }
-  }, [userId]);
+  }, [isSelf, userId, profileData?.id]);
 
   const loadReplies = useCallback(async () => {
-    if (!userId || userId === "guest") return;
+    const targetUid = isSelf ? userId : profileData?.id;
+    if (!targetUid || targetUid === "guest") return;
     setUserRepliesLoading(true);
     try {
-      const data = await getUserReplies(userId);
+      const data = await getUserReplies(targetUid);
       setUserReplies(Array.isArray(data) ? data : []);
     } catch {
       setUserReplies([]);
     } finally {
       setUserRepliesLoading(false);
     }
-  }, [userId]);
+  }, [isSelf, userId, profileData?.id]);
 
   const loadReposts = useCallback(async () => {
-    if (!userId || userId === "guest") return;
+    const targetUid = isSelf ? userId : profileData?.id;
+    if (!targetUid || targetUid === "guest") return;
     setUserRepostsLoading(true);
     try {
-      const data = await getUserReposts(userId);
+      const data = await getUserReposts(targetUid);
       setUserReposts(Array.isArray(data) ? data : []);
     } catch {
       setUserReposts([]);
     } finally {
       setUserRepostsLoading(false);
     }
-  }, [userId]);
+  }, [isSelf, userId, profileData?.id]);
 
   const loadLikes = useCallback(async () => {
-    if (!userId || userId === "guest") return;
+    const targetUid = isSelf ? userId : profileData?.id;
+    if (!targetUid || targetUid === "guest") return;
     setUserLikesLoading(true);
     try {
-      const data = await getUserLikes(userId);
+      const data = await getUserLikes(targetUid);
       setUserLikes(Array.isArray(data) ? data : []);
     } catch {
       setUserLikes([]);
     } finally {
       setUserLikesLoading(false);
     }
-  }, [userId]);
+  }, [isSelf, userId, profileData?.id]);
 
   const loadBookmarks = useCallback(async () => {
     setUserBookmarksLoading(true);
@@ -376,6 +422,202 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
     }
   }, []);
 
+  // Community lists loaders
+  const loadFriends = useCallback(async () => {
+    const target = isSelf ? user?.username : routeUsername;
+    if (!target) return;
+    setFriendsListLoading(true);
+    try {
+      const data = await getUserFriends(target);
+      setFriendsList(Array.isArray(data) ? data : []);
+    } catch {
+      setFriendsList([]);
+    } finally {
+      setFriendsListLoading(false);
+    }
+  }, [isSelf, user?.username, routeUsername]);
+
+  const loadFollowers = useCallback(async () => {
+    const target = isSelf ? user?.username : routeUsername;
+    if (!target) return;
+    setFollowersListLoading(true);
+    try {
+      const data = await getUserFollowers(target);
+      setFollowersList(Array.isArray(data) ? data : []);
+    } catch {
+      setFollowersList([]);
+    } finally {
+      setFollowersListLoading(false);
+    }
+  }, [isSelf, user?.username, routeUsername]);
+
+  const loadFollowing = useCallback(async () => {
+    const target = isSelf ? user?.username : routeUsername;
+    if (!target) return;
+    setFollowingListLoading(true);
+    try {
+      const data = await getUserFollowing(target);
+      setFollowingList(Array.isArray(data) ? data : []);
+    } catch {
+      setFollowingList([]);
+    } finally {
+      setFollowingListLoading(false);
+    }
+  }, [isSelf, user?.username, routeUsername]);
+
+  const loadFriendRequests = useCallback(async () => {
+    if (!isSelf || !user?.id) return;
+    setFriendRequestsLoading(true);
+    try {
+      const data = await getFriendRequests();
+      setFriendRequests(Array.isArray(data) ? data : []);
+    } catch {
+      setFriendRequests([]);
+    } finally {
+      setFriendRequestsLoading(false);
+    }
+  }, [isSelf, user?.id]);
+
+  // Load target public profile and initialize
+  useEffect(() => {
+    const targetName = isSelf ? user?.username : routeUsername;
+    if (!targetName) return;
+
+    setLoadingProfile(true);
+    getUserProfile(targetName)
+      .then((data) => {
+        setProfileData(data);
+      })
+      .catch((err) => {
+        if (!isSelf) {
+          addToast(err.message || "Failed to load user profile", "error");
+        }
+      })
+      .finally(() => {
+        setLoadingProfile(false);
+      });
+
+    if (isSelf) {
+      loadFriendRequests();
+    }
+  }, [isSelf, routeUsername, user?.username, addToast, loadFriendRequests]);
+
+  // Social action handlers
+  async function handleToggleFollow() {
+    if (!profileData?.id) return;
+    const willFollow = !profileData.is_following;
+    setProfileData((prev) => ({
+      ...prev,
+      is_following: willFollow,
+      followers_count: willFollow ? ((prev?.followers_count || 0) + 1) : Math.max(0, (prev?.followers_count || 1) - 1),
+    }));
+    try {
+      if (willFollow) {
+        await followUser(profileData.id);
+        addToast(`Followed @${displayUsername}`);
+      } else {
+        await unfollowUser(profileData.id);
+        addToast(`Unfollowed @${displayUsername}`);
+      }
+      loadFollowers();
+    } catch (err) {
+      setProfileData((prev) => ({
+        ...prev,
+        is_following: !willFollow,
+        followers_count: willFollow ? Math.max(0, (prev?.followers_count || 1) - 1) : ((prev?.followers_count || 0) + 1),
+      }));
+      addToast(err.message || "Failed to update follow", "error");
+    }
+  }
+
+  async function handleSendFriendRequest() {
+    if (!profileData?.id) return;
+    setProfileData((prev) => ({ ...prev, friendship_status: "pending_sent" }));
+    try {
+      const res = await sendFriendRequest(profileData.id);
+      setProfileData((prev) => ({
+        ...prev,
+        friendship_status: res.status,
+        friendship_id: res.friendship_id,
+        friends_count: res.friends_count,
+      }));
+      addToast(res.status === "friends" ? `You and @${displayUsername} are now friends!` : "Friend request sent!");
+    } catch (err) {
+      setProfileData((prev) => ({ ...prev, friendship_status: "none" }));
+      addToast(err.message || "Failed to send friend request", "error");
+    }
+  }
+
+  async function handleAcceptFriendRequest(reqId) {
+    const fId = reqId || profileData?.friendship_id;
+    if (!fId) return;
+    try {
+      const res = await acceptFriendRequest(fId);
+      if (profileData) {
+        setProfileData((prev) => ({
+          ...prev,
+          friendship_status: "friends",
+          friends_count: res.friends_count,
+        }));
+      }
+      addToast("Friend request accepted!");
+      loadFriendRequests();
+      loadFriends();
+    } catch (err) {
+      addToast(err.message || "Failed to accept friend request", "error");
+    }
+  }
+
+  async function handleDeclineFriendRequest(reqId) {
+    const fId = reqId || profileData?.friendship_id;
+    if (!fId) return;
+    try {
+      await declineFriendRequest(fId);
+      if (profileData) {
+        setProfileData((prev) => ({ ...prev, friendship_status: "none", friendship_id: null }));
+      }
+      addToast("Friend request declined");
+      loadFriendRequests();
+    } catch (err) {
+      addToast(err.message || "Failed to decline friend request", "error");
+    }
+  }
+
+  async function handleCancelFriendRequest(reqId) {
+    const fId = reqId || profileData?.friendship_id;
+    if (!fId) return;
+    try {
+      await cancelFriendRequest(fId);
+      if (profileData) {
+        setProfileData((prev) => ({ ...prev, friendship_status: "none", friendship_id: null }));
+      }
+      addToast("Friend request cancelled");
+      loadFriendRequests();
+    } catch (err) {
+      addToast(err.message || "Failed to cancel friend request", "error");
+    }
+  }
+
+  async function handleRemoveFriend(targetId) {
+    const uId = targetId || profileData?.id;
+    if (!uId) return;
+    try {
+      const res = await removeFriend(uId);
+      if (profileData && profileData.id === uId) {
+        setProfileData((prev) => ({
+          ...prev,
+          friendship_status: "none",
+          friendship_id: null,
+          friends_count: res.friends_count,
+        }));
+      }
+      addToast("Friend removed");
+      loadFriends();
+    } catch (err) {
+      addToast(err.message || "Failed to remove friend", "error");
+    }
+  }
+
   // Fetch active tab data
   useEffect(() => {
     if (activeTab === "posts") loadPosts();
@@ -383,18 +625,25 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
     else if (activeTab === "reposts") loadReposts();
     else if (activeTab === "likes") loadLikes();
     else if (activeTab === "bookmarks") loadBookmarks();
-  }, [activeTab, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks]);
+    else if (activeTab === "friends") loadFriends();
+    else if (activeTab === "followers") loadFollowers();
+    else if (activeTab === "following") loadFollowing();
+    else if (activeTab === "requests") loadFriendRequests();
+  }, [activeTab, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks, loadFriends, loadFollowers, loadFollowing, loadFriendRequests]);
 
   // Initial load of counts for tab badges
   useEffect(() => {
-    if (userId && userId !== "guest") {
+    const targetUid = isSelf ? userId : profileData?.id;
+    if (targetUid && targetUid !== "guest") {
       loadPosts();
       loadReplies();
-      loadReposts();
-      loadLikes();
-      loadBookmarks();
+      if (isSelf) {
+        loadReposts();
+        loadLikes();
+        loadBookmarks();
+      }
     }
-  }, [userId, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks]);
+  }, [isSelf, userId, profileData?.id, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks]);
 
   // Listen for real-time social actions dispatched from anywhere in the app
   useEffect(() => {
@@ -404,10 +653,14 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
       else if (activeTab === "reposts") loadReposts();
       else if (activeTab === "likes") loadLikes();
       else if (activeTab === "bookmarks") loadBookmarks();
+      else if (activeTab === "friends") loadFriends();
+      else if (activeTab === "followers") loadFollowers();
+      else if (activeTab === "following") loadFollowing();
+      else if (activeTab === "requests") loadFriendRequests();
     }
     window.addEventListener("nox-social-action", handleSocialUpdate);
     return () => window.removeEventListener("nox-social-action", handleSocialUpdate);
-  }, [activeTab, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks]);
+  }, [activeTab, loadPosts, loadReplies, loadReposts, loadLikes, loadBookmarks, loadFriends, loadFollowers, loadFollowing, loadFriendRequests]);
 
   async function handleSaveBio() {
     setBio(bioInput);
@@ -607,9 +860,10 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
       {/* Profile Banner */}
       {(() => {
         const isNowPlayingMode = bannerMode === "now_playing" && nowPlaying?.name;
+        const currentBanner = isSelf ? bannerUrl : (profileData?.banner_url || "");
         const activeBg = isNowPlayingMode
-          ? (nowPlaying.landscape_art || nowPlaying.album_art || bannerUrl)
-          : bannerUrl;
+          ? (nowPlaying.landscape_art || nowPlaying.album_art || currentBanner)
+          : currentBanner;
 
         return (
           <div
@@ -695,15 +949,17 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
               </>
             ) : null}
 
-            <button
-              type="button"
-              onClick={() => setShowBannerModal(true)}
-              className="absolute top-3 right-3 px-3 py-1.5 rounded-md bg-surface/85 hover:bg-accent hover:text-black text-text border border-border/80 backdrop-blur-md font-heading font-semibold text-xs flex items-center gap-1.5 transition-all shadow-2 cursor-pointer z-10"
-              title="Customize Profile Banner"
-            >
-              <Camera className="w-3.5 h-3.5" />
-              <span>{bannerMode === "now_playing" ? "Live Banner" : bannerUrl ? "Change Banner" : "Add Banner"}</span>
-            </button>
+            {isSelf && (
+              <button
+                type="button"
+                onClick={() => setShowBannerModal(true)}
+                className="absolute top-3 right-3 px-3 py-1.5 rounded-md bg-surface/85 hover:bg-accent hover:text-black text-text border border-border/80 backdrop-blur-md font-heading font-semibold text-xs flex items-center gap-1.5 transition-all shadow-2 cursor-pointer z-10"
+                title="Customize Profile Banner"
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>{bannerMode === "now_playing" ? "Live Banner" : bannerUrl ? "Change Banner" : "Add Banner"}</span>
+              </button>
+            )}
           </div>
         );
       })()}
@@ -715,70 +971,160 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
           <div className="flex gap-4 items-end">
             <div className="relative">
               <Avatar
-                username={username}
-                src={avatarUrl}
+                username={displayUsername}
+                src={isSelf ? avatarUrl : profileData?.avatar_url}
                 size={84}
-                customIcon={customAvatar}
-                onClick={() => setShowAvatarPicker(true)}
-                className="cursor-pointer border-2 border-accent shadow-3"
+                customIcon={isSelf ? customAvatar : null}
+                onClick={isSelf ? () => setShowAvatarPicker(true) : undefined}
+                className={cn("border-2 border-accent shadow-3", isSelf && "cursor-pointer")}
               />
-              <button
-                type="button"
-                onClick={() => setShowAvatarPicker(true)}
-                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-black flex items-center justify-center shadow-2 border border-surface cursor-pointer hover:scale-110 transition-transform"
-                title="Change profile picture"
-                aria-label="Change profile picture"
-              >
-                <Camera className="w-3.5 h-3.5 stroke-[2.5]" />
-              </button>
+              {isSelf && (
+                <button
+                  type="button"
+                  onClick={() => setShowAvatarPicker(true)}
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-accent text-black flex items-center justify-center shadow-2 border border-surface cursor-pointer hover:scale-110 transition-transform"
+                  title="Change profile picture"
+                  aria-label="Change profile picture"
+                >
+                  <Camera className="w-3.5 h-3.5 stroke-[2.5]" />
+                </button>
+              )}
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="font-heading font-black text-2xl text-text m-0">{username}</h1>
+                <h1 className="font-heading font-black text-2xl text-text m-0">{displayUsername}</h1>
                 <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/30">
-                  Archivist
+                  {isSelf ? "Archivist" : "Tastemaker"}
                 </span>
+                {!isSelf && profileData?.is_followed_by && (
+                  <span className="font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-surface-sunken text-text-dim border border-border">
+                    Follows you
+                  </span>
+                )}
               </div>
               <div className="font-mono text-xs text-text-muted mt-0.5">
-                @{username.toLowerCase()}
+                @{displayUsername.toLowerCase()}
               </div>
             </div>
           </div>
 
           {/* Action buttons */}
           <div className="flex gap-2 items-center flex-wrap">
-            <Button
-              variant={lastfmConnected ? "outline" : "primary"}
-              size="sm"
-              onClick={connectLastfm}
-            >
-              {lastfmConnected ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Last.fm Synced</span>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>Connect Last.fm</span>
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditingBio(!isEditingBio)}
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              <span>Edit Bio</span>
-            </Button>
+            {isSelf ? (
+              <>
+                <Button
+                  variant={lastfmConnected ? "outline" : "primary"}
+                  size="sm"
+                  onClick={connectLastfm}
+                >
+                  {lastfmConnected ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Last.fm Synced</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Connect Last.fm</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditingBio(!isEditingBio)}
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Edit Bio</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Follow / Unfollow */}
+                <Button
+                  variant={profileData?.is_following ? "outline" : "primary"}
+                  size="sm"
+                  onClick={handleToggleFollow}
+                  className="min-w-[100px]"
+                >
+                  {profileData?.is_following ? (
+                    <>
+                      <UserCheck className="w-3.5 h-3.5 text-accent" />
+                      <span>Following</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-3.5 h-3.5" />
+                      <span>Follow</span>
+                    </>
+                  )}
+                </Button>
+
+                {/* Friendship button */}
+                {profileData?.friendship_status === "friends" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (window.confirm(`Remove @${displayUsername} from your friends?`)) {
+                        handleRemoveFriend();
+                      }
+                    }}
+                    className="hover:text-danger hover:border-danger transition-colors"
+                    title="Click to unfriend"
+                  >
+                    <Users className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Friends</span>
+                  </Button>
+                ) : profileData?.friendship_status === "pending_sent" ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCancelFriendRequest()}
+                    className="hover:text-danger hover:border-danger transition-colors"
+                    title="Click to cancel sent friend request"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-accent" />
+                    <span>Request Sent</span>
+                  </Button>
+                ) : profileData?.friendship_status === "pending_received" ? (
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => handleAcceptFriendRequest()}
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Accept</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeclineFriendRequest()}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Decline</span>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSendFriendRequest}
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Add Friend</span>
+                  </Button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
         {/* Bio Section */}
         <div className="mt-4 max-w-xl">
-          {isEditingBio ? (
+          {isSelf && isEditingBio ? (
             <div className="space-y-2">
               <textarea
                 value={bioInput}
@@ -798,34 +1144,77 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
             </div>
           ) : (
             <p className="font-sans text-sm text-text-muted leading-relaxed m-0">
-              {bio}
+              {isSelf ? bio : (profileData?.bio || "Crate digger & vinyl enthusiast exploring soundscapes on Nox.")}
             </p>
           )}
         </div>
 
+        {/* Social Counts Row */}
+        <div className="flex items-center gap-4 sm:gap-6 mt-4 pt-3 text-xs font-mono text-text-dim border-t border-border">
+          <button
+            type="button"
+            onClick={() => handleTabChange("followers")}
+            className="hover:text-text hover:underline transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <strong className="text-text font-bold font-sans text-sm">{profileData?.followers_count ?? 0}</strong>
+            <span>Followers</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("following")}
+            className="hover:text-text hover:underline transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <strong className="text-text font-bold font-sans text-sm">{profileData?.following_count ?? 0}</strong>
+            <span>Following</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("friends")}
+            className="hover:text-text hover:underline transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <strong className="text-text font-bold font-sans text-sm">{profileData?.friends_count ?? 0}</strong>
+            <span>Friends</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("posts")}
+            className="hover:text-text hover:underline transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            <strong className="text-text font-bold font-sans text-sm">
+              {isSelf ? userThreads.length : (profileData?.threads_count ?? userThreads.length)}
+            </strong>
+            <span>Posts</span>
+          </button>
+        </div>
+
         {/* Music Tags */}
-        <div className="flex items-center gap-1.5 flex-wrap mt-4 pt-3 border-t border-border">
+        <div className="flex items-center gap-1.5 flex-wrap mt-3 pt-3 border-t border-border/50">
           {tags.map((t) => (
             <span
               key={t}
-              className="inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-wider px-2.5 py-1 rounded-full border border-border bg-surface text-text-muted cursor-pointer hover:border-danger hover:text-danger transition-colors"
-              onClick={() => handleRemoveTag(t)}
-              title="Click to remove"
+              className={cn(
+                "inline-flex items-center gap-1 font-mono text-2xs uppercase tracking-wider px-2.5 py-1 rounded-full border border-border bg-surface text-text-muted",
+                isSelf && "cursor-pointer hover:border-danger hover:text-danger transition-colors"
+              )}
+              onClick={isSelf ? () => handleRemoveTag(t) : undefined}
+              title={isSelf ? "Click to remove" : undefined}
             >
               <span>{t}</span>
-              <X className="w-2.5 h-2.5 opacity-60" />
+              {isSelf && <X className="w-2.5 h-2.5 opacity-60" />}
             </span>
           ))}
 
-          <form onSubmit={handleAddTag} className="inline-flex">
-            <input
-              type="text"
-              placeholder="+ add genre"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              className="h-6 px-2.5 rounded-full border border-dashed border-border bg-transparent font-mono text-2xs text-text placeholder:text-text-dim outline-none focus:border-accent"
-            />
-          </form>
+          {isSelf && (
+            <form onSubmit={handleAddTag} className="inline-flex">
+              <input
+                type="text"
+                placeholder="+ add genre"
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                className="h-6 px-2.5 rounded-full border border-dashed border-border bg-transparent font-mono text-2xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+              />
+            </form>
+          )}
         </div>
       </div>
 
@@ -869,67 +1258,149 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
           )}
         </button>
 
-        {/* Tab 3: Reposts / Retweets */}
+        {/* Tab: Friends */}
         <button
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
-            activeTab === "reposts"
+            activeTab === "friends"
               ? "bg-accent text-black font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
-          onClick={() => handleTabChange("reposts")}
+          onClick={() => handleTabChange("friends")}
         >
-          <Repeat2 className="w-3.5 h-3.5" />
-          <span>Reposts</span>
-          {userReposts.length > 0 && (
-            <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "reposts" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
-              {userReposts.length}
+          <Users className="w-3.5 h-3.5" />
+          <span>Friends</span>
+          {(profileData?.friends_count || friendsList.length) > 0 && (
+            <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "friends" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
+              {profileData?.friends_count || friendsList.length}
             </span>
           )}
         </button>
 
-        {/* Tab 4: Likes */}
+        {/* Tab: Followers */}
         <button
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
-            activeTab === "likes"
+            activeTab === "followers"
               ? "bg-accent text-black font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
-          onClick={() => handleTabChange("likes")}
+          onClick={() => handleTabChange("followers")}
         >
-          <Heart className="w-3.5 h-3.5" />
-          <span>Likes</span>
-          {userLikes.length > 0 && (
-            <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "likes" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
-              {userLikes.length}
+          <User className="w-3.5 h-3.5" />
+          <span>Followers</span>
+          {(profileData?.followers_count || followersList.length) > 0 && (
+            <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "followers" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
+              {profileData?.followers_count || followersList.length}
             </span>
           )}
         </button>
 
-        {/* Tab 5: Bookmarks */}
+        {/* Tab: Following */}
         <button
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
-            activeTab === "bookmarks"
+            activeTab === "following"
               ? "bg-accent text-black font-bold shadow-1"
               : "text-text-muted hover:text-text hover:bg-surface-raised"
           )}
-          onClick={() => handleTabChange("bookmarks")}
+          onClick={() => handleTabChange("following")}
         >
-          <Bookmark className="w-3.5 h-3.5" />
-          <span>Bookmarks</span>
-          {userBookmarks.length > 0 && (
-            <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "bookmarks" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
-              {userBookmarks.length}
+          <UserCheck className="w-3.5 h-3.5" />
+          <span>Following</span>
+          {(profileData?.following_count || followingList.length) > 0 && (
+            <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "following" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
+              {profileData?.following_count || followingList.length}
             </span>
           )}
         </button>
 
-        {/* Divider separating social stream from music curation & settings */}
+        {/* Tab: Friend Requests (Self only) */}
+        {isSelf && (
+          <button
+            className={cn(
+              "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0 relative",
+              activeTab === "requests"
+                ? "bg-accent text-black font-bold shadow-1"
+                : "text-text-muted hover:text-text hover:bg-surface-raised"
+            )}
+            onClick={() => handleTabChange("requests")}
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>Requests</span>
+            {incomingRequests.length > 0 && (
+              <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-accent text-black animate-pulse">
+                {incomingRequests.length}
+              </span>
+            )}
+          </button>
+        )}
+
+        {isSelf && (
+          <>
+            {/* Tab: Reposts */}
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
+                activeTab === "reposts"
+                  ? "bg-accent text-black font-bold shadow-1"
+                  : "text-text-muted hover:text-text hover:bg-surface-raised"
+              )}
+              onClick={() => handleTabChange("reposts")}
+            >
+              <Repeat2 className="w-3.5 h-3.5" />
+              <span>Reposts</span>
+              {userReposts.length > 0 && (
+                <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "reposts" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
+                  {userReposts.length}
+                </span>
+              )}
+            </button>
+
+            {/* Tab: Likes */}
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
+                activeTab === "likes"
+                  ? "bg-accent text-black font-bold shadow-1"
+                  : "text-text-muted hover:text-text hover:bg-surface-raised"
+              )}
+              onClick={() => handleTabChange("likes")}
+            >
+              <Heart className="w-3.5 h-3.5" />
+              <span>Likes</span>
+              {userLikes.length > 0 && (
+                <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "likes" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
+                  {userLikes.length}
+                </span>
+              )}
+            </button>
+
+            {/* Tab: Bookmarks */}
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
+                activeTab === "bookmarks"
+                  ? "bg-accent text-black font-bold shadow-1"
+                  : "text-text-muted hover:text-text hover:bg-surface-raised"
+              )}
+              onClick={() => handleTabChange("bookmarks")}
+            >
+              <Bookmark className="w-3.5 h-3.5" />
+              <span>Bookmarks</span>
+              {userBookmarks.length > 0 && (
+                <span className={cn("font-mono text-2xs px-1.5 py-0.2 rounded-full", activeTab === "bookmarks" ? "bg-black/20 text-black" : "bg-surface-raised text-text-dim")}>
+                  {userBookmarks.length}
+                </span>
+              )}
+            </button>
+          </>
+        )}
+
+        {/* Divider */}
         <div className="w-px h-5 bg-border mx-1 shrink-0" />
 
-        {/* Tab 6: Topsters & Quilts */}
+        {/* Tab: Topsters & Quilts */}
         <button
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
@@ -943,7 +1414,7 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
           <span>Topsters &amp; Quilts</span>
         </button>
 
-        {/* Tab 7: Listening Stats */}
+        {/* Tab: Listening Stats */}
         <button
           className={cn(
             "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
@@ -957,33 +1428,37 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
           <span>Listening Stats</span>
         </button>
 
-        {/* Tab 8: Settings */}
-        <button
-          className={cn(
-            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
-            activeTab === "settings"
-              ? "bg-accent text-black font-bold shadow-1"
-              : "text-text-muted hover:text-text hover:bg-surface-raised"
-          )}
-          onClick={() => handleTabChange("settings")}
-        >
-          <Settings className="w-3.5 h-3.5" />
-          <span>Settings</span>
-        </button>
+        {isSelf && (
+          <>
+            {/* Tab: Settings */}
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
+                activeTab === "settings"
+                  ? "bg-accent text-black font-bold shadow-1"
+                  : "text-text-muted hover:text-text hover:bg-surface-raised"
+              )}
+              onClick={() => handleTabChange("settings")}
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span>Settings</span>
+            </button>
 
-        {/* Tab 9: Overview */}
-        <button
-          className={cn(
-            "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
-            activeTab === "overview"
-              ? "bg-accent text-black font-bold shadow-1"
-              : "text-text-muted hover:text-text hover:bg-surface-raised"
-          )}
-          onClick={() => handleTabChange("overview")}
-        >
-          <User className="w-3.5 h-3.5" />
-          <span>Overview</span>
-        </button>
+            {/* Tab: Overview */}
+            <button
+              className={cn(
+                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-heading font-semibold transition-all cursor-pointer shrink-0",
+                activeTab === "overview"
+                  ? "bg-accent text-black font-bold shadow-1"
+                  : "text-text-muted hover:text-text hover:bg-surface-raised"
+              )}
+              onClick={() => handleTabChange("overview")}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Overview</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* CONTENT FOR TAB: POSTS (Includes Retweets, exactly like Twitter) */}
@@ -1062,6 +1537,336 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
                 </article>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT FOR TAB: FRIENDS */}
+      {activeTab === "friends" && (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-surface overflow-hidden divide-y divide-border shadow-1">
+            {friendsListLoading ? (
+              <LoadingSkeleton count={3} />
+            ) : friendsList.length === 0 ? (
+              <EmptyState
+                icon={Users}
+                title="No friends in circle yet"
+                description={
+                  isSelf
+                    ? "Connect with fellow audiophiles and archivists by sending friend requests across the platform."
+                    : `@${displayUsername} hasn't added any friends to their circle yet.`
+                }
+                buttonText={isSelf ? "Explore Discussions" : undefined}
+                buttonLink="/"
+              />
+            ) : (
+              friendsList.map((friend) => (
+                <div
+                  key={friend.id}
+                  className="p-4 hover:bg-surface-raised/40 transition-colors flex items-center justify-between gap-4 text-left"
+                >
+                  <Link
+                    to={`/profile/${friend.username}`}
+                    className="flex items-center gap-3.5 min-w-0 flex-1 group"
+                  >
+                    <Avatar username={friend.username} src={friend.avatar_url} size={44} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-heading font-bold text-sm text-text group-hover:text-accent transition-colors truncate">
+                          {friend.username}
+                        </span>
+                        <span className="font-mono text-2xs px-1.5 py-0.2 rounded bg-accent/15 text-accent font-semibold shrink-0">
+                          Friend
+                        </span>
+                      </div>
+                      {friend.bio && (
+                        <p className="font-sans text-xs text-text-muted truncate mt-0.5 max-w-md">
+                          {friend.bio}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      to={`/profile/${friend.username}`}
+                      className="h-7 px-3 rounded border border-border hover:border-border-strong hover:bg-surface-raised text-text font-heading font-semibold text-xs flex items-center justify-center transition-colors"
+                    >
+                      Profile
+                    </Link>
+                    {isSelf && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFriend(friend.id)}
+                        className="h-7 px-2.5 rounded border border-danger/30 hover:bg-danger/10 text-danger hover:border-danger text-xs font-heading font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Remove Friend"
+                      >
+                        <UserX className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Unfriend</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT FOR TAB: FOLLOWERS */}
+      {activeTab === "followers" && (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-surface overflow-hidden divide-y divide-border shadow-1">
+            {followersListLoading ? (
+              <LoadingSkeleton count={3} />
+            ) : followersList.length === 0 ? (
+              <EmptyState
+                icon={User}
+                title="No followers yet"
+                description={
+                  isSelf
+                    ? "Share records, publish topsters, and participate in transmissions to build your audience."
+                    : `No one is following @${displayUsername} yet.`
+                }
+                buttonText={isSelf ? "Start a Transmission" : undefined}
+                buttonLink="/"
+              />
+            ) : (
+              followersList.map((follower) => (
+                <div
+                  key={follower.id}
+                  className="p-4 hover:bg-surface-raised/40 transition-colors flex items-center justify-between gap-4 text-left"
+                >
+                  <Link
+                    to={`/profile/${follower.username}`}
+                    className="flex items-center gap-3.5 min-w-0 flex-1 group"
+                  >
+                    <Avatar username={follower.username} src={follower.avatar_url} size={44} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-heading font-bold text-sm text-text group-hover:text-accent transition-colors truncate">
+                          {follower.username}
+                        </span>
+                        {follower.is_friend && (
+                          <span className="font-mono text-2xs px-1.5 py-0.2 rounded bg-accent/15 text-accent font-semibold shrink-0">
+                            Friend
+                          </span>
+                        )}
+                      </div>
+                      {follower.bio && (
+                        <p className="font-sans text-xs text-text-muted truncate mt-0.5 max-w-md">
+                          {follower.bio}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      to={`/profile/${follower.username}`}
+                      className="h-7 px-3 rounded border border-border hover:border-border-strong hover:bg-surface-raised text-text font-heading font-semibold text-xs flex items-center justify-center transition-colors"
+                    >
+                      Profile
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT FOR TAB: FOLLOWING */}
+      {activeTab === "following" && (
+        <div className="space-y-4">
+          <div className="rounded-md border border-border bg-surface overflow-hidden divide-y divide-border shadow-1">
+            {followingListLoading ? (
+              <LoadingSkeleton count={3} />
+            ) : followingList.length === 0 ? (
+              <EmptyState
+                icon={UserCheck}
+                title="Not following anyone yet"
+                description={
+                  isSelf
+                    ? "Follow fellow listeners to see their latest topsters and transmissions in your feed."
+                    : `@${displayUsername} is not following anyone yet.`
+                }
+                buttonText={isSelf ? "Discover Listeners" : undefined}
+                buttonLink="/"
+              />
+            ) : (
+              followingList.map((targetUser) => (
+                <div
+                  key={targetUser.id}
+                  className="p-4 hover:bg-surface-raised/40 transition-colors flex items-center justify-between gap-4 text-left"
+                >
+                  <Link
+                    to={`/profile/${targetUser.username}`}
+                    className="flex items-center gap-3.5 min-w-0 flex-1 group"
+                  >
+                    <Avatar username={targetUser.username} src={targetUser.avatar_url} size={44} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-heading font-bold text-sm text-text group-hover:text-accent transition-colors truncate">
+                          {targetUser.username}
+                        </span>
+                        {targetUser.is_friend && (
+                          <span className="font-mono text-2xs px-1.5 py-0.2 rounded bg-accent/15 text-accent font-semibold shrink-0">
+                            Friend
+                          </span>
+                        )}
+                      </div>
+                      {targetUser.bio && (
+                        <p className="font-sans text-xs text-text-muted truncate mt-0.5 max-w-md">
+                          {targetUser.bio}
+                        </p>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link
+                      to={`/profile/${targetUser.username}`}
+                      className="h-7 px-3 rounded border border-border hover:border-border-strong hover:bg-surface-raised text-text font-heading font-semibold text-xs flex items-center justify-center transition-colors"
+                    >
+                      Profile
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT FOR TAB: REQUESTS (Self only) */}
+      {activeTab === "requests" && isSelf && (
+        <div className="space-y-6">
+          {/* Incoming Friend Requests */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading font-bold text-sm text-text flex items-center gap-2">
+                <span>Incoming Friend Requests</span>
+                <span className="font-mono text-2xs px-1.5 py-0.2 rounded-full bg-accent text-black font-bold">
+                  {incomingRequests.length}
+                </span>
+              </h3>
+            </div>
+            <div className="rounded-md border border-border bg-surface overflow-hidden divide-y divide-border shadow-1">
+              {friendRequestsLoading ? (
+                <LoadingSkeleton count={2} />
+              ) : incomingRequests.length === 0 ? (
+                <div className="p-8 text-center text-text-muted font-sans text-xs">
+                  No incoming friend requests at the moment.
+                </div>
+              ) : (
+                incomingRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-4 hover:bg-surface-raised/40 transition-colors flex items-center justify-between gap-4 text-left"
+                  >
+                    <Link
+                      to={`/profile/${req.sender_username}`}
+                      className="flex items-center gap-3.5 min-w-0 flex-1 group"
+                    >
+                      <Avatar username={req.sender_username} src={req.sender_avatar_url} size={44} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-heading font-bold text-sm text-text group-hover:text-accent transition-colors truncate">
+                            {req.sender_username}
+                          </span>
+                          <span className="font-mono text-2xs text-text-dim shrink-0">
+                            &middot; {formatTimeAgo(req.created_at)}
+                          </span>
+                        </div>
+                        <span className="font-mono text-2xs text-text-dim block mt-0.5">
+                          Wants to connect as audiophile friends
+                        </span>
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleAcceptFriendRequest(req.id)}
+                        className="flex items-center gap-1.5"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Accept</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeclineFriendRequest(req.id)}
+                        className="flex items-center gap-1.5 text-text-muted hover:text-danger hover:border-danger/40"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Decline</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Outgoing Sent Requests */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-heading font-bold text-sm text-text flex items-center gap-2">
+                <span>Sent Requests</span>
+                <span className="font-mono text-2xs px-1.5 py-0.2 rounded-full bg-surface-raised text-text-dim font-bold">
+                  {outgoingRequests.length}
+                </span>
+              </h3>
+            </div>
+            <div className="rounded-md border border-border bg-surface overflow-hidden divide-y divide-border shadow-1">
+              {friendRequestsLoading ? (
+                <LoadingSkeleton count={2} />
+              ) : outgoingRequests.length === 0 ? (
+                <div className="p-8 text-center text-text-muted font-sans text-xs">
+                  No pending sent friend requests.
+                </div>
+              ) : (
+                outgoingRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className="p-4 hover:bg-surface-raised/40 transition-colors flex items-center justify-between gap-4 text-left"
+                  >
+                    <Link
+                      to={`/profile/${req.receiver_username}`}
+                      className="flex items-center gap-3.5 min-w-0 flex-1 group"
+                    >
+                      <Avatar username={req.receiver_username} src={req.receiver_avatar_url} size={44} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-heading font-bold text-sm text-text group-hover:text-accent transition-colors truncate">
+                            {req.receiver_username}
+                          </span>
+                          <span className="font-mono text-2xs text-text-dim shrink-0">
+                            &middot; {formatTimeAgo(req.created_at)}
+                          </span>
+                        </div>
+                        <span className="font-mono text-2xs text-text-muted block mt-0.5">
+                          Pending response...
+                        </span>
+                      </div>
+                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCancelFriendRequest(req.id)}
+                        className="flex items-center gap-1.5 text-text-muted hover:text-danger hover:border-danger/40"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Cancel Request</span>
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

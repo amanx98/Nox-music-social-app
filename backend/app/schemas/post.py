@@ -19,5 +19,6 @@ class PostRead(BaseModel):
     author_name: Optional[str] = None
     author_username: Optional[str] = None
     author_avatar_url: Optional[str] = None
+    author_bio: Optional[str] = None
     thread_title: Optional[str] = None
     thread_author: Optional[str] = None
