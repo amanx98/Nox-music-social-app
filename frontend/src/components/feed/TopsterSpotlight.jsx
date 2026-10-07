@@ -206,7 +206,6 @@ export default function TopsterSpotlight({ user }) {
           />
         )}
         {/* Analog Scanline Overlay */}
-        <div className="absolute inset-0 scanlines opacity-35 pointer-events-none" />
 
         {/* Mode Tag on top of image */}
         <div className="absolute top-2 left-2 pointer-events-none">

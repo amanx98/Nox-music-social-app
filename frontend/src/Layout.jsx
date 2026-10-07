@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Outlet } from "react-router-dom";
 import Header from "./components/nav/Header";
-import BroadcastTicker from "./components/nav/BroadcastTicker";
+import CircleNowPlaying from "./components/nav/CircleNowPlaying";
 import MobileDrawer from "./components/nav/MobileDrawer";
 import ComposerModal from "./components/composer/ComposerModal";
 
@@ -11,7 +11,9 @@ export default function Layout({ user, onLogout }) {
   const drawerTriggerRef = useRef(null);
 
   return (
-    <div className="min-h-screen flex flex-col bg-surface text-text radio-desk-grid">
+    <div className="min-h-screen flex flex-col bg-surface text-text">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+
       {/* 1. Sticky Top Navigation */}
       <Header
         user={user}
@@ -19,10 +21,11 @@ export default function Layout({ user, onLogout }) {
         onOpenDrawer={() => setIsDrawerOpen((prev) => !prev)}
         isDrawerOpen={isDrawerOpen}
         onOpenComposer={() => setIsComposerOpen(true)}
+        drawerTriggerRef={drawerTriggerRef}
       />
 
-      {/* 2. Live Broadcast Community Ticker directly beneath header */}
-      <BroadcastTicker user={user} />
+      {/* 2. What your circle is listening to (slow, one at a time) */}
+      <CircleNowPlaying user={user} />
 
       {/* Accessible Mobile Navigation Drawer */}
       <MobileDrawer
@@ -33,10 +36,11 @@ export default function Layout({ user, onLogout }) {
         triggerRef={drawerTriggerRef}
       />
 
-      {/* Main Editorial Content View with Skip-Link Anchor */}
+      {/* Main content with skip-link anchor */}
       <main
         id="main-content"
-        className="flex-1 w-full max-w-[1440px] mx-auto px-4 py-6 outline-none"
+        tabIndex={-1}
+        className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 outline-none"
       >
         <Outlet context={{ user, onLogout, onOpenComposer: () => setIsComposerOpen(true) }} />
       </main>

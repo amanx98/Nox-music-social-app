@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { getMe } from "./api/client";
 import { ToastProvider } from "./components/Toast";
-import CursorSpotlight from "./components/CursorSpotlight";
 import Login from "./Login";
 import Register from "./Register";
 import Layout from "./Layout";
@@ -87,11 +86,9 @@ function App() {
 
   if (loadingUser) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
-        <div style={{ textAlign: "center" }}>
-          <div className="vinyl-disc animate-spin-slow" style={{ width: "56px", height: "56px", marginBottom: "16px" }} />
-          <div className="brand-title" style={{ fontSize: "28px" }}>NOX<span className="brand-dot">.</span></div>
-          <p className="meta" style={{ marginTop: "6px" }}>Tuning frequencies...</p>
+      <div className="min-h-screen flex items-center justify-center bg-surface">
+        <div className="brand-title text-[28px] animate-pulse" aria-label="Loading">
+          NOX<span className="brand-dot">.</span>
         </div>
       </div>
     );
@@ -99,7 +96,6 @@ function App() {
 
   return (
     <ToastProvider>
-      <CursorSpotlight />
       {!user ? (
         <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px" }}>
           {showRegister ? (

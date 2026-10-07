@@ -42,17 +42,6 @@ export default function ThreadCard({
   const flair = flairMatch ? flairMatch[1] : null;
   const cleanBody = flairMatch ? flairMatch[2] : thread.body;
 
-  // Get artwork thumbnail based on tag or thread
-  const thumbnailSrc = (thread.image_url && thread.media_type !== "video") ? thread.image_url : (
-    tagInfo?.name?.toLowerCase().includes("ambient")
-      ? "/assets/editorial/ambient.svg"
-      : tagInfo?.name?.toLowerCase().includes("industrial")
-      ? "/assets/editorial/industrial.svg"
-      : tagInfo?.name?.toLowerCase().includes("techno") || tagInfo?.name?.toLowerCase().includes("acid")
-      ? "/assets/editorial/acid-house.svg"
-      : (thread.id % 2 === 0 ? "/assets/editorial/vinyl-desk.svg" : "/assets/editorial/lofi-tape.svg")
-  );
-
   return (
     <article
       onClick={onSelect}
@@ -63,7 +52,7 @@ export default function ThreadCard({
     >
       {/* Twitter-style Retweet Banner if this card was retweeted */}
       {thread.is_repost && (
-        <div className="flex items-center gap-1.5 text-xs text-text-dim font-mono mb-1 pl-12 sm:pl-16">
+        <div className="flex items-center gap-1.5 text-xs text-text-dim font-mono mb-1 pl-12 sm:pl-14">
           <Repeat2 className="w-3.5 h-3.5 text-accent stroke-[2.5]" />
           <span className="font-semibold text-text-muted hover:underline">
             {thread.reposted_by ? `${thread.reposted_by} reposted` : "Reposted"}
@@ -72,25 +61,19 @@ export default function ThreadCard({
       )}
 
       <div className="flex gap-3.5 w-full">
-        {/* Left Column: Visual Artwork Thumbnail & Author Avatar */}
-        <div className="flex flex-col items-center gap-2 shrink-0">
-          <div className="w-12 h-12 rounded overflow-hidden border border-border bg-surface-sunken shadow-1 group-hover:border-accent transition-colors">
-            <img
-              src={thumbnailSrc}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                e.currentTarget.src = "/assets/editorial/vinyl-desk.svg";
-              }}
-            />
-          </div>
+        {/* Left Column: Author PFP */}
+        <div className="shrink-0 pt-0.5">
           <Link
             to={`/profile/${thread.author_username || authorName}`}
             onClick={(e) => e.stopPropagation()}
-            className="hover:scale-110 transition-transform cursor-pointer"
+            className="block hover:opacity-90 hover:scale-105 transition-all cursor-pointer"
             title={`View @${authorHandle}'s profile`}
           >
-            <Avatar username={authorName} src={thread.author_avatar_url || thread.avatar_url} size={22} />
+            <Avatar
+              username={authorName}
+              src={thread.author_avatar_url || thread.avatar_url}
+              size={42}
+            />
           </Link>
         </div>
 

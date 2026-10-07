@@ -2,19 +2,22 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   Menu,
-  MessageSquare,
-  LayoutGrid,
-  Radio,
   Plus,
   User as UserIcon,
+  LayoutGrid,
   Settings,
   LogOut,
-  ChevronDown,
 } from "lucide-react";
 import Avatar from "../Avatar";
 import HeaderSearch from "./HeaderSearch";
 import NotificationsPanel from "./NotificationsPanel";
 import { cn } from "../../lib/cn";
+
+const NAV_ITEMS = [
+  { to: "/", label: "Feed", match: (p) => p === "/" },
+  { to: "/topsters", label: "Topsters", match: (p) => p.startsWith("/topsters") },
+  { to: "/discover", label: "Discover", match: (p) => p.startsWith("/discover") },
+];
 
 export default function Header({
   user,
@@ -24,6 +27,7 @@ export default function Header({
   onOpenComposer,
   onSelectThread,
   onSelectTag,
+  drawerTriggerRef,
 }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -55,163 +59,98 @@ export default function Header({
   }, [location.pathname]);
 
   return (
-    <header className="sticky top-0 z-[100] w-full h-14 bg-surface/90 backdrop-blur-md border-b border-border shadow-1 select-none">
-      <div className="max-w-[1440px] h-full mx-auto px-4 flex items-center justify-between gap-3">
-        {/* Left: Mobile Drawer Trigger & NOX Wordmark */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onOpenDrawer}
-            aria-expanded={isDrawerOpen}
-            aria-controls="mobile-drawer"
-            aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
-            className="md:hidden min-h-[38px] min-w-[38px] flex items-center justify-center p-2 rounded-md text-text-muted hover:text-black hover:bg-accent transition-colors focus-visible:outline-2 focus-visible:outline-accent cursor-pointer"
-          >
-            <Menu className="w-5 h-5 stroke-[1.75]" />
-          </button>
+    <header className="sticky top-0 z-[100] w-full h-14 bg-surface/95 backdrop-blur-sm border-b border-border select-none">
+      <div className="max-w-[1200px] h-full mx-auto px-4 flex items-center justify-between gap-4">
+        {/* Left: mobile menu + wordmark + primary nav */}
+        <div className="flex items-center gap-6 min-w-0">
+          <div className="flex items-center gap-2">
+            <button
+              ref={drawerTriggerRef}
+              type="button"
+              onClick={onOpenDrawer}
+              aria-expanded={isDrawerOpen}
+              aria-controls="mobile-drawer"
+              aria-label={isDrawerOpen ? "Close menu" : "Open menu"}
+              className="md:hidden h-9 w-9 -ml-2 flex items-center justify-center rounded-md text-text-muted hover:text-text hover:bg-surface-hover transition-colors cursor-pointer"
+            >
+              <Menu className="w-5 h-5 stroke-[1.75]" />
+            </button>
 
-          {/* Wordmark with acid lime period */}
-          <Link
-            to="/"
-            className="flex items-center gap-1 group focus-visible:outline-2 focus-visible:outline-accent rounded-sm"
-            aria-label="Nox Home"
-          >
-            <span className="font-heading font-extrabold text-2xl tracking-tighter text-text group-hover:text-accent transition-colors">
-              NOX<span className="text-accent">.</span>
-            </span>
-            <span className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-widest text-text-dim px-1.5 py-0.5 ml-1 border border-border rounded-[3px] bg-surface-sunken">
-              RADIO-DESK
-            </span>
-          </Link>
+            <Link to="/" className="rounded-sm" aria-label="Nox home">
+              <span className="font-heading font-bold text-xl tracking-tighter text-text">
+                NOX<span className="text-accent">.</span>
+              </span>
+            </Link>
+          </div>
+
+          <nav aria-label="Main" className="hidden md:flex items-center gap-1 h-14">
+            {NAV_ITEMS.map((item) => (
+              <NavLinkItem
+                key={item.to}
+                to={item.to}
+                label={item.label}
+                active={item.match(location.pathname)}
+              />
+            ))}
+          </nav>
         </div>
 
-        {/* Center: Primary Destinations (Feed, Topsters, Discover) */}
-        <nav aria-label="Main Navigation" className="hidden md:flex items-center gap-1">
-          <NavLinkItem
-            to="/"
-            label="Feed"
-            icon={<MessageSquare className="w-3.5 h-3.5" />}
-            active={location.pathname === "/"}
-          />
-          <NavLinkItem
-            to="/topsters"
-            label="Topsters"
-            icon={<LayoutGrid className="w-3.5 h-3.5" />}
-            active={location.pathname.startsWith("/topsters")}
-          />
-          <NavLinkItem
-            to="/discover"
-            label="Discover"
-            icon={<Radio className="w-3.5 h-3.5" />}
-            active={location.pathname.startsWith("/discover")}
-          />
-        </nav>
-
-        {/* Right: Search, Notifications, Compose, Profile Menu */}
-        <div className="flex items-center gap-2">
-          {/* Desktop Search Input with Debounced Querying */}
+        {/* Right: search, notifications, post, profile */}
+        <div className="flex items-center gap-1">
           <HeaderSearch onSelectThread={onSelectThread} onSelectTag={onSelectTag} />
-
-          {/* Notifications Panel */}
           <NotificationsPanel />
 
-          {/* Primary Transmit / Compose Action */}
           <button
             type="button"
             onClick={onOpenComposer}
-            className="transmit-btn hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-accent text-black hover:bg-accent-hover hover:text-black font-heading font-bold text-xs tracking-tight transition-all active:translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent cursor-pointer shadow-1"
+            className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 ml-2 rounded-md bg-accent text-accent-text hover:bg-accent-hover text-sm font-medium transition-colors cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>Transmit</span>
+            <Plus className="w-4 h-4 stroke-[2.25]" />
+            <span>Post</span>
           </button>
 
-          {/* Current User Avatar & Profile Dropdown */}
-          <div ref={profileMenuRef} className="relative">
+          {/* Profile menu */}
+          <div ref={profileMenuRef} className="relative ml-2">
             <button
               type="button"
               onClick={() => setIsProfileMenuOpen((prev) => !prev)}
               aria-expanded={isProfileMenuOpen}
-              aria-haspopup="true"
+              aria-haspopup="menu"
               aria-label="Open profile menu"
-              className="profile-trigger flex items-center gap-1.5 p-1 rounded-md hover:bg-accent hover:text-black border border-transparent hover:border-accent transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-accent group"
+              className="flex items-center rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-border-strong transition-shadow cursor-pointer"
             >
-              <Avatar username={user?.username || "me"} src={user?.avatar_url} size={28} />
-              <span className="hidden lg:inline text-xs font-heading font-semibold text-text group-hover:text-black max-w-[100px] truncate transition-colors">
-                {user?.username}
-              </span>
-              <ChevronDown
-                className={cn(
-                  "w-3 h-3 text-text-dim group-hover:text-black transition-all duration-150",
-                  isProfileMenuOpen && "rotate-180 text-text"
-                )}
-              />
+              <Avatar username={user?.username || "me"} src={user?.avatar_url} size={30} />
             </button>
 
-            {/* Accessible Profile Menu Dropdown */}
             {isProfileMenuOpen && (
               <div
                 role="menu"
-                aria-label="User account actions"
-                className="absolute right-0 top-11 w-56 rounded-md bg-surface-raised border border-border p-1.5 shadow-5 z-50 animate-slide-up text-left divide-y divide-border/60"
+                aria-label="Account"
+                className="absolute right-0 top-11 w-56 rounded-lg bg-surface-raised border border-border p-1 shadow-3 z-50 animate-slide-up text-left"
               >
-                {/* User Info Header */}
-                <div className="px-3 py-2 flex items-center gap-2.5">
-                  <Avatar username={user?.username || "me"} src={user?.avatar_url} size={32} />
-                  <div className="min-w-0">
-                    <div className="font-heading font-bold text-xs text-text truncate">
-                      {user?.username}
-                    </div>
-                    <div className="font-mono text-[11px] text-text-dim truncate">
-                      @{user?.username?.toLowerCase()}
-                    </div>
-                  </div>
+                <div className="px-3 py-2.5 mb-1 border-b border-border">
+                  <div className="text-sm font-medium text-text truncate">{user?.username}</div>
+                  <div className="text-xs text-text-dim truncate">@{user?.username?.toLowerCase()}</div>
                 </div>
 
-                {/* Navigation Links */}
-                <div className="py-1">
-                  <Link
-                    to="/profile"
-                    role="menuitem"
-                    className="profile-menu-item flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-black hover:bg-accent transition-colors group"
-                  >
-                    <UserIcon className="w-3.5 h-3.5 text-accent group-hover:text-black transition-colors" />
-                    <span>Archivist Profile</span>
-                  </Link>
+                <MenuLink to="/profile" icon={UserIcon} label="Profile" />
+                <MenuLink to="/topsters" icon={LayoutGrid} label="Topsters" />
+                <MenuLink to="/profile?tab=settings" icon={Settings} label="Settings" />
 
-                  <Link
-                    to="/topsters"
-                    role="menuitem"
-                    className="profile-menu-item flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-black hover:bg-accent transition-colors group"
-                  >
-                    <LayoutGrid className="w-3.5 h-3.5 text-accent group-hover:text-black transition-colors" />
-                    <span>Topsters &amp; Quilts</span>
-                  </Link>
+                <div className="my-1 border-t border-border" />
 
-                  <Link
-                    to="/profile?tab=settings"
-                    role="menuitem"
-                    className="profile-menu-item flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-text-muted hover:text-black hover:bg-accent transition-colors group"
-                  >
-                    <Settings className="w-3.5 h-3.5 text-text-dim group-hover:text-black transition-colors" />
-                    <span>Desk Settings</span>
-                  </Link>
-                </div>
-
-                {/* Sign Out Action */}
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      setIsProfileMenuOpen(false);
-                      onLogout?.();
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 rounded-sm text-xs font-medium text-danger hover:bg-danger/20 transition-colors cursor-pointer text-left"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setIsProfileMenuOpen(false);
+                    onLogout?.();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4 text-text-dim" />
+                  <span>Sign out</span>
+                </button>
               </div>
             )}
           </div>
@@ -221,19 +160,32 @@ export default function Header({
   );
 }
 
-function NavLinkItem({ to, label, icon, active }) {
+function NavLinkItem({ to, label, active }) {
   return (
     <Link
       to={to}
-      style={active ? { color: "#0A0B0A", backgroundColor: "var(--color-accent)" } : undefined}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "nav-link-item h-8 px-3.5 flex items-center gap-2 rounded-md font-heading text-xs font-semibold tracking-tight transition-all focus-visible:outline-2 focus-visible:outline-accent",
-        active
-          ? "active-nav-link bg-accent text-black font-bold shadow-1"
-          : "text-text hover:bg-accent hover:text-black"
+        "relative h-full px-3 flex items-center text-sm transition-colors",
+        active ? "text-text font-medium" : "text-text-dim hover:text-text-muted"
       )}
     >
-      <span aria-hidden="true" className="transition-colors pointer-events-none flex items-center">{icon}</span>
+      {label}
+      {active && (
+        <span className="absolute left-3 right-3 -bottom-px h-[2px] rounded-full bg-text" aria-hidden="true" />
+      )}
+    </Link>
+  );
+}
+
+function MenuLink({ to, icon: Icon, label }) {
+  return (
+    <Link
+      to={to}
+      role="menuitem"
+      className="flex items-center gap-2.5 px-3 py-2 rounded-md text-sm text-text-muted hover:text-text hover:bg-surface-hover transition-colors"
+    >
+      <Icon className="w-4 h-4 text-text-dim" />
       <span>{label}</span>
     </Link>
   );

@@ -303,11 +303,13 @@ export async function getArtistDetails(artistName) {
   }
 }
 
-export async function getNowPlaying(username) {
+export async function getNowPlaying(username, { linkedOnly = false } = {}) {
   try {
-    const url = username
-      ? `/lastfm/now-playing?username=${encodeURIComponent(username)}`
-      : `/lastfm/now-playing`;
+    const params = new URLSearchParams();
+    if (username) params.set("username", username);
+    if (linkedOnly) params.set("linked_only", "true");
+    const qs = params.toString();
+    const url = `/lastfm/now-playing${qs ? `?${qs}` : ""}`;
     return await apiRequest(url, { timeout: 10000 });
   } catch {
     return {

@@ -233,6 +233,7 @@ async def lastfm_artist_details(artist: str):
 @router.get("/now-playing")
 async def lastfm_now_playing(
     username: Optional[str] = None,
+    linked_only: bool = False,
     session: Session = Depends(get_session),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
@@ -245,7 +246,9 @@ async def lastfm_now_playing(
             profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)).first()
             if profile:
                 lfm_username = profile.lastfm_username
-        if not lfm_username:
+        # Fall back to treating it as a raw Last.fm username, unless the caller
+        # only wants app users with a linked Last.fm account (e.g. the Circle strip).
+        if not lfm_username and not linked_only:
             lfm_username = username
     elif current_user:
         profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()

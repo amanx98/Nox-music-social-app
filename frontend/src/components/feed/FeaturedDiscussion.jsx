@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { MessageSquare, Heart, Flame, ArrowUpRight, Play, Pause, Disc3, Pencil } from "lucide-react";
 import { resolveMusicArt } from "../../api/client";
 import Avatar from "../Avatar";
@@ -118,13 +119,12 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
                 alt="Turntable Music Player"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 scanlines opacity-30" />
             </div>
 
             {/* 2. Headline Album Cover Sleeve / Artist Photo (Front & Sharp) */}
             <div
               onClick={() => onSelectThread?.(thread)}
-              className="relative w-40 sm:w-48 aspect-square rounded-md overflow-hidden border border-border bg-surface-sunken cursor-pointer shadow-4 group-hover:border-accent group-hover:scale-105 transition-all duration-300 desk-diagonal z-10 -ml-16 sm:-ml-20 flex items-center justify-center"
+              className="relative w-40 sm:w-48 aspect-square rounded-md overflow-hidden border border-border bg-surface-sunken cursor-pointer shadow-4 group-hover:border-accent group-hover:scale-105 transition-all duration-300 z-10 -ml-16 sm:-ml-20 flex items-center justify-center"
             >
               {(thread?.media_type === "gif" || thread?.image_url) && (
                 <div
@@ -147,7 +147,6 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
 
               {/* Fine Analog Scanline Overlay and Vinyl Sleeve Sheen */}
               <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-white/10 pointer-events-none" />
-              <div className="absolute inset-0 scanlines opacity-30 pointer-events-none" />
 
               {/* 30s Preview Audio Play Toggle Overlay */}
               {resolvedArt?.preview_url && (
@@ -193,11 +192,16 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
         <div className="md:col-span-7 flex flex-col justify-between space-y-3">
           {/* Top Line: Author & Resolved Music Entity Badge */}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Avatar username={authorName} src={thread?.author_avatar_url || thread?.avatar_url} size={30} />
+            <Link
+              to={`/profile/${thread?.author_username || authorName}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 group/author cursor-pointer"
+              title={`View @${authorName.toLowerCase()}'s profile`}
+            >
+              <Avatar username={authorName} src={thread?.author_avatar_url || thread?.avatar_url} size={32} />
               <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="font-heading font-bold text-xs text-text">{authorName}</span>
-                <span className="font-mono text-[11px] text-text-dim">@{authorName.toLowerCase()}</span>
+                <span className="font-heading font-bold text-xs text-text group-hover/author:text-accent group-hover/author:underline">{authorName}</span>
+                <span className="font-mono text-[11px] text-text-dim group-hover/author:text-accent">@{authorName.toLowerCase()}</span>
                 <span className="text-text-dim text-xs">&middot;</span>
                 <span className="font-mono text-[11px] text-text-dim">
                   {thread ? formatTimeAgo(thread.created_at) : "Tonight // 01:45"}
@@ -208,7 +212,7 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
                   </span>
                 )}
               </div>
-            </div>
+            </Link>
 
             <div className="flex items-center gap-2">
               {/* Author Edit Button */}

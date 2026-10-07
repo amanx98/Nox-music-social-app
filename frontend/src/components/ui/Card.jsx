@@ -2,15 +2,15 @@ import { forwardRef } from "react";
 import { cn } from "../../lib/cn";
 
 export const Card = forwardRef(function Card(
-  { className, hover = true, children, ...props },
+  { className, hover = false, children, ...props },
   ref
 ) {
   return (
     <div
       ref={ref}
       className={cn(
-        "bg-surface-raised border border-border rounded-md p-5 text-text transition-[border-color,box-shadow,transform] duration-200 ease-out",
-        hover && "hover:border-border-strong hover:shadow-2",
+        "bg-surface-raised border border-border rounded-lg p-5 text-text transition-colors duration-200 ease-out",
+        hover && "hover:border-border-strong",
         className
       )}
       {...props}
@@ -28,7 +28,7 @@ export const CardHeader = forwardRef(function CardHeader(
   return (
     <div
       ref={ref}
-      className={cn("flex flex-col gap-1 mb-4 pb-3 border-b border-border", className)}
+      className={cn("flex flex-col gap-1 mb-4", className)}
       {...props}
     >
       {children}
@@ -44,7 +44,7 @@ export const CardTitle = forwardRef(function CardTitle(
   return (
     <h3
       ref={ref}
-      className={cn("text-lg font-semibold text-text m-0 tracking-tight", className)}
+      className={cn("text-base font-semibold text-text m-0 tracking-tight", className)}
       {...props}
     >
       {children}
@@ -60,7 +60,7 @@ export const CardDescription = forwardRef(function CardDescription(
   return (
     <p
       ref={ref}
-      className={cn("text-xs text-text-muted m-0 font-mono", className)}
+      className={cn("text-sm text-text-muted m-0", className)}
       {...props}
     >
       {children}

@@ -21,6 +21,19 @@ export function getAvatarForUser(username = "") {
   return AVATAR_PALETTES[index];
 }
 
+// Built-in actual portrait avatars for personas
+const DEFAULT_PERSONA_AVATARS = {
+  miles_ahead: "/assets/avatars/miles_ahead.jpg",
+  shoegaze_queen: "/assets/avatars/shoegaze_queen.jpg",
+  crate_digger_99: "/assets/avatars/crate_digger_99.jpg",
+  modular_synth: "/assets/avatars/modular_synth.jpg",
+  dub_techno_echo: "/assets/avatars/dub_techno_echo.jpg",
+  post_punk_pete: "/assets/avatars/post_punk_pete.jpg",
+  audiophile_dan: "/assets/avatars/audiophile_dan.jpg",
+  ambient_drifter: "/assets/avatars/ambient_drifter.jpg",
+  amanx98: "/assets/avatars/amanx98.jpg",
+};
+
 export default function Avatar({
   username = "user",
   size = 36,
@@ -32,9 +45,19 @@ export default function Avatar({
 }) {
   const [imageError, setImageError] = useState(false);
 
+  // Normalize username key
+  const cleanName = String(username || "").toLowerCase().replace(/[@\s]/g, "");
+  const personaDefault = DEFAULT_PERSONA_AVATARS[cleanName] || null;
+
   // Derive active image source
-  const rawSrc = src || avatarUrl || (typeof window !== "undefined" ? localStorage.getItem(`nox_avatar_img_${username}`) : null);
-  const resolvedSrc = rawSrc ? resolveImageUrl(rawSrc) : null;
+  let rawSrc = src || avatarUrl || (typeof window !== "undefined" ? localStorage.getItem(`nox_avatar_img_${username}`) : null);
+
+  // Upgrade legacy editorial illustration SVGs to real portrait PFPs
+  if ((!rawSrc || rawSrc.includes("/assets/editorial/")) && personaDefault) {
+    rawSrc = personaDefault;
+  }
+
+  const resolvedSrc = rawSrc ? resolveImageUrl(rawSrc) : (personaDefault ? resolveImageUrl(personaDefault) : null);
 
   // Reset error state if image source changes
   useEffect(() => {
