@@ -1,4 +1,7 @@
+from pathlib import Path
 from pydantic_settings import BaseSettings
+
+ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
 
 class Settings(BaseSettings):
     database_url: str
@@ -10,7 +13,7 @@ class Settings(BaseSettings):
     lastfm_callback_url: str
     
     class Config:
-        env_file = ".env"
+        env_file = str(ENV_PATH)
 
 settings = Settings()
 
