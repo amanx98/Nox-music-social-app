@@ -9,4 +9,5 @@ class AlbumQuilt(SQLModel, table=True):
     quilt_type: str = Field(default="albums")  # "albums" | "tracks"
     period: str
     image_path: str
+    folder: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow)

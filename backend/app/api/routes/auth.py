@@ -86,16 +86,10 @@ async def login(request: Request, session: Session = Depends(get_session)):
         )
     ).first()
 
-    if not user:
+    if not user or not verify_password(plain_password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Account not found. Please check your username/email or create a new account."
-        )
-
-    if not verify_password(plain_password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect password. (Tip: Demo accounts use 'password123')"
+            detail="Invalid username/email or password"
         )
 
     token = create_access_token({"sub": str(user.id)})
@@ -133,14 +127,31 @@ async def upload_avatar(
 ):
     if file and file.filename:
         ext = file.filename.split(".")[-1].lower() if "." in file.filename else "jpg"
-        if ext not in ["jpg", "jpeg", "png", "webp", "gif", "svg"]:
-            raise HTTPException(status_code=400, detail="Unsupported image format. Allowed: JPG, PNG, WEBP, GIF, SVG.")
+        if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
+            raise HTTPException(status_code=400, detail="Unsupported image format. Allowed formats: JPG, PNG, WEBP, GIF.")
         
+        max_avatar_size = 5 * 1024 * 1024  # 5MB
         filename = f"avatar_u{current_user.id}_{int(datetime.utcnow().timestamp())}_{uuid.uuid4().hex[:6]}.{ext}"
         filepath = os.path.join(AVATAR_DIR, filename)
-        content = await file.read()
-        with open(filepath, "wb") as f:
-            f.write(content)
+        
+        total_bytes = 0
+        try:
+            with open(filepath, "wb") as f:
+                while chunk := await file.read(64 * 1024):
+                    total_bytes += len(chunk)
+                    if total_bytes > max_avatar_size:
+                        f.close()
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                        raise HTTPException(status_code=413, detail="Avatar exceeds 5MB size limit.")
+                    f.write(chunk)
+        except HTTPException:
+            raise
+        except Exception:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            raise HTTPException(status_code=500, detail="Failed to save avatar image.")
+
         current_user.avatar_url = f"/static/uploads/avatars/{filename}"
     elif image_url is not None:
         clean_url = image_url.strip()
@@ -162,14 +173,31 @@ async def upload_banner(
 ):
     if file and file.filename:
         ext = file.filename.split(".")[-1].lower() if "." in file.filename else "jpg"
-        if ext not in ["jpg", "jpeg", "png", "webp", "gif", "svg"]:
-            raise HTTPException(status_code=400, detail="Unsupported image format. Allowed: JPG, PNG, WEBP, GIF, SVG.")
+        if ext not in ["jpg", "jpeg", "png", "webp", "gif"]:
+            raise HTTPException(status_code=400, detail="Unsupported image format. Allowed formats: JPG, PNG, WEBP, GIF.")
         
+        max_banner_size = 10 * 1024 * 1024  # 10MB
         filename = f"banner_u{current_user.id}_{int(datetime.utcnow().timestamp())}_{uuid.uuid4().hex[:6]}.{ext}"
         filepath = os.path.join(BANNER_DIR, filename)
-        content = await file.read()
-        with open(filepath, "wb") as f:
-            f.write(content)
+        
+        total_bytes = 0
+        try:
+            with open(filepath, "wb") as f:
+                while chunk := await file.read(64 * 1024):
+                    total_bytes += len(chunk)
+                    if total_bytes > max_banner_size:
+                        f.close()
+                        if os.path.exists(filepath):
+                            os.remove(filepath)
+                        raise HTTPException(status_code=413, detail="Banner exceeds 10MB size limit.")
+                    f.write(chunk)
+        except HTTPException:
+            raise
+        except Exception:
+            if os.path.exists(filepath):
+                os.remove(filepath)
+            raise HTTPException(status_code=500, detail="Failed to save banner image.")
+
         current_user.banner_url = f"/static/uploads/banners/{filename}"
     elif image_url is not None:
         clean_url = image_url.strip()

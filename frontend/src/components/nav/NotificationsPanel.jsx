@@ -1,40 +1,71 @@
-import { useState, useRef, useEffect } from "react";
-import { Bell, Flame, MessageSquare, Sparkles, CheckCheck, Radio } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { Bell, Flame, MessageSquare, Sparkles, CheckCheck, Radio, Heart, Repeat, UserPlus, Loader2 } from "lucide-react";
+import { getNotifications } from "../../api/client";
+
+function formatTimeAgo(dateString) {
+  if (!dateString) return "just now";
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSecs = Math.floor((now - date) / 1000);
+
+  if (diffInSecs < 60) return "just now";
+  if (diffInSecs < 3600) return `${Math.floor(diffInSecs / 60)}m ago`;
+  if (diffInSecs < 86400) return `${Math.floor(diffInSecs / 3600)}h ago`;
+  if (diffInSecs < 604800) return `${Math.floor(diffInSecs / 86400)}d ago`;
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function getIconForType(type) {
+  switch (type) {
+    case "reply":
+      return MessageSquare;
+    case "like":
+      return Flame;
+    case "repost":
+      return Repeat;
+    case "friend_request":
+      return UserPlus;
+    default:
+      return Radio;
+  }
+}
 
 export default function NotificationsPanel() {
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(2);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [readIds, setReadIds] = useState(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem("nox_read_notifs") || "[]"));
+    } catch {
+      return new Set();
+    }
+  });
   const panelRef = useRef(null);
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: "notif-1",
-      type: "reaction",
-      icon: Flame,
-      title: "Active Reaction Wave",
-      detail: "Your take in #shoegaze received 12 new reactions.",
-      time: "14m ago",
-      read: false,
-    },
-    {
-      id: "notif-2",
-      type: "topster",
-      icon: Sparkles,
-      title: "New Station Topster",
-      detail: "@resonant posted 'Sub-Bass & Broken Beats 1996'.",
-      time: "1h ago",
-      read: false,
-    },
-    {
-      id: "notif-3",
-      type: "session",
-      icon: Radio,
-      title: "Broadcast Scheduled",
-      detail: "Pirate Radio Control Room live transmission at 02:00.",
-      time: "4h ago",
-      read: true,
-    },
-  ]);
+  const fetchNotifs = useCallback(async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setNotifications([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await getNotifications();
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      // quiet fail on network issues
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifs();
+    const interval = setInterval(fetchNotifs, 45000); // refresh every 45s
+    return () => clearInterval(interval);
+  }, [fetchNotifs]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -48,9 +79,20 @@ export default function NotificationsPanel() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
+  const unreadCount = notifications.filter((n) => !readIds.has(n.id)).length;
+
   function handleMarkAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
+    const allIds = new Set([...readIds, ...notifications.map((n) => n.id)]);
+    setReadIds(allIds);
+    localStorage.setItem("nox_read_notifs", JSON.stringify([...allIds]));
+  }
+
+  function handleItemClick(id) {
+    const updated = new Set(readIds);
+    updated.add(id);
+    setReadIds(updated);
+    localStorage.setItem("nox_read_notifs", JSON.stringify([...updated]));
+    setIsOpen(false);
   }
 
   return (
@@ -95,7 +137,12 @@ export default function NotificationsPanel() {
             )}
           </div>
 
-          {notifications.length === 0 ? (
+          {loading && notifications.length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-accent" />
+              <span className="font-mono text-2xs text-text-dim">Scanning signals...</span>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="py-8 text-center">
               <p className="font-heading font-bold text-xs text-text mb-0.5">
                 All quiet on frequencies
@@ -107,13 +154,14 @@ export default function NotificationsPanel() {
           ) : (
             <div className="space-y-1.5 max-h-[340px] overflow-y-auto no-scrollbar">
               {notifications.map((item) => {
-                const Icon = item.icon || MessageSquare;
-                return (
+                const Icon = getIconForType(item.type);
+                const isRead = readIds.has(item.id);
+                const Content = (
                   <div
-                    key={item.id}
-                    className={`p-2.5 rounded-sm border transition-colors flex gap-2.5 ${
-                      !item.read
-                        ? "bg-surface border-accent/30 hover:border-accent"
+                    onClick={() => handleItemClick(item.id)}
+                    className={`p-2.5 rounded-sm border transition-colors flex gap-2.5 cursor-pointer ${
+                      !isRead
+                        ? "bg-surface border-accent/40 hover:border-accent"
                         : "bg-surface-sunken/60 border-border hover:border-border-strong"
                     }`}
                   >
@@ -126,7 +174,7 @@ export default function NotificationsPanel() {
                           {item.title}
                         </span>
                         <span className="font-mono text-[10px] text-text-dim shrink-0">
-                          {item.time}
+                          {formatTimeAgo(item.created_at)}
                         </span>
                       </div>
                       <p className="font-sans text-xs text-text-muted mt-0.5 leading-snug">
@@ -134,6 +182,14 @@ export default function NotificationsPanel() {
                       </p>
                     </div>
                   </div>
+                );
+
+                return item.link ? (
+                  <Link key={item.id} to={item.link} className="block no-underline">
+                    {Content}
+                  </Link>
+                ) : (
+                  <div key={item.id}>{Content}</div>
                 );
               })}
             </div>

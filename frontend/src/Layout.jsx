@@ -4,14 +4,19 @@ import Header from "./components/nav/Header";
 import CircleNowPlaying from "./components/nav/CircleNowPlaying";
 import MobileDrawer from "./components/nav/MobileDrawer";
 import ComposerModal from "./components/composer/ComposerModal";
+import GlobalAudioDock from "./components/player/GlobalAudioDock";
+import AuthModal from "./components/auth/AuthModal";
 
-export default function Layout({ user, onLogout }) {
+export default function Layout({ user, onLogout, onLoginSuccess }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const drawerTriggerRef = useRef(null);
 
+  const handleOpenAuth = () => setIsAuthModalOpen(true);
+
   return (
-    <div className="min-h-screen flex flex-col bg-surface text-text">
+    <div className="min-h-screen flex flex-col bg-surface text-text pb-20">
       <a href="#main-content" className="skip-link">Skip to content</a>
 
       {/* 1. Sticky Top Navigation */}
@@ -20,7 +25,8 @@ export default function Layout({ user, onLogout }) {
         onLogout={onLogout}
         onOpenDrawer={() => setIsDrawerOpen((prev) => !prev)}
         isDrawerOpen={isDrawerOpen}
-        onOpenComposer={() => setIsComposerOpen(true)}
+        onOpenComposer={() => (user ? setIsComposerOpen(true) : handleOpenAuth())}
+        onOpenAuth={handleOpenAuth}
         drawerTriggerRef={drawerTriggerRef}
       />
 
@@ -33,6 +39,7 @@ export default function Layout({ user, onLogout }) {
         onClose={() => setIsDrawerOpen(false)}
         user={user}
         onLogout={onLogout}
+        onOpenAuth={handleOpenAuth}
         triggerRef={drawerTriggerRef}
       />
 
@@ -42,18 +49,37 @@ export default function Layout({ user, onLogout }) {
         tabIndex={-1}
         className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 outline-none"
       >
-        <Outlet context={{ user, onLogout, onOpenComposer: () => setIsComposerOpen(true) }} />
+        <Outlet
+          context={{
+            user,
+            onLogout,
+            onOpenAuth: handleOpenAuth,
+            onOpenComposer: () => (user ? setIsComposerOpen(true) : handleOpenAuth()),
+          }}
+        />
       </main>
 
       {/* Global Compose Modal */}
-      <ComposerModal
-        isOpen={isComposerOpen}
-        onClose={() => setIsComposerOpen(false)}
-        user={user}
-        onSuccess={() => {
-          // Triggers re-render or notification
-        }}
+      {user && (
+        <ComposerModal
+          isOpen={isComposerOpen}
+          onClose={() => setIsComposerOpen(false)}
+          user={user}
+          onSuccess={() => {
+            // Triggers re-render or notification
+          }}
+        />
+      )}
+
+      {/* Global Auth Modal for guest actions */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={onLoginSuccess}
       />
+
+      {/* Persistent Global Audio Dock */}
+      <GlobalAudioDock />
     </div>
   );
 }

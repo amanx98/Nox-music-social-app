@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useNavigate } from "react-router-dom";
 import { Plus, Radio, RefreshCw, AlertCircle, X } from "lucide-react";
 import { getThreads } from "../api/client";
 import FeaturedDiscussion from "../components/feed/FeaturedDiscussion";
@@ -12,6 +12,7 @@ import ComposerModal from "../components/composer/ComposerModal";
 import EditPostModal from "../components/composer/EditPostModal";
 
 export default function FeedPage({ user: propUser }) {
+  const navigate = useNavigate();
   const context = useOutletContext?.() || {};
   const user = propUser || context?.user;
   const contextOpenComposer = context?.onOpenComposer;
@@ -119,7 +120,11 @@ export default function FeedPage({ user: propUser }) {
           {/* 4. Featured Discussion (Dominant content block roughly 2/3 desktop width) */}
           <FeaturedDiscussion
             thread={featuredThread}
-            onSelectThread={(t) => setSelectedThread(t || featuredThread)}
+            onSelectThread={(t) => {
+              const target = t || featuredThread;
+              if (target?.id) navigate(`/threads/${target.id}`);
+              else setSelectedThread(target);
+            }}
             onSelectTag={setSelectedTag}
             onEdit={(t) => setEditingThread(t || featuredThread)}
             currentUser={user}
@@ -226,7 +231,10 @@ export default function FeedPage({ user: propUser }) {
                     key={t.id}
                     thread={t}
                     tag={selectedTag}
-                    onSelect={() => setSelectedThread(t)}
+                    onSelect={() => {
+                      if (t?.id) navigate(`/threads/${t.id}`);
+                      else setSelectedThread(t);
+                    }}
                     onSelectTag={setSelectedTag}
                     onEdit={(threadToEdit) => setEditingThread(threadToEdit)}
                     currentUser={user}

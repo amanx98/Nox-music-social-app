@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Send, Heart, MessageSquare, Pencil } from "lucide-react";
-import { getPosts, createPost, updatePost } from "./api/client";
+import { ArrowLeft, Send, Heart, MessageSquare, Pencil, Trash2 } from "lucide-react";
+import { getPosts, createPost, updatePost, deleteThread, deletePost } from "./api/client";
 import { useToast } from "./components/Toast";
 import Avatar from "./components/Avatar";
 import SocialActions from "./components/SocialActions";
@@ -109,6 +109,28 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
     }
   }
 
+  async function handleDeleteThread() {
+    if (!window.confirm("Are you sure you want to delete this transmission?")) return;
+    try {
+      await deleteThread(thread.id);
+      addToast("Thread deleted");
+      onBack();
+    } catch (err) {
+      addToast(err.message || "Failed to delete thread", "error");
+    }
+  }
+
+  async function handleDeletePost(postId) {
+    if (!window.confirm("Are you sure you want to delete this reply?")) return;
+    try {
+      await deletePost(postId);
+      setPosts((prev) => prev.filter((p) => p.id !== postId));
+      addToast("Reply deleted");
+    } catch (err) {
+      addToast(err.message || "Failed to delete reply", "error");
+    }
+  }
+
   const threadAuthor = thread.author_name || thread.username || `listener_${thread.user_id}`;
   const authorHandle = threadAuthor.toLowerCase().replace(/\s+/g, "_");
   const isThreadAuthor = Boolean(
@@ -171,16 +193,27 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
             </div>
           </div>
 
-          {/* Author Edit Button */}
+          {/* Author Actions */}
           {isThreadAuthor && (
-            <button
-              type="button"
-              onClick={() => setIsEditingThread(true)}
-              className="inline-flex items-center gap-1 font-mono text-xs text-text-dim hover:text-accent hover:bg-surface-raised px-2.5 py-1 rounded-md border border-border hover:border-accent/40 transition-colors cursor-pointer"
-            >
-              <Pencil className="w-3.5 h-3.5" />
-              <span>Edit</span>
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsEditingThread(true)}
+                className="inline-flex items-center gap-1 font-mono text-xs text-text-dim hover:text-accent hover:bg-surface-raised px-2.5 py-1 rounded-md border border-border hover:border-accent/40 transition-colors cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                <span>Edit</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteThread}
+                className="inline-flex items-center gap-1 font-mono text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 px-2.5 py-1 rounded-md border border-border hover:border-rose-400/40 transition-colors cursor-pointer"
+                title="Delete transmission"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            </div>
           )}
         </div>
 
@@ -235,10 +268,13 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
         <div className="pt-3 border-t border-border/60">
           <SocialActions
             id={thread.id}
-            type="thread_detail"
+            type="thread"
             replyCount={posts.length}
-            initialLikes={8}
-            initialReposts={3}
+            initialLikes={thread.likes_count || 0}
+            initialReposts={thread.reposts_count || 0}
+            isLiked={thread.is_liked}
+            isReposted={thread.is_reposted}
+            isBookmarked={thread.is_bookmarked}
           />
         </div>
       </article>
@@ -344,15 +380,26 @@ export default function ThreadView({ thread: initialThread, onBack, user, onThre
                       </div>
 
                       {isPostAuthor && !isEditingThisPost && (
-                        <button
-                          type="button"
-                          onClick={() => startEditingPost(post)}
-                          className="inline-flex items-center gap-1 font-mono text-[11px] text-text-dim hover:text-accent px-1.5 py-0.5 rounded hover:bg-surface-sunken transition-colors cursor-pointer"
-                          title="Edit reply"
-                        >
-                          <Pencil className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => startEditingPost(post)}
+                            className="inline-flex items-center gap-1 font-mono text-[11px] text-text-dim hover:text-accent px-1.5 py-0.5 rounded hover:bg-surface-sunken transition-colors cursor-pointer"
+                            title="Edit reply"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePost(post.id)}
+                            className="inline-flex items-center gap-1 font-mono text-[11px] text-text-dim hover:text-rose-400 px-1.5 py-0.5 rounded hover:bg-surface-sunken transition-colors cursor-pointer"
+                            title="Delete reply"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Delete</span>
+                          </button>
+                        </div>
                       )}
                     </div>
 

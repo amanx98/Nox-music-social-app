@@ -28,6 +28,7 @@ export default function Header({
   onSelectThread,
   onSelectTag,
   drawerTriggerRef,
+  onOpenAuth,
 }) {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -102,25 +103,26 @@ export default function Header({
 
           <button
             type="button"
-            onClick={onOpenComposer}
+            onClick={user ? onOpenComposer : onOpenAuth}
             className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 ml-2 rounded-md bg-accent text-accent-text hover:bg-accent-hover text-sm font-medium transition-colors cursor-pointer"
           >
             <Plus className="w-4 h-4 stroke-[2.25]" />
             <span>Post</span>
           </button>
 
-          {/* Profile menu */}
-          <div ref={profileMenuRef} className="relative ml-2">
-            <button
-              type="button"
-              onClick={() => setIsProfileMenuOpen((prev) => !prev)}
-              aria-expanded={isProfileMenuOpen}
-              aria-haspopup="menu"
-              aria-label="Open profile menu"
-              className="flex items-center rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-border-strong transition-shadow cursor-pointer"
-            >
-              <Avatar username={user?.username || "me"} src={user?.avatar_url} size={30} />
-            </button>
+          {/* Profile menu or Guest Sign-in */}
+          {user ? (
+            <div ref={profileMenuRef} className="relative ml-2">
+              <button
+                type="button"
+                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+                aria-expanded={isProfileMenuOpen}
+                aria-haspopup="menu"
+                aria-label="Open profile menu"
+                className="flex items-center rounded-full ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-border-strong transition-shadow cursor-pointer"
+              >
+                <Avatar username={user?.username || "me"} src={user?.avatar_url} size={30} />
+              </button>
 
             {isProfileMenuOpen && (
               <div
@@ -154,7 +156,16 @@ export default function Header({
               </div>
             )}
           </div>
-        </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onOpenAuth}
+            className="h-8 px-3 ml-2 rounded-md bg-accent text-accent-text hover:bg-accent-hover text-sm font-medium transition-colors cursor-pointer"
+          >
+            Sign In
+          </button>
+        )}
+      </div>
       </div>
     </header>
   );

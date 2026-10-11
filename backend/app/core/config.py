@@ -11,9 +11,12 @@ class Settings(BaseSettings):
     lastfm_api_key: str
     lastfm_shared_secret: str
     lastfm_callback_url: str
+    frontend_url: str = "http://localhost:5173"
+    environment: str = "development"
     
     class Config:
         env_file = str(ENV_PATH)
+        extra = "ignore"
 
 settings = Settings()
 

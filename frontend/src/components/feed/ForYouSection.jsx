@@ -5,9 +5,10 @@
  * Each card shows: album art, name, artist, score badge, and matching tags
  * ("why this?"). 30s Deezer preview plays on hover if available.
  */
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Sparkles, Loader2, Play, Pause, Info, Disc } from "lucide-react";
 import { getRecommendations } from "../../api/client";
+import { useAudio } from "../../context/AudioContext";
 
 function ScoreBadge({ score }) {
   const pct = Math.round(score * 100);
@@ -23,31 +24,23 @@ function ScoreBadge({ score }) {
 }
 
 function TrackCard({ track, index }) {
-  const [playing, setPlaying] = useState(false);
   const [showTags, setShowTags] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const audioRef = useRef(null);
+  const { currentTrack, isPlaying, togglePlay } = useAudio();
 
-  function togglePlay(e) {
+  const isTrackPlaying = isPlaying && currentTrack?.preview_url === track.preview_url;
+
+  function handlePlay(e) {
     e.stopPropagation();
     if (!track.preview_url) return;
-    if (playing) {
-      audioRef.current?.pause();
-    } else {
-      // Pause any other audio elements on the page
-      document.querySelectorAll("audio").forEach((a) => a !== audioRef.current && a.pause());
-      audioRef.current?.play();
-    }
-    setPlaying(!playing);
+    togglePlay({
+      title: track.name,
+      artist: track.artist,
+      album: track.album || null,
+      artwork_url: track.image_url || null,
+      preview_url: track.preview_url,
+    });
   }
-
-  useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    const onEnd = () => setPlaying(false);
-    el.addEventListener("ended", onEnd);
-    return () => el.removeEventListener("ended", onEnd);
-  }, []);
 
   const image = track.image_url;
   const isValidImage = image && !image.includes("2a96cbd8b46e442fc41c2b86b821562f") && !imgError;
@@ -74,18 +67,15 @@ function TrackCard({ track, index }) {
         )}
         {track.preview_url && (
           <button
-            onClick={togglePlay}
+            onClick={handlePlay}
             className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
           >
-            {playing ? (
+            {isTrackPlaying ? (
               <Pause className="w-3.5 h-3.5 text-white" />
             ) : (
               <Play className="w-3.5 h-3.5 text-white fill-white" />
             )}
           </button>
-        )}
-        {track.preview_url && (
-          <audio ref={audioRef} src={track.preview_url} preload="none" />
         )}
       </div>
 

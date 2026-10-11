@@ -5,9 +5,10 @@
  * then the engine generates a playlist from their taste vector.
  * Tracks can be previewed (30s Deezer) and the playlist can be saved.
  */
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { X, Sparkles, Loader2, Play, Pause, Save, Music2, Check } from "lucide-react";
 import { generatePlaylist, saveGeneratedPlaylist } from "../../api/client";
+import { useAudio } from "../../context/AudioContext";
 
 const MOOD_OPTIONS = [
   { value: null, label: "Any mood", emoji: "✦" },
@@ -22,28 +23,20 @@ const MOOD_OPTIONS = [
 ];
 
 function TrackRow({ track, index }) {
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useRef(null);
+  const { currentTrack, isPlaying, togglePlay } = useAudio();
+  const isTrackPlaying = isPlaying && currentTrack?.preview_url === track.preview_url;
 
-  function togglePlay(e) {
+  function handlePlay(e) {
     e.stopPropagation();
     if (!track.preview_url) return;
-    if (playing) {
-      audioRef.current?.pause();
-    } else {
-      document.querySelectorAll("audio").forEach((a) => a !== audioRef.current && a.pause());
-      audioRef.current?.play();
-    }
-    setPlaying(!playing);
+    togglePlay({
+      title: track.name,
+      artist: track.artist,
+      album: track.album || null,
+      artwork_url: track.image_url || null,
+      preview_url: track.preview_url,
+    });
   }
-
-  useEffect(() => {
-    const el = audioRef.current;
-    if (!el) return;
-    const onEnd = () => setPlaying(false);
-    el.addEventListener("ended", onEnd);
-    return () => el.removeEventListener("ended", onEnd);
-  }, []);
 
   return (
     <div className="flex items-center gap-3 py-2 px-3 hover:bg-surface-raised rounded-md transition-colors group">
@@ -62,19 +55,16 @@ function TrackRow({ track, index }) {
           </div>
         )}
         {track.preview_url && (
-          <>
-            <button
-              onClick={togglePlay}
-              className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-            >
-              {playing ? (
-                <Pause className="w-3 h-3 text-white" />
-              ) : (
-                <Play className="w-3 h-3 text-white fill-white" />
-              )}
-            </button>
-            <audio ref={audioRef} src={track.preview_url} preload="none" />
-          </>
+          <button
+            onClick={handlePlay}
+            className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          >
+            {isTrackPlaying ? (
+              <Pause className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <Play className="w-3.5 h-3.5 text-white fill-white" />
+            )}
+          </button>
         )}
       </div>
 

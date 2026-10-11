@@ -100,6 +100,7 @@ async def create_quilt(
         "image_url": _format_quilt_url(quilt.image_path),
         "quilt_type": quilt.quilt_type,
         "period": quilt.period,
+        "folder": quilt.folder,
         "created_at": quilt.created_at,
     }
 
@@ -134,10 +135,29 @@ def list_quilts(
             "image_url": _format_quilt_url(q.image_path),
             "quilt_type": q.quilt_type,
             "period": q.period,
+            "folder": q.folder,
             "created_at": q.created_at,
         }
         for q in quilts
     ]
+
+@router.patch("/{quilt_id}/folder")
+def update_quilt_folder(
+    quilt_id: int,
+    folder: Optional[str] = None,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    quilt = session.exec(
+        select(AlbumQuilt).where(AlbumQuilt.id == quilt_id, AlbumQuilt.user_id == current_user.id)
+    ).first()
+    if not quilt:
+        raise HTTPException(status_code=404, detail="Quilt not found")
+    quilt.folder = folder.strip() if folder and folder.strip() else None
+    session.add(quilt)
+    session.commit()
+    session.refresh(quilt)
+    return {"ok": True, "id": quilt.id, "folder": quilt.folder}
 
 @router.delete("/{quilt_id}")
 def delete_quilt(

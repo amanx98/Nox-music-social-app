@@ -16,6 +16,7 @@ import {
   generateQuilt,
   getQuilts,
   deleteQuilt,
+  updateQuiltFolder,
   getTopAlbums,
   getTopArtists,
   getArtistDetails,
@@ -185,7 +186,22 @@ export default function QuiltGallery({ user }) {
   async function loadQuilts() {
     try {
       const data = await getQuilts();
-      setQuilts(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setQuilts(list);
+
+      // Hydrate folder assignments from server database
+      const serverAssignments = {};
+      const combinedFolders = new Set(folders);
+      list.forEach((q) => {
+        if (q.folder) {
+          serverAssignments[q.id] = q.folder;
+          combinedFolders.add(q.folder);
+        }
+      });
+      if (Object.keys(serverAssignments).length > 0) {
+        setQuiltFolders((prev) => ({ ...prev, ...serverAssignments }));
+        setFolders(Array.from(combinedFolders));
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -232,6 +248,11 @@ export default function QuiltGallery({ user }) {
         next[quiltId] = folderName;
       }
       return next;
+    });
+
+    // Persist folder assignment to database
+    updateQuiltFolder(quiltId, folderName || null).catch((err) => {
+      console.warn("Failed to persist quilt folder to server:", err);
     });
   }
 

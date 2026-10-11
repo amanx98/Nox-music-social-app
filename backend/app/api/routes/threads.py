@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, delete
 from app.db.session import get_session
 from app.models.thread import Thread
 from app.models.post import Post
@@ -17,6 +17,7 @@ from app.models.user import User
 from app.models.social import ThreadLike, ThreadRepost, ThreadBookmark
 from app.schemas.thread import ThreadCreate, ThreadRead, ThreadUpdate
 from app.core.deps import get_current_user, get_optional_current_user
+from app.core.http import get_async_client
 
 router = APIRouter(prefix="/threads", tags=["threads"])
 
@@ -26,7 +27,7 @@ THREAD_MEDIA_DIR = os.path.join(UPLOAD_DIR, "threads")
 os.makedirs(THREAD_MEDIA_DIR, exist_ok=True)
 
 ALLOWED_MEDIA_EXTENSIONS = {
-    "image": {".jpg", ".jpeg", ".png", ".webp", ".svg"},
+    "image": {".jpg", ".jpeg", ".png", ".webp"},
     "gif": {".gif"},
     "video": {".mp4", ".webm", ".mov"},
 }
@@ -241,7 +242,7 @@ def _score_music_match(candidate: dict, item: dict, original_text: str) -> tuple
 
     return score, reasons
 
-def _lookup_considerate_music(candidate: dict, original_text: str) -> Optional[dict]:
+async def _lookup_considerate_music(candidate: dict, original_text: str, client) -> Optional[dict]:
     query = candidate.get('query', '').strip()
     if not query or len(query) < 2:
         return None
@@ -253,9 +254,9 @@ def _lookup_considerate_music(candidate: dict, original_text: str) -> Optional[d
     # 1. Deezer General Search (Tracks & Albums with preview)
     try:
         url = f"https://api.deezer.com/search?q={enc}&limit=5"
-        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=3) as res:
-            data = json.loads(res.read().decode())
+        res = await client.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
+        if res.status_code == 200:
+            data = res.json()
             items = data.get("data", [])
             for item in items:
                 art = (
@@ -285,9 +286,9 @@ def _lookup_considerate_music(candidate: dict, original_text: str) -> Optional[d
     if best_score < 75:
         try:
             url = f"https://api.deezer.com/search/album?q={enc}&limit=4"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=3) as res:
-                data = json.loads(res.read().decode())
+            res = await client.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
+            if res.status_code == 200:
+                data = res.json()
                 items = data.get("data", [])
                 for item in items:
                     art = item.get("cover_xl") or item.get("cover_big") or item.get("cover_medium")
@@ -319,9 +320,9 @@ def _lookup_considerate_music(candidate: dict, original_text: str) -> Optional[d
     if best_score < 65:
         try:
             url = f"https://itunes.apple.com/search?term={enc}&entity=album&limit=2"
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=3) as res:
-                data = json.loads(res.read().decode())
+            res = await client.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=3.0)
+            if res.status_code == 200:
+                data = res.json()
                 results = data.get("results", [])
                 if results:
                     first = results[0]
@@ -354,6 +355,87 @@ def _lookup_considerate_music(candidate: dict, original_text: str) -> Optional[d
         return best_match
     return None
 
+def _enrich_threads_batch(
+    threads: list[Thread],
+    session: Session,
+    current_user: Optional[User] = None,
+    repost_meta: Optional[dict[int, dict]] = None,
+) -> list[ThreadRead]:
+    if not threads:
+        return []
+
+    thread_ids = [t.id for t in threads if t.id is not None]
+    user_ids = {t.user_id for t in threads if t.user_id is not None}
+    tag_ids = {t.tag_id for t in threads if t.tag_id is not None}
+
+    users = {u.id: u for u in session.exec(select(User).where(User.id.in_(user_ids))).all()} if user_ids else {}
+    tags = {t.id: t for t in session.exec(select(Tag).where(Tag.id.in_(tag_ids))).all()} if tag_ids else {}
+
+    post_counts = dict(session.exec(
+        select(Post.thread_id, func.count(Post.id)).where(Post.thread_id.in_(thread_ids)).group_by(Post.thread_id)
+    ).all()) if thread_ids else {}
+
+    likes_counts = dict(session.exec(
+        select(ThreadLike.thread_id, func.count(ThreadLike.id)).where(ThreadLike.thread_id.in_(thread_ids)).group_by(ThreadLike.thread_id)
+    ).all()) if thread_ids else {}
+
+    reposts_counts = dict(session.exec(
+        select(ThreadRepost.thread_id, func.count(ThreadRepost.id)).where(ThreadRepost.thread_id.in_(thread_ids)).group_by(ThreadRepost.thread_id)
+    ).all()) if thread_ids else {}
+
+    user_likes = set()
+    user_reposts = set()
+    user_bookmarks = set()
+    if current_user and thread_ids:
+        user_likes = set(session.exec(
+            select(ThreadLike.thread_id).where(ThreadLike.thread_id.in_(thread_ids), ThreadLike.user_id == current_user.id)
+        ).all())
+        user_reposts = set(session.exec(
+            select(ThreadRepost.thread_id).where(ThreadRepost.thread_id.in_(thread_ids), ThreadRepost.user_id == current_user.id)
+        ).all())
+        user_bookmarks = set(session.exec(
+            select(ThreadBookmark.thread_id).where(ThreadBookmark.thread_id.in_(thread_ids), ThreadBookmark.user_id == current_user.id)
+        ).all())
+
+    results = []
+    for thread in threads:
+        author = users.get(thread.user_id)
+        author_name = author.username if author else f"audiphile_{thread.user_id}"
+        tag = tags.get(thread.tag_id) if thread.tag_id else None
+
+        meta = (repost_meta or {}).get(thread.id, {})
+        is_repost = meta.get("is_repost", False)
+        reposted_by = meta.get("reposted_by", None)
+        reposted_at = meta.get("reposted_at", None)
+
+        results.append(ThreadRead(
+            id=thread.id,
+            user_id=thread.user_id,
+            tag_id=thread.tag_id,
+            title=thread.title,
+            body=thread.body,
+            image_url=thread.image_url,
+            media_type=thread.media_type,
+            created_at=thread.created_at,
+            author_name=author_name,
+            author_username=author_name,
+            author_avatar_url=author.avatar_url if author else None,
+            author_bio=author.bio if author else None,
+            tag_name=tag.name if tag else None,
+            tag_type=tag.type if tag else None,
+            likes_count=likes_counts.get(thread.id, 0),
+            reposts_count=reposts_counts.get(thread.id, 0),
+            post_count=post_counts.get(thread.id, 0),
+            is_liked=thread.id in user_likes,
+            is_reposted=thread.id in user_reposts,
+            is_bookmarked=thread.id in user_bookmarks,
+            is_repost=is_repost,
+            reposted_by=reposted_by,
+            reposted_at=reposted_at,
+            updated_at=thread.updated_at,
+        ))
+    return results
+
 def _enrich_thread(
     thread: Thread,
     session: Session,
@@ -362,67 +444,12 @@ def _enrich_thread(
     reposted_by: Optional[str] = None,
     reposted_at: Optional[datetime] = None,
 ) -> ThreadRead:
-    author = session.get(User, thread.user_id)
-    author_name = author.username if author else f"audiphile_{thread.user_id}"
-    author_avatar_url = author.avatar_url if author else None
-    author_bio = author.bio if author else None
-    
-    tag = session.get(Tag, thread.tag_id) if thread.tag_id else None
-    tag_name = tag.name if tag else None
-    tag_type = tag.type if tag else None
-
-    # Counts
-    post_count = session.exec(select(func.count(Post.id)).where(Post.thread_id == thread.id)).one()
-    likes_count = session.exec(select(func.count(ThreadLike.id)).where(ThreadLike.thread_id == thread.id)).one()
-    reposts_count = session.exec(select(func.count(ThreadRepost.id)).where(ThreadRepost.thread_id == thread.id)).one()
-
-    # User interactions
-    is_liked = False
-    is_reposted = False
-    is_bookmarked = False
-
-    if current_user:
-        is_liked = session.exec(
-            select(ThreadLike).where(ThreadLike.thread_id == thread.id, ThreadLike.user_id == current_user.id)
-        ).first() is not None
-
-        is_reposted = session.exec(
-            select(ThreadRepost).where(ThreadRepost.thread_id == thread.id, ThreadRepost.user_id == current_user.id)
-        ).first() is not None
-
-        is_bookmarked = session.exec(
-            select(ThreadBookmark).where(ThreadBookmark.thread_id == thread.id, ThreadBookmark.user_id == current_user.id)
-        ).first() is not None
-
-    return ThreadRead(
-        id=thread.id,
-        user_id=thread.user_id,
-        tag_id=thread.tag_id,
-        title=thread.title,
-        body=thread.body,
-        image_url=thread.image_url,
-        media_type=thread.media_type,
-        created_at=thread.created_at,
-        author_name=author_name,
-        author_username=author_name,
-        author_avatar_url=author_avatar_url,
-        author_bio=author_bio,
-        tag_name=tag_name,
-        tag_type=tag_type,
-        likes_count=likes_count,
-        reposts_count=reposts_count,
-        post_count=post_count,
-        is_liked=is_liked,
-        is_reposted=is_reposted,
-        is_bookmarked=is_bookmarked,
-        is_repost=is_repost,
-        reposted_by=reposted_by,
-        reposted_at=reposted_at,
-        updated_at=thread.updated_at,
-    )
+    meta = {thread.id: {"is_repost": is_repost, "reposted_by": reposted_by, "reposted_at": reposted_at}} if thread.id else None
+    enriched = _enrich_threads_batch([thread], session, current_user, repost_meta=meta)
+    return enriched[0]
 
 @router.post("/upload-media")
-def upload_thread_media(
+async def upload_thread_media(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
 ):
@@ -436,15 +463,37 @@ def upload_thread_media(
     if not media_type:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported media format '{ext}'. Allowed formats: images (.jpg, .png, .webp, .svg), gifs (.gif), and videos (.mp4, .webm, .mov)"
+            detail=f"Unsupported media format '{ext}'. Allowed formats: images (.jpg, .png, .webp), gifs (.gif), and videos (.mp4, .webm, .mov)"
         )
+
+    # Size limits: 15MB for images/gifs, 50MB for videos
+    max_size = 50 * 1024 * 1024 if media_type == "video" else 15 * 1024 * 1024
+    max_mb = 50 if media_type == "video" else 15
 
     safe_name = os.path.basename(file.filename or "media").replace(" ", "_")
     filename = f"{uuid.uuid4().hex}_{safe_name}"
     filepath = os.path.join(THREAD_MEDIA_DIR, filename)
 
-    with open(filepath, "wb") as buffer:
-        buffer.write(file.file.read())
+    total_bytes = 0
+    try:
+        with open(filepath, "wb") as buffer:
+            while chunk := await file.read(64 * 1024):  # 64KB chunks
+                total_bytes += len(chunk)
+                if total_bytes > max_size:
+                    buffer.close()
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File exceeds maximum allowed size of {max_mb}MB"
+                    )
+                buffer.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+        raise HTTPException(status_code=500, detail="Failed to save uploaded media")
 
     return {
         "url": f"/static/uploads/threads/{filename}",
@@ -453,7 +502,7 @@ def upload_thread_media(
     }
 
 @router.get("/resolve-music-art")
-def resolve_music_art(
+async def resolve_music_art(
     text: str = "",
     tag: Optional[str] = None,
 ):
@@ -461,13 +510,14 @@ def resolve_music_art(
     best_result = None
     best_score = 0
 
-    for cand in candidates[:5]:
-        result = _lookup_considerate_music(cand, text)
-        if result and result.get("score", 0) > best_score:
-            best_score = result["score"]
-            best_result = result
-            if best_score >= 85:
-                break
+    async with get_async_client() as client:
+        for cand in candidates[:5]:
+            result = await _lookup_considerate_music(cand, text, client)
+            if result and result.get("score", 0) > best_score:
+                best_score = result["score"]
+                best_result = result
+                if best_score >= 85:
+                    break
 
     if best_result and best_score >= 60:
         return best_result
@@ -499,6 +549,38 @@ def create_thread(
     session.commit()
     session.refresh(thread)
     return _enrich_thread(thread, session, current_user)
+
+@router.get("/{thread_id}", response_model=ThreadRead)
+def get_thread(
+    thread_id: int,
+    session: Session = Depends(get_session),
+    current_user: Optional[User] = Depends(get_optional_current_user),
+):
+    thread = session.get(Thread, thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    return _enrich_thread(thread, session, current_user)
+
+@router.delete("/{thread_id}")
+def delete_thread(
+    thread_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    thread = session.get(Thread, thread_id)
+    if not thread:
+        raise HTTPException(status_code=404, detail="Thread not found")
+    if thread.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this thread")
+
+    # Clean up associated interactions and posts
+    session.exec(delete(ThreadLike).where(ThreadLike.thread_id == thread_id))
+    session.exec(delete(ThreadRepost).where(ThreadRepost.thread_id == thread_id))
+    session.exec(delete(ThreadBookmark).where(ThreadBookmark.thread_id == thread_id))
+    session.exec(delete(Post).where(Post.thread_id == thread_id))
+    session.delete(thread)
+    session.commit()
+    return {"ok": True, "deleted_id": thread_id}
 
 @router.patch("/{thread_id}", response_model=ThreadRead)
 def update_thread(
@@ -535,48 +617,53 @@ def list_threads(
     tag_id: int | None = None,
     user_id: int | None = None,
     include_reposts: bool = False,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    limit = min(max(1, limit), 100)
+    offset = max(0, offset)
+
     # If filtering by a specific user profile and including retweets in the timeline
     if user_id is not None and include_reposts:
         profile_user = session.get(User, user_id)
         reposter_name = profile_user.username if profile_user else "listener"
 
-        # 1. Original threads by user
         orig_threads = session.exec(
             select(Thread).where(Thread.user_id == user_id)
         ).all()
-        enriched_orig = [
-            (t.created_at, _enrich_thread(t, session, current_user, is_repost=False))
-            for t in orig_threads
-        ]
 
-        # 2. Retweets / Reposts by user
         reposts = session.exec(
             select(ThreadRepost).where(ThreadRepost.user_id == user_id).order_by(ThreadRepost.created_at.desc())
         ).all()
+        repost_thread_ids = [r.thread_id for r in reposts]
+        repost_threads_map = {
+            t.id: t for t in session.exec(select(Thread).where(Thread.id.in_(repost_thread_ids))).all()
+        } if repost_thread_ids else {}
 
-        enriched_reposts = []
+        timeline_items = []
+        for t in orig_threads:
+            timeline_items.append((t.created_at, t, False, None, None))
+
         for r in reposts:
-            orig_t = session.get(Thread, r.thread_id)
+            orig_t = repost_threads_map.get(r.thread_id)
             if orig_t:
-                enriched_reposts.append((
-                    r.created_at,
-                    _enrich_thread(
-                        orig_t,
-                        session,
-                        current_user,
-                        is_repost=True,
-                        reposted_by=reposter_name,
-                        reposted_at=r.created_at,
-                    )
-                ))
+                timeline_items.append((r.created_at, orig_t, True, reposter_name, r.created_at))
 
-        # Combine and sort newest timeline event first
-        combined = enriched_orig + enriched_reposts
-        combined.sort(key=lambda x: x[0], reverse=True)
-        return [item[1] for item in combined]
+        timeline_items.sort(key=lambda x: x[0], reverse=True)
+        paged_items = timeline_items[offset : offset + limit]
+
+        repost_meta = {
+            item[1].id: {
+                "is_repost": item[2],
+                "reposted_by": item[3],
+                "reposted_at": item[4]
+            }
+            for item in paged_items if item[2]
+        }
+
+        return _enrich_threads_batch([item[1] for item in paged_items], session, current_user, repost_meta=repost_meta)
 
     query = select(Thread)
     if tag_id:
@@ -584,9 +671,9 @@ def list_threads(
     if user_id:
         query = query.where(Thread.user_id == user_id)
 
-    query = query.order_by(Thread.created_at.desc())
+    query = query.order_by(Thread.created_at.desc()).offset(offset).limit(limit)
     threads = session.exec(query).all()
-    return [_enrich_thread(t, session, current_user) for t in threads]
+    return _enrich_threads_batch(threads, session, current_user)
 
 @router.post("/{thread_id}/like")
 def toggle_like(
@@ -686,61 +773,75 @@ def toggle_bookmark(
 @router.get("/user/{user_id}/likes", response_model=list[ThreadRead])
 def list_user_likes(
     user_id: int,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    limit = min(max(1, limit), 100)
+    offset = max(0, offset)
     likes = session.exec(
-        select(ThreadLike).where(ThreadLike.user_id == user_id).order_by(ThreadLike.created_at.desc())
+        select(ThreadLike).where(ThreadLike.user_id == user_id).order_by(ThreadLike.created_at.desc()).offset(offset).limit(limit)
     ).all()
 
-    threads = []
-    for like in likes:
-        t = session.get(Thread, like.thread_id)
-        if t:
-            threads.append(_enrich_thread(t, session, current_user))
-    return threads
+    thread_ids = [l.thread_id for l in likes]
+    if not thread_ids:
+        return []
+
+    threads_map = {t.id: t for t in session.exec(select(Thread).where(Thread.id.in_(thread_ids))).all()}
+    ordered_threads = [threads_map[tid] for tid in thread_ids if tid in threads_map]
+    return _enrich_threads_batch(ordered_threads, session, current_user)
 
 @router.get("/user/{user_id}/reposts", response_model=list[ThreadRead])
 def list_user_reposts(
     user_id: int,
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
+    limit = min(max(1, limit), 100)
+    offset = max(0, offset)
     profile_user = session.get(User, user_id)
     reposter_name = profile_user.username if profile_user else "listener"
 
     reposts = session.exec(
-        select(ThreadRepost).where(ThreadRepost.user_id == user_id).order_by(ThreadRepost.created_at.desc())
+        select(ThreadRepost).where(ThreadRepost.user_id == user_id).order_by(ThreadRepost.created_at.desc()).offset(offset).limit(limit)
     ).all()
 
-    threads = []
-    for r in reposts:
-        t = session.get(Thread, r.thread_id)
-        if t:
-            threads.append(
-                _enrich_thread(
-                    t,
-                    session,
-                    current_user,
-                    is_repost=True,
-                    reposted_by=reposter_name,
-                    reposted_at=r.created_at,
-                )
-            )
-    return threads
+    thread_ids = [r.thread_id for r in reposts]
+    if not thread_ids:
+        return []
+
+    threads_map = {t.id: t for t in session.exec(select(Thread).where(Thread.id.in_(thread_ids))).all()}
+    ordered_threads = [threads_map[r.thread_id] for r in reposts if r.thread_id in threads_map]
+    repost_meta = {
+        r.thread_id: {
+            "is_repost": True,
+            "reposted_by": reposter_name,
+            "reposted_at": r.created_at,
+        }
+        for r in reposts
+    }
+    return _enrich_threads_batch(ordered_threads, session, current_user, repost_meta=repost_meta)
 
 @router.get("/me/bookmarks", response_model=list[ThreadRead])
 def list_my_bookmarks(
+    limit: int = 50,
+    offset: int = 0,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user),
 ):
+    limit = min(max(1, limit), 100)
+    offset = max(0, offset)
     bookmarks = session.exec(
-        select(ThreadBookmark).where(ThreadBookmark.user_id == current_user.id).order_by(ThreadBookmark.created_at.desc())
+        select(ThreadBookmark).where(ThreadBookmark.user_id == current_user.id).order_by(ThreadBookmark.created_at.desc()).offset(offset).limit(limit)
     ).all()
 
-    threads = []
-    for b in bookmarks:
-        t = session.get(Thread, b.thread_id)
-        if t:
-            threads.append(_enrich_thread(t, session, current_user))
-    return threads
+    thread_ids = [b.thread_id for b in bookmarks]
+    if not thread_ids:
+        return []
+
+    threads_map = {t.id: t for t in session.exec(select(Thread).where(Thread.id.in_(thread_ids))).all()}
+    ordered_threads = [threads_map[tid] for tid in thread_ids if tid in threads_map]
+    return _enrich_threads_batch(ordered_threads, session, current_user)

@@ -30,6 +30,7 @@ from typing import Optional
 import httpx
 
 from app.core.config import settings
+from app.core.http import get_async_client
 
 LASTFM_API_BASE = "https://ws.audioscrobbler.com/2.0/"
 
@@ -335,7 +336,7 @@ async def _get_deezer_preview(track: str, artist: str, client: httpx.AsyncClient
 async def _enrich_with_previews(tracks: list[dict]) -> list[dict]:
     """Fetch preview URLs and album cover art for a batch of tracks concurrently."""
     headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
-    async with httpx.AsyncClient(verify=False, headers=headers) as client:
+    async with get_async_client(headers=headers) as client:
         tasks = [_get_deezer_preview(t.get("name", ""), t.get("artist", ""), client) for t in tracks]
         enrichment_data = await asyncio.gather(*tasks)
         
@@ -368,7 +369,7 @@ async def build_taste_vector(lastfm_username: str) -> dict:
 
     Returns a dict like: {"dream-pop": 0.95, "shoegaze": 0.82, "4ad": 0.61, ...}
     """
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         # Step 1: Get top 15 artists (captures primary soundscape without excessive latency)
         artists_data = await _lastfm_get(
             {"method": "user.getTopArtists", "user": lastfm_username, "period": "overall", "limit": 15},
@@ -433,7 +434,7 @@ async def get_candidates(
     genres = top_genres[:genre_count]
     artists = top_artists[:2 if is_compact else 3]
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         tasks = []
 
         # Source 1: Tag tracks (randomized pages across top genres)
@@ -498,7 +499,7 @@ async def score_candidates(
     rather than making 180+ individual track tag requests to Last.fm.
     """
     unique_artists = list({t["artist"].strip() for t in candidates if t.get("artist")})
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         tag_tasks = [_get_artist_tags(a, client) for a in unique_artists]
         artist_tags_list = await asyncio.gather(*tag_tasks)
     artist_tags_map = {a.lower(): tags for a, tags in zip(unique_artists, artist_tags_list)}
@@ -628,7 +629,7 @@ async def get_nox_recommendations(
 
     top_artists = existing_top_artists
     if not top_artists:
-        async with httpx.AsyncClient(verify=False) as client:
+        async with get_async_client() as client:
             artists_data = await _lastfm_get(
                 {"method": "user.getTopArtists", "user": lastfm_username, "period": "overall", "limit": 10},
                 client,
@@ -681,7 +682,7 @@ async def get_lastfm_recommendations(lastfm_username: str, seed_tracks: list[dic
     if not seeds:
         return []
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         tasks = [
             _get_track_similar_lastfm(s["name"], s["artist"], client, limit=20)
             for s in seeds
@@ -723,7 +724,7 @@ async def compare_engines(lastfm_username: str) -> dict:
     }
     """
     # Fetch top tracks for seed (needed for Last.fm getSimilar)
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         seeds_data = await _lastfm_get(
             {"method": "user.getTopTracks", "user": lastfm_username, "period": "overall", "limit": 5},
             client,
@@ -828,7 +829,7 @@ async def _generate_artist_grounded_playlist(
     Prevents unrelated genres from polluting the tracklist (e.g. no Sade/Marvin Gaye
     in a Griselda/boom-bap rap playlist).
     """
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         # Step 1: Canonicalize name
         canonical = await _resolve_canonical_artist(seed_artist, client)
 

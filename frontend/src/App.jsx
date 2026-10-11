@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { getMe } from "./api/client";
 import { ToastProvider } from "./components/Toast";
-import Login from "./Login";
-import Register from "./Register";
+import { AudioProvider } from "./context/AudioContext";
 import Layout from "./Layout";
 import FeedPage from "./pages/FeedPage";
+import ThreadViewPage from "./pages/ThreadViewPage";
 import ProfilePage from "./pages/ProfilePage";
 import TopstersPage from "./pages/TopstersPage";
 import DiscoverPage from "./pages/DiscoverPage";
@@ -14,7 +14,6 @@ import ErrorBoundary from "./components/ErrorBoundary";
 function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [showRegister, setShowRegister] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -96,37 +95,44 @@ function App() {
 
   return (
     <ToastProvider>
-      {!user ? (
-        <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          {showRegister ? (
-            <Register
-              onRegisterSuccess={() => setShowRegister(false)}
-              onSwitchToLogin={() => setShowRegister(false)}
-              onLoginSuccess={setUser}
-            />
-          ) : (
-            <Login
-              onLoginSuccess={setUser}
-              onSwitchToRegister={() => setShowRegister(true)}
-            />
-          )}
-        </div>
-      ) : (
+      <AudioProvider>
         <BrowserRouter>
           <ErrorBoundary>
             <Routes>
-              <Route path="/" element={<Layout user={user} onLogout={handleLogout} />}>
+              <Route
+                path="/"
+                element={
+                  <Layout
+                    user={user}
+                    onLogout={handleLogout}
+                    onLoginSuccess={setUser}
+                  />
+                }
+              >
                 <Route index element={<FeedPage user={user} />} />
+                <Route path="threads/:threadId" element={<ThreadViewPage user={user} />} />
                 <Route path="topsters" element={<TopstersPage user={user} />} />
                 <Route path="discover" element={<DiscoverPage />} />
-                <Route path="profile" element={<ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />} />
-                <Route path="profile/:username" element={<ProfilePage user={user} onLogout={handleLogout} />} />
+                <Route
+                  path="profile"
+                  element={
+                    user ? (
+                      <ProfilePage user={user} initialTab="overview" onLogout={handleLogout} />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  }
+                />
+                <Route
+                  path="profile/:username"
+                  element={<ProfilePage user={user} onLogout={handleLogout} />}
+                />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Route>
             </Routes>
           </ErrorBoundary>
         </BrowserRouter>
-      )}
+      </AudioProvider>
     </ToastProvider>
   );
 }

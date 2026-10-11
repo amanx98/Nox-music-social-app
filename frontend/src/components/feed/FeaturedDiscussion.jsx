@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { MessageSquare, Heart, Flame, ArrowUpRight, Play, Pause, Disc3, Pencil } from "lucide-react";
 import { resolveMusicArt } from "../../api/client";
+import { useAudio } from "../../context/AudioContext";
 import Avatar from "../Avatar";
 
 function formatTimeAgo(dateString) {
@@ -33,8 +34,7 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
 
   // Auto-resolve artwork and preview if thread does not have explicit user media
   const [resolvedArt, setResolvedArt] = useState(null);
-  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
-  const audioRef = useRef(null);
+  const { currentTrack, isPlaying, togglePlay } = useAudio();
 
   useEffect(() => {
     let isMounted = true;
@@ -50,25 +50,22 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
 
     return () => {
       isMounted = false;
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
     };
   }, [thread?.id, title, cleanBody, tagName]);
 
+  const isPlayingPreview = isPlaying && currentTrack?.preview_url === resolvedArt?.preview_url;
+
   function togglePreviewAudio(e) {
     e.stopPropagation();
-    if (!audioRef.current || !resolvedArt?.preview_url) return;
-    if (isPlayingPreview) {
-      audioRef.current.pause();
-      setIsPlayingPreview(false);
-    } else {
-      audioRef.current.play().then(() => {
-        setIsPlayingPreview(true);
-      }).catch(() => {
-        setIsPlayingPreview(false);
-      });
-    }
+    if (!resolvedArt?.preview_url) return;
+    togglePlay({
+      title: resolvedArt.title || title,
+      artist: resolvedArt.artist || authorName,
+      album: resolvedArt.album || null,
+      artwork_url: thread?.image_url || resolvedArt?.artwork_url || "/assets/editorial/vinyl-desk.svg",
+      preview_url: resolvedArt.preview_url,
+      threadId: thread?.id,
+    });
   }
 
   // Active artwork: user-attached image, or auto-resolved album/artist art, or vinyl desk
@@ -175,16 +172,6 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
                 #{tagName}
               </div>
             </div>
-
-            {/* Hidden audio element for preview */}
-            {resolvedArt?.preview_url && (
-              <audio
-                ref={audioRef}
-                src={resolvedArt.preview_url}
-                onEnded={() => setIsPlayingPreview(false)}
-                preload="none"
-              />
-            )}
           </div>
         </div>
 

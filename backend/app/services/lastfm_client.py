@@ -1,12 +1,19 @@
 import hashlib
-import httpx
+from typing import Optional
+import urllib.parse
 from app.core.config import settings
+from app.core.http import get_async_client
 
 LASTFM_AUTH_URL = "https://www.last.fm/api/auth"
 LASTFM_API_BASE = "https://ws.audioscrobbler.com/2.0/"
 
-def get_lastfm_login_url() -> str:
-    return f"{LASTFM_AUTH_URL}/?api_key={settings.lastfm_api_key}&cb={settings.lastfm_callback_url}"
+def get_lastfm_login_url(state: Optional[str] = None) -> str:
+    cb = settings.lastfm_callback_url
+    if state:
+        delimiter = "&" if "?" in cb else "?"
+        cb = f"{cb}{delimiter}state={state}"
+    encoded_cb = urllib.parse.quote(cb, safe="")
+    return f"{LASTFM_AUTH_URL}/?api_key={settings.lastfm_api_key}&cb={encoded_cb}"
 
 def _sign_params(params: dict) -> str:
     sorted_items = sorted(params.items())
@@ -23,7 +30,7 @@ async def get_session_key(token: str) -> dict:
     params["api_sig"] = _sign_params(params)
     params["format"] = "json"
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client(timeout=10.0) as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -37,7 +44,7 @@ async def get_top_albums(username: str, period: str = "overall", limit: int = 9)
         "limit": limit,
         "format": "json",
     }
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -51,7 +58,7 @@ async def get_top_tracks(username: str, period: str = "overall", limit: int = 9)
         "limit": limit,
         "format": "json",
     }
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -64,7 +71,7 @@ async def get_track_album_art(artist: str, track: str) -> str | None:
         "track": track,
         "format": "json",
     }
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         if response.status_code != 200:
             return None
@@ -85,7 +92,7 @@ async def get_top_artists(username: str, period: str = "overall", limit: int = 9
         "limit": limit,
         "format": "json",
     }
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         response = await client.get(LASTFM_API_BASE, params=params)
         response.raise_for_status()
         return response.json()
@@ -100,7 +107,7 @@ async def get_artist_details(artist_name: str) -> dict:
     }
     headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
     try:
-        async with httpx.AsyncClient(verify=False, timeout=8.0, headers=headers) as client:
+        async with get_async_client(timeout=8.0, headers=headers) as client:
             artist_id = None
             a = None
             
@@ -225,7 +232,7 @@ async def get_artist_details(artist_name: str) -> dict:
                 "limit": 10,
                 "format": "json",
             }
-            async with httpx.AsyncClient(verify=False, timeout=8.0) as client:
+            async with get_async_client(timeout=8.0) as client:
                 r = await client.get(LASTFM_API_BASE, params=params)
                 if r.status_code == 200:
                     tracks = r.json().get("toptracks", {}).get("track", [])
@@ -267,7 +274,7 @@ async def get_now_playing(lastfm_username: str) -> dict:
 
     headers = {"User-Agent": "NoxMusicApp/1.0 (nox@example.com)"}
     try:
-        async with httpx.AsyncClient(verify=False, timeout=8.0, headers=headers) as client:
+        async with get_async_client(timeout=8.0, headers=headers) as client:
             # 1. Fetch recent tracks from Last.fm
             r = await client.get(
                 LASTFM_API_BASE,

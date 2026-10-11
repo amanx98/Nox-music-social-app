@@ -227,6 +227,16 @@ export async function updateThread(threadId, { title, body, imageUrl, mediaType,
   });
 }
 
+export async function getThread(threadId) {
+  return apiRequest(`/threads/${threadId}`);
+}
+
+export async function deleteThread(threadId) {
+  return apiRequest(`/threads/${threadId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function getPosts(threadId) {
   return apiRequest(`/posts/?thread_id=${threadId}`);
 }
@@ -242,6 +252,12 @@ export async function updatePost(postId, body) {
   return apiRequest(`/posts/${postId}`, {
     method: "PATCH",
     body: JSON.stringify({ body }),
+  });
+}
+
+export async function deletePost(postId) {
+  return apiRequest(`/posts/${postId}`, {
+    method: "DELETE",
   });
 }
 
@@ -285,6 +301,13 @@ export async function getQuilts() {
 export async function deleteQuilt(quiltId) {
   return apiRequest(`/quilts/${quiltId}`, {
     method: "DELETE",
+  });
+}
+
+export async function updateQuiltFolder(quiltId, folder) {
+  const query = folder ? `?folder=${encodeURIComponent(folder)}` : "";
+  return apiRequest(`/quilts/${quiltId}/folder${query}`, {
+    method: "PATCH",
   });
 }
 
@@ -479,5 +502,10 @@ export async function removeFriend(userId) {
 /** Get all pending friend requests for current user (incoming & outgoing) */
 export async function getFriendRequests() {
   return apiRequest("/friends/requests");
+}
+
+/** Get live activity notifications */
+export async function getNotifications() {
+  return apiRequest("/notifications/");
 }
 

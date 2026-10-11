@@ -59,15 +59,18 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 def on_startup():
     from sqlmodel import SQLModel, Session, text
     SQLModel.metadata.create_all(engine)
-    try:
-        with engine.begin() as conn:
-            conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS image_url VARCHAR;"))
-            conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS media_type VARCHAR;"))
-            conn.execute(text("ALTER TABLE thread ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
-            conn.execute(text("ALTER TABLE post ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP;"))
-    except Exception:
-        # SQLite doesn't support IF NOT EXISTS in ALTER TABLE; columns already created by create_all
-        pass
+    for table, col, col_type in [
+        ("thread", "image_url", "VARCHAR"),
+        ("thread", "media_type", "VARCHAR"),
+        ("thread", "updated_at", "TIMESTAMP"),
+        ("post", "updated_at", "TIMESTAMP"),
+        ("albumquilt", "folder", "VARCHAR"),
+    ]:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type};"))
+        except Exception:
+            pass
 
     try:
         from app.db.seed import seed_database
@@ -93,6 +96,7 @@ from app.api.routes.quilts import router as quilts_router
 from app.api.routes.curation import router as curation_router
 from app.api.routes.users import router as users_router
 from app.api.routes.friends import router as friends_router
+from app.api.routes.notifications import router as notifications_router
 
 app.include_router(tags_router)
 app.include_router(threads_router)
@@ -102,9 +106,15 @@ app.include_router(quilts_router)
 app.include_router(curation_router)
 app.include_router(users_router)
 app.include_router(friends_router)
+app.include_router(notifications_router)
+
+from app.core.config import settings
+from fastapi import HTTPException
 
 @app.post("/dev/seed")
 def dev_seed():
+    if settings.environment.lower() not in ("development", "dev", "test"):
+        raise HTTPException(status_code=403, detail="Database seeding is disabled in production environments.")
     from sqlmodel import Session
     from app.db.seed import seed_database
     with Session(engine) as session:

@@ -10,9 +10,14 @@ from app.core.deps import get_current_user, get_optional_current_user
 from app.core.security import decode_access_token
 from app.services.lastfm_client import get_lastfm_login_url, get_session_key
 
+import secrets
+import time
+from app.core.config import settings
+
 router = APIRouter(prefix="/lastfm", tags=["lastfm"])
 
-pending_lastfm_users: dict[str, int] = {}
+# Thread-safe state map with 15-minute TTL to prevent OAuth CSRF and concurrency collisions
+pending_lastfm_states: dict[str, dict] = {}
 
 @router.get("/login")
 def lastfm_login(
@@ -33,17 +38,40 @@ def lastfm_login(
     if not user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    pending_lastfm_users["awaiting"] = user.id
-    login_url = get_lastfm_login_url()
+    # Prune expired states (> 15 minutes)
+    now = time.time()
+    expired = [s for s, data in list(pending_lastfm_states.items()) if now - data.get("created_at", 0) > 900]
+    for s in expired:
+        pending_lastfm_states.pop(s, None)
+
+    state = secrets.token_urlsafe(32)
+    pending_lastfm_states[state] = {"user_id": user.id, "created_at": now}
+    login_url = get_lastfm_login_url(state=state)
+
     if redirect:
         return RedirectResponse(url=login_url)
-    return {"login_url": login_url}
+    return {"login_url": login_url, "state": state}
 
 @router.get("/callback")
-async def lastfm_callback(token: str, session: Session = Depends(get_session)):
-    user_id = pending_lastfm_users.pop("awaiting", None)
-    if user_id is None:
-        raise HTTPException(status_code=400, detail="No pending Last.fm login")
+async def lastfm_callback(
+    token: str,
+    state: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    if not state or state not in pending_lastfm_states:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired Last.fm authorization session. Please try connecting again from your profile."
+        )
+
+    state_data = pending_lastfm_states.pop(state)
+    if time.time() - state_data.get("created_at", 0) > 900:
+        raise HTTPException(
+            status_code=400,
+            detail="Last.fm authorization session timed out. Please try connecting again."
+        )
+
+    user_id = state_data["user_id"]
 
     session_data = await get_session_key(token)
     lastfm_session = session_data["session"]
@@ -66,7 +94,8 @@ async def lastfm_callback(token: str, session: Session = Depends(get_session)):
 
     session.commit()
 
-    return RedirectResponse(url="http://localhost:5173/?lastfm=connected&lastfm_success=true")
+    frontend_base = settings.frontend_url.rstrip("/")
+    return RedirectResponse(url=f"{frontend_base}/?lastfm=connected&lastfm_success=true")
 
 def _resolve_lastfm_profile(
     session: Session,
@@ -88,8 +117,8 @@ def _resolve_lastfm_profile(
         if p:
             return p
 
-    # Fallback to the first active LastfmProfile so topsters never show empty
-    return session.exec(select(LastfmProfile)).first()
+    # Never leak another user's profile if the requested user hasn't linked Last.fm
+    return None
 
 @router.get("/status")
 def get_lastfm_status(

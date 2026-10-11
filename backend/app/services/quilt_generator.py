@@ -1,10 +1,12 @@
 import os
-import httpx
+from pathlib import Path
 from PIL import Image
 from io import BytesIO
 import uuid
+from app.core.http import get_async_client
 
-QUILT_OUTPUT_DIR = "static/quilts"
+BACKEND_DIR = Path(__file__).resolve().parents[2]
+QUILT_OUTPUT_DIR = str(BACKEND_DIR / "static" / "quilts")
 TILE_SIZE = 300  # each album cover resized to 300x300
 
 os.makedirs(QUILT_OUTPUT_DIR, exist_ok=True)
@@ -17,7 +19,7 @@ async def generate_quilt(albums: list[dict], grid_size: int = 3) -> str:
     drawn_count = 0
     max_tiles = grid_size * grid_size
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with get_async_client() as client:
         for album in albums:
             if drawn_count >= max_tiles:
                 break
