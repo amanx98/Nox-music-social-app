@@ -141,7 +141,7 @@ export default function ThreadCard({
                   ) : (
                     <Hash className="w-2.5 h-2.5 stroke-[2] text-secondary" />
                   )}
-                  <span>{tagInfo.name}</span>
+                  <span>c/{tagInfo.name}</span>
                 </button>
               )}
             </div>

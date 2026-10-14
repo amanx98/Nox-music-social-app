@@ -69,7 +69,7 @@ export default function TagBrowser({ tags = [], selectedTag, onSelectTag }) {
                 ) : (
                   <Hash className="w-2.5 h-2.5 stroke-[2] text-secondary" />
                 )}
-                <span>#{tag.name}</span>
+                <span>c/{tag.name}</span>
               </button>
             );
           })}

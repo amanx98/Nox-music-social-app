@@ -1,12 +1,22 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Hash, Mic, Radio, Search, Plus, ArrowRight, Loader2, X, Sparkles } from "lucide-react";
-import { getTags, createTag } from "../api/client";
+import {
+  Hash,
+  Mic,
+  Radio,
+  Search,
+  Plus,
+  ArrowRight,
+  Loader2,
+  X,
+  Sparkles,
+  Disc,
+} from "lucide-react";
+import { getTags, createTag, resolveImageUrl } from "../api/client";
 import { useToast } from "../components/Toast";
 import EngineCompareView from "../components/curation/EngineCompareView";
 import PlaylistGeneratorModal from "../components/curation/PlaylistGeneratorModal";
 import TasteVectorCard from "../components/curation/TasteVectorCard";
-
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
@@ -18,11 +28,10 @@ export default function DiscoverPage() {
   const [activeFilter, setActiveFilter] = useState("all");
 
   const [newTagName, setNewTagName] = useState("");
+  const [newTagDesc, setNewTagDesc] = useState("");
   const [newTagType, setNewTagType] = useState("genre");
   const [creating, setCreating] = useState(false);
   const [isPlaylistModalOpen, setIsPlaylistModalOpen] = useState(false);
-
-
 
   const loadTags = useCallback(async () => {
     setLoading(true);
@@ -42,15 +51,18 @@ export default function DiscoverPage() {
 
   async function handleCreateTag(e) {
     e.preventDefault();
-    const trimmed = newTagName.trim();
+    const trimmed = newTagName.trim().replace(/^#/, "").replace(/^c\//, "");
     if (!trimmed) return;
 
     setCreating(true);
     try {
-      await createTag(trimmed, newTagType);
+      await createTag(trimmed, newTagType, {
+        description: newTagDesc.trim() || null,
+      });
       setNewTagName("");
-      addToast(`Community #${trimmed} created successfully!`);
-      loadTags();
+      setNewTagDesc("");
+      addToast(`Community c/${trimmed} founded successfully!`);
+      navigate(`/c/${encodeURIComponent(trimmed)}`);
     } catch (err) {
       addToast(err.message || "Failed to create community", "error");
     } finally {
@@ -133,7 +145,7 @@ export default function DiscoverPage() {
         </div>
       </div>
 
-      {/* Grid of Communities */}
+      {/* Reddit-Style Grid of Subreddit Communities */}
       {loading ? (
         <div className="py-16 text-center">
           <Loader2 className="w-6 h-6 animate-spin text-accent mx-auto mb-2" />
@@ -145,84 +157,151 @@ export default function DiscoverPage() {
             No communities found matching "{searchQuery}"
           </p>
           <p className="font-sans text-xs text-text-muted max-w-xs mx-auto">
-            You can create this scene below to start the conversation.
+            You can create this scene below to become its founding curator.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {filteredTags.map((tag) => (
-            <div
-              key={tag.id}
-              onClick={() => navigate(`/?tag=${encodeURIComponent(tag.name)}`)}
-              className="p-3.5 rounded-md border border-border bg-surface-raised hover:border-accent hover:bg-surface transition-all cursor-pointer group flex items-center justify-between gap-3 shadow-1"
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded bg-surface-sunken border border-border flex items-center justify-center text-accent shrink-0 group-hover:border-accent transition-colors">
-                  {tag.type === "artist" ? (
-                    <Mic className="w-4 h-4 stroke-[2]" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          {filteredTags.map((tag) => {
+            const themeColor = tag.theme_color || "#C7F43D";
+            const bannerSrc = tag.banner_url ? resolveImageUrl(tag.banner_url) : null;
+            const iconSrc = tag.icon_url ? resolveImageUrl(tag.icon_url) : null;
+
+            return (
+              <div
+                key={tag.id}
+                onClick={() => navigate(`/c/${encodeURIComponent(tag.name)}`)}
+                className="rounded-xl border border-border bg-surface-raised hover:border-accent hover:bg-surface transition-all cursor-pointer group flex flex-col overflow-hidden shadow-2 hover:shadow-4 relative"
+              >
+                {/* Card Mini Banner */}
+                <div className="relative w-full h-20 overflow-hidden bg-surface-sunken">
+                  {bannerSrc ? (
+                    <img
+                      src={bannerSrc}
+                      alt=""
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                   ) : (
-                    <Hash className="w-4 h-4 stroke-[2]" />
+                    <div
+                      className="w-full h-full"
+                      style={{
+                        background: `radial-gradient(ellipse at 80% 20%, ${themeColor}33 0%, rgba(10, 11, 10, 0.95) 75%),
+                                     linear-gradient(135deg, #0e100f 0%, #151816 100%)`,
+                      }}
+                    />
                   )}
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-heading font-bold text-xs text-text group-hover:text-accent truncate m-0">
-                    #{tag.name}
-                  </h3>
-                  <span className="font-mono text-[10px] text-text-dim uppercase tracking-wider">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
+
+                  {/* Type badge */}
+                  <div className="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-xs font-mono text-[9px] uppercase tracking-wider text-text-dim border border-white/10">
                     {tag.type}
-                  </span>
+                  </div>
+                </div>
+
+                {/* Card Body with Overlapping Avatar */}
+                <div className="p-3.5 pt-0 flex-1 flex flex-col justify-between">
+                  <div className="flex items-start gap-2.5 -mt-6 relative z-10 mb-2">
+                    {/* Community Icon */}
+                    <div
+                      className="w-12 h-12 rounded-xl bg-surface-sunken border-2 overflow-hidden shadow-2 flex items-center justify-center shrink-0"
+                      style={{ borderColor: themeColor }}
+                    >
+                      {iconSrc ? (
+                        <img src={iconSrc} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Disc className="w-6 h-6" style={{ color: themeColor }} />
+                      )}
+                    </div>
+
+                    <div className="min-w-0 pt-6">
+                      <h3 className="font-heading font-black text-sm text-text group-hover:text-accent truncate m-0">
+                        c/{tag.name}
+                      </h3>
+                      {tag.creator_username && (
+                        <span className="font-mono text-[10px] text-text-dim">
+                          curated by @{tag.creator_username}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {tag.description && (
+                    <p className="font-sans text-xs text-text-muted line-clamp-2 leading-relaxed mb-3">
+                      {tag.description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border/60 text-text-dim font-mono text-[10px] mt-auto">
+                    <span>
+                      {tag.threads_count || 0} takes • {tag.posts_count || 0} replies
+                    </span>
+                    <span className="text-accent group-hover:translate-x-0.5 transition-transform font-heading font-bold text-xs inline-flex items-center gap-0.5">
+                      Enter Scene →
+                    </span>
+                  </div>
                 </div>
               </div>
-
-              <ArrowRight className="w-3.5 h-3.5 text-text-dim group-hover:text-accent group-hover:translate-x-0.5 transition-all shrink-0" />
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Create New Community Box */}
-      <div className="rounded-md border border-border bg-surface-raised p-5 space-y-3 shadow-1">
+      <div className="rounded-xl border border-border bg-surface-raised p-5 sm:p-6 space-y-4 shadow-2">
         <div>
           <div className="font-mono text-[9px] uppercase tracking-widest text-accent font-bold">
             FOUND A FREQUENCY
           </div>
-          <h3 className="font-heading font-bold text-sm text-text m-0">
+          <h3 className="font-heading font-bold text-base text-text m-0">
             Start a New Music Community
           </h3>
           <p className="font-sans text-xs text-text-muted mt-0.5">
-            Create an unlisted scene, sub-genre, or artist archive.
+            You will become the founding creator and moderator, with full rights to customize its banner, icon, rules, and vibe.
           </p>
         </div>
 
-        <form onSubmit={handleCreateTag} className="flex flex-wrap items-center gap-2">
-          <input
-            type="text"
-            placeholder="Community name (e.g. Cocteau Twins, Minimal Wave)"
-            value={newTagName}
-            onChange={(e) => setNewTagName(e.target.value)}
-            disabled={creating}
-            className="flex-1 min-w-[200px] h-9 px-3 rounded-md bg-surface-sunken border border-border text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
-          />
+        <form onSubmit={handleCreateTag} className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              placeholder="Community name (e.g. Cocteau Twins, Minimal Wave)"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              disabled={creating}
+              className="flex-1 min-w-[200px] h-9 px-3 rounded-md bg-surface-sunken border border-border text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+            />
 
-          <select
-            value={newTagType}
-            onChange={(e) => setNewTagType(e.target.value)}
-            disabled={creating}
-            className="h-9 px-3 rounded-md bg-surface-sunken border border-border font-mono text-xs text-text focus:border-accent outline-none cursor-pointer"
-          >
-            <option value="genre">Genre</option>
-            <option value="artist">Artist</option>
-            <option value="custom">Custom Discussion</option>
-          </select>
+            <select
+              value={newTagType}
+              onChange={(e) => setNewTagType(e.target.value)}
+              disabled={creating}
+              className="h-9 px-3 rounded-md bg-surface-sunken border border-border font-mono text-xs text-text focus:border-accent outline-none cursor-pointer"
+            >
+              <option value="genre">Genre</option>
+              <option value="artist">Artist</option>
+              <option value="custom">Custom Discussion</option>
+            </select>
+          </div>
 
-          <button
-            type="submit"
-            disabled={creating || !newTagName.trim()}
-            className="h-9 px-4 rounded-md bg-accent text-black hover:bg-accent-hover hover:text-black font-heading font-bold text-xs tracking-tight transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
-          >
-            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-            <span>{creating ? "Creating..." : "Create Scene"}</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              placeholder="Brief manifesto or description (optional)..."
+              value={newTagDesc}
+              onChange={(e) => setNewTagDesc(e.target.value)}
+              disabled={creating}
+              className="flex-1 min-w-[200px] h-9 px-3 rounded-md bg-surface-sunken border border-border text-xs text-text placeholder:text-text-dim outline-none focus:border-accent"
+            />
+
+            <button
+              type="submit"
+              disabled={creating || !newTagName.trim()}
+              className="h-9 px-4 rounded-md bg-accent text-black hover:bg-accent-hover hover:text-black font-heading font-bold text-xs tracking-tight transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+              <span>{creating ? "Founding..." : "Found Community"}</span>
+            </button>
+          </div>
         </form>
       </div>
 

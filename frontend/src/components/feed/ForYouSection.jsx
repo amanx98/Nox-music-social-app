@@ -5,7 +5,7 @@
  * Each card shows: album art, name, artist, score badge, and matching tags
  * ("why this?"). 30s Deezer preview plays on hover if available.
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sparkles, Loader2, Play, Pause, Info, Disc } from "lucide-react";
 import { getRecommendations } from "../../api/client";
 import { useAudio } from "../../context/AudioContext";

@@ -318,7 +318,7 @@ export default function ComposerModal({ isOpen, onClose, user, onSuccess, defaul
               >
                 {tags.map((t) => (
                   <option key={t.id} value={t.id}>
-                    #{t.name} ({t.type})
+                    c/{t.name} ({t.type})
                   </option>
                 ))}
               </select>

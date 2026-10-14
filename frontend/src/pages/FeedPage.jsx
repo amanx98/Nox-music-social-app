@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { useOutletContext, useNavigate } from "react-router-dom";
+import { useOutletContext, useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Radio, RefreshCw, AlertCircle, X } from "lucide-react";
-import { getThreads } from "../api/client";
+import { getThreads, getTag } from "../api/client";
 import FeaturedDiscussion from "../components/feed/FeaturedDiscussion";
 import ThreadCard from "../components/feed/ThreadCard";
 import DiscoveryRail from "../components/feed/DiscoveryRail";
@@ -10,6 +10,8 @@ import ForYouSection from "../components/feed/ForYouSection";
 import ThreadView from "../ThreadView";
 import ComposerModal from "../components/composer/ComposerModal";
 import EditPostModal from "../components/composer/EditPostModal";
+import CommunityBannerWindow from "../components/community/CommunityBannerWindow";
+import CommunitySettingsModal from "../components/community/CommunitySettingsModal";
 
 export default function FeedPage({ user: propUser }) {
   const navigate = useNavigate();
@@ -17,15 +19,55 @@ export default function FeedPage({ user: propUser }) {
   const user = propUser || context?.user;
   const contextOpenComposer = context?.onOpenComposer;
 
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tagParam = searchParams.get("tag");
+
   const [threads, setThreads] = useState([]);
   const [selectedTag, setSelectedTag] = useState(null);
   const [selectedThread, setSelectedThread] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Local Composer Modal & Edit Post Modal state
+  // Local Composer Modal, Edit Post Modal & Community Settings Modal state
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [editingThread, setEditingThread] = useState(null);
+  const [isCommunitySettingsOpen, setIsCommunitySettingsOpen] = useState(false);
+
+  // Sync ?tag= parameter from URL with full community metadata
+  useEffect(() => {
+    let active = true;
+    if (tagParam) {
+      getTag(tagParam)
+        .then((data) => {
+          if (active) setSelectedTag(data);
+        })
+        .catch(() => {
+          if (active) setSelectedTag({ name: tagParam });
+        });
+    } else {
+      setSelectedTag(null);
+    }
+    return () => {
+      active = false;
+    };
+  }, [tagParam]);
+
+  function handleSelectTag(tag) {
+    if (!tag) {
+      setSelectedTag(null);
+      setSearchParams({});
+    } else {
+      getTag(tag.name || tag.id)
+        .then((fullData) => {
+          setSelectedTag(fullData);
+          setSearchParams({ tag: fullData.name });
+        })
+        .catch(() => {
+          setSelectedTag(tag);
+          setSearchParams({ tag: tag.name });
+        });
+    }
+  }
 
   const loadFeedData = useCallback(async () => {
     setLoading(true);
@@ -117,34 +159,51 @@ export default function FeedPage({ user: propUser }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Main Feed Column (8 Cols on Desktop) */}
         <div className="lg:col-span-8 space-y-6">
-          {/* 4. Featured Discussion (Dominant content block roughly 2/3 desktop width) */}
-          <FeaturedDiscussion
-            thread={featuredThread}
-            onSelectThread={(t) => {
-              const target = t || featuredThread;
-              if (target?.id) navigate(`/threads/${target.id}`);
-              else setSelectedThread(target);
-            }}
-            onSelectTag={setSelectedTag}
-            onEdit={(t) => setEditingThread(t || featuredThread)}
-            currentUser={user}
-          />
+          {/* Reddit-Style Customizable Community Banner Window when a community is selected */}
+          {selectedTag && (
+            <CommunityBannerWindow
+              tag={selectedTag}
+              user={user}
+              onOpenSettings={() => setIsCommunitySettingsOpen(true)}
+              onOpenComposer={handleOpenComposer}
+              onTagUpdated={(updated) => setSelectedTag(updated)}
+            />
+          )}
+
+          {/* 4. Featured Discussion (Dominant content block roughly 2/3 desktop width) - hidden when filtering by community */}
+          {!selectedTag && (
+            <FeaturedDiscussion
+              thread={featuredThread}
+              onSelectThread={(t) => {
+                const target = t || featuredThread;
+                if (target?.id) navigate(`/threads/${target.id}`);
+                else setSelectedThread(target);
+              }}
+              onSelectTag={handleSelectTag}
+              onEdit={(t) => setEditingThread(t || featuredThread)}
+              currentUser={user}
+            />
+          )}
 
           {/* 5. Community Feed Section */}
           <section aria-labelledby="community-feed-heading" className="space-y-3">
             {/* Section Bar: "FROM YOUR CIRCLES" & "ADD YOUR TAKE" action */}
             <div className="flex items-center justify-between gap-3 pb-2 border-b border-border">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h2
                   id="community-feed-heading"
                   className="font-heading font-black text-sm uppercase tracking-wider text-text m-0"
                 >
-                  FROM YOUR CIRCLES
+                  {selectedTag ? `c/${selectedTag.name} DISPATCHES` : "FROM YOUR CIRCLES"}
                 </h2>
                 {selectedTag && (
-                  <span className="font-mono text-2xs text-accent px-1.5 py-0.2 rounded bg-surface-raised border border-accent/30">
-                    #{selectedTag.name}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/c/${encodeURIComponent(selectedTag.name)}`)}
+                    className="font-mono text-2xs text-accent hover:underline px-2 py-0.5 rounded bg-surface-raised border border-accent/30 cursor-pointer"
+                  >
+                    Open Dedicated Page →
+                  </button>
                 )}
               </div>
 
@@ -152,7 +211,7 @@ export default function FeedPage({ user: propUser }) {
                 {selectedTag && (
                   <button
                     type="button"
-                    onClick={() => setSelectedTag(null)}
+                    onClick={() => handleSelectTag(null)}
                     className="inline-flex items-center gap-1 font-mono text-[11px] text-text-dim hover:text-text px-2 py-0.5 rounded border border-border hover:bg-surface-raised transition-colors cursor-pointer"
                   >
                     <X className="w-3 h-3" />
@@ -235,7 +294,7 @@ export default function FeedPage({ user: propUser }) {
                       if (t?.id) navigate(`/threads/${t.id}`);
                       else setSelectedThread(t);
                     }}
-                    onSelectTag={setSelectedTag}
+                    onSelectTag={handleSelectTag}
                     onEdit={(threadToEdit) => setEditingThread(threadToEdit)}
                     currentUser={user}
                   />
@@ -249,7 +308,7 @@ export default function FeedPage({ user: propUser }) {
         <div className="lg:col-span-4 space-y-6">
           {/* 6. Discovery Rail */}
           <DiscoveryRail
-            onSelectTag={setSelectedTag}
+            onSelectTag={handleSelectTag}
             selectedTag={selectedTag}
           />
 
@@ -293,6 +352,17 @@ export default function FeedPage({ user: propUser }) {
         onClose={() => setEditingThread(null)}
         onSuccess={handleThreadUpdated}
       />
+
+      {/* Creator Community Customization Studio */}
+      {selectedTag && (
+        <CommunitySettingsModal
+          isOpen={isCommunitySettingsOpen}
+          onClose={() => setIsCommunitySettingsOpen(false)}
+          tag={selectedTag}
+          user={user}
+          onSuccess={(updated) => setSelectedTag(updated)}
+        />
+      )}
     </div>
   );
 }

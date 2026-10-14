@@ -9,6 +9,7 @@ import ThreadViewPage from "./pages/ThreadViewPage";
 import ProfilePage from "./pages/ProfilePage";
 import TopstersPage from "./pages/TopstersPage";
 import DiscoverPage from "./pages/DiscoverPage";
+import CommunityPage from "./pages/CommunityPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
@@ -113,6 +114,8 @@ function App() {
                 <Route path="threads/:threadId" element={<ThreadViewPage user={user} />} />
                 <Route path="topsters" element={<TopstersPage user={user} />} />
                 <Route path="discover" element={<DiscoverPage />} />
+                <Route path="c/:tagName" element={<CommunityPage user={user} />} />
+                <Route path="community/:tagName" element={<CommunityPage user={user} />} />
                 <Route
                   path="profile"
                   element={

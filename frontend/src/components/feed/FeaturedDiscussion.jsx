@@ -78,13 +78,20 @@ export default function FeaturedDiscussion({ thread, onSelectThread, onSelectTag
     >
       {/* Subtle Angle Accent Header Tab */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-surface-sunken/80">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="inline-flex items-center gap-1 font-mono text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-[3px] bg-accent text-black">
             <Flame className="w-2.5 h-2.5 fill-black" />
             FEATURED
           </span>
-          <span className="font-mono text-[10px] text-accent uppercase tracking-wider font-semibold">
-            {flair}
+          <button
+            type="button"
+            onClick={() => onSelectTag?.({ name: tagName, id: thread?.tag_id })}
+            className="font-mono text-[10px] text-accent hover:underline uppercase tracking-wider font-bold cursor-pointer"
+          >
+            c/{tagName}
+          </button>
+          <span className="font-mono text-[10px] text-text-dim uppercase tracking-wider font-semibold">
+            // {flair}
           </span>
         </div>
 

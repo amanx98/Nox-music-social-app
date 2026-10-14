@@ -162,11 +162,90 @@ export async function getTags() {
   return apiRequest("/tags/");
 }
 
-export async function createTag(name, type) {
+export async function getTag(nameOrId) {
+  return apiRequest(`/tags/${encodeURIComponent(nameOrId)}`);
+}
+
+export async function createTag(name, type = "genre", { description, rules, themeColor, bannerUrl, iconUrl } = {}) {
   return apiRequest("/tags/", {
     method: "POST",
-    body: JSON.stringify({ name, type }),
+    body: JSON.stringify({
+      name,
+      type,
+      description: description || null,
+      rules: rules || null,
+      theme_color: themeColor || null,
+      banner_url: bannerUrl || null,
+      icon_url: iconUrl || null,
+    }),
   });
+}
+
+export async function updateTag(tagId, data = {}) {
+  const payload = {};
+  if (data.name !== undefined) payload.name = data.name;
+  if (data.type !== undefined) payload.type = data.type;
+  if (data.description !== undefined) payload.description = data.description;
+  if (data.rules !== undefined) payload.rules = data.rules;
+  if (data.themeColor !== undefined) payload.theme_color = data.themeColor;
+  if (data.theme_color !== undefined) payload.theme_color = data.theme_color;
+  if (data.bannerUrl !== undefined) payload.banner_url = data.bannerUrl;
+  if (data.banner_url !== undefined) payload.banner_url = data.banner_url;
+  if (data.iconUrl !== undefined) payload.icon_url = data.iconUrl;
+  if (data.icon_url !== undefined) payload.icon_url = data.icon_url;
+
+  return apiRequest(`/tags/${tagId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadTagBanner(tagId, fileOrUrl) {
+  const token = localStorage.getItem("access_token");
+  const formData = new FormData();
+  if (fileOrUrl && (fileOrUrl instanceof File || fileOrUrl instanceof Blob)) {
+    formData.append("file", fileOrUrl);
+  } else if (typeof fileOrUrl === "string" && fileOrUrl.trim()) {
+    formData.append("image_url", fileOrUrl.trim());
+  } else {
+    formData.append("image_url", "");
+  }
+
+  const response = await fetch(`${API_BASE}/tags/${tagId}/banner`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update community banner");
+  }
+  return response.json();
+}
+
+export async function uploadTagIcon(tagId, fileOrUrl) {
+  const token = localStorage.getItem("access_token");
+  const formData = new FormData();
+  if (fileOrUrl && (fileOrUrl instanceof File || fileOrUrl instanceof Blob)) {
+    formData.append("file", fileOrUrl);
+  } else if (typeof fileOrUrl === "string" && fileOrUrl.trim()) {
+    formData.append("image_url", fileOrUrl.trim());
+  } else {
+    formData.append("image_url", "");
+  }
+
+  const response = await fetch(`${API_BASE}/tags/${tagId}/icon`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to update community icon");
+  }
+  return response.json();
 }
 
 export async function getThreads(tagId = null) {
