@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from app.db.session import get_session
 from app.models.lastfm_profile import LastfmProfile
@@ -8,7 +8,15 @@ from app.models.user import User
 from typing import Optional
 from app.core.deps import get_current_user, get_optional_current_user
 from app.core.security import decode_access_token
-from app.services.lastfm_client import get_lastfm_login_url, get_session_key
+from app.services.lastfm_client import (
+    get_lastfm_login_url,
+    get_session_key,
+    get_top_albums,
+    get_top_tracks,
+    get_top_artists,
+    get_artist_details,
+    get_now_playing,
+)
 
 import secrets
 import time
@@ -74,6 +82,13 @@ async def lastfm_callback(
     user_id = state_data["user_id"]
 
     session_data = await get_session_key(token)
+    if not session_data or "session" not in session_data:
+        err_msg = session_data.get("message") if isinstance(session_data, dict) else "Last.fm authentication failed"
+        raise HTTPException(
+            status_code=400,
+            detail=f"Last.fm authorization failed: {err_msg}. Please try connecting again."
+        )
+
     lastfm_session = session_data["session"]
 
     existing = session.exec(
@@ -102,22 +117,30 @@ def _resolve_lastfm_profile(
     current_user: Optional[User] = None,
     username: Optional[str] = None,
 ) -> Optional[LastfmProfile]:
-    if current_user:
-        p = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
-        if p:
-            return p
-
-    if username:
-        app_user = session.exec(select(User).where(User.username == username)).first()
+    # 1. When an explicit username is requested, resolve exclusively for that user
+    if username and username.strip():
+        clean_user = username.strip()
+        app_user = session.exec(
+            select(User).where(func.lower(User.username) == clean_user.lower())
+        ).first()
         if app_user:
-            p = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)).first()
-            if p:
-                return p
-        p = session.exec(select(LastfmProfile).where(LastfmProfile.lastfm_username == username)).first()
+            return session.exec(
+                select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)
+            ).first()
+
+        p = session.exec(
+            select(LastfmProfile).where(func.lower(LastfmProfile.lastfm_username) == clean_user.lower())
+        ).first()
         if p:
             return p
 
-    # Never leak another user's profile if the requested user hasn't linked Last.fm
+        # Allow querying raw Last.fm username directly if not an app user
+        return LastfmProfile(user_id=0, lastfm_username=clean_user, session_key="")
+
+    # 2. Only if no username was provided, fall back to current authenticated user
+    if current_user:
+        return session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
+
     return None
 
 @router.get("/status")
@@ -133,9 +156,6 @@ def get_lastfm_status(
         "username": profile.lastfm_username if profile else None,
     }
 
-from app.services.lastfm_client import get_lastfm_login_url, get_session_key, get_top_albums
-from sqlmodel import select
-
 @router.get("/top-albums")
 async def lastfm_top_albums(
     period: str = "overall",
@@ -144,11 +164,15 @@ async def lastfm_top_albums(
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     profile = _resolve_lastfm_profile(session, current_user, username)
-    if not profile:
+    if not profile or not profile.lastfm_username:
         raise HTTPException(status_code=404, detail="Last.fm not connected")
 
-    data = await get_top_albums(profile.lastfm_username, period=period)
-    albums = data.get("topalbums", {}).get("album", [])
+    try:
+        data = await get_top_albums(profile.lastfm_username, period=period)
+    except Exception:
+        return []
+
+    albums = (data.get("topalbums") or {}).get("album", [])
     if isinstance(albums, dict):
         albums = [albums]
     elif not isinstance(albums, list):
@@ -185,8 +209,6 @@ async def lastfm_top_albums(
         if isinstance(album, dict)
     ]
 
-from app.services.lastfm_client import get_lastfm_login_url, get_session_key, get_top_albums, get_top_tracks
-
 @router.get("/top-tracks")
 async def lastfm_top_tracks(
     period: str = "overall",
@@ -195,11 +217,15 @@ async def lastfm_top_tracks(
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     profile = _resolve_lastfm_profile(session, current_user, username)
-    if not profile:
+    if not profile or not profile.lastfm_username:
         raise HTTPException(status_code=404, detail="Last.fm not connected")
 
-    data = await get_top_tracks(profile.lastfm_username, period=period)
-    tracks = data.get("toptracks", {}).get("track", [])
+    try:
+        data = await get_top_tracks(profile.lastfm_username, period=period)
+    except Exception:
+        return []
+
+    tracks = (data.get("toptracks") or {}).get("track", [])
     if isinstance(tracks, dict):
         tracks = [tracks]
     elif not isinstance(tracks, list):
@@ -227,8 +253,6 @@ async def lastfm_top_tracks(
         if isinstance(t, dict)
     ]
 
-from app.services.lastfm_client import get_top_artists, get_artist_details
-
 @router.get("/top-artists")
 async def lastfm_top_artists(
     period: str = "overall",
@@ -237,11 +261,15 @@ async def lastfm_top_artists(
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
     profile = _resolve_lastfm_profile(session, current_user, username)
-    if not profile:
+    if not profile or not profile.lastfm_username:
         raise HTTPException(status_code=404, detail="Last.fm not connected")
 
-    data = await get_top_artists(profile.lastfm_username, period=period)
-    artists = data.get("topartists", {}).get("artist", [])
+    try:
+        data = await get_top_artists(profile.lastfm_username, period=period)
+    except Exception:
+        return []
+
+    artists = (data.get("topartists") or {}).get("artist", [])
     if isinstance(artists, dict):
         artists = [artists]
     elif not isinstance(artists, list):
@@ -253,11 +281,18 @@ async def lastfm_top_artists(
         if isinstance(a, dict)
     ]
 
-from app.services.lastfm_client import get_now_playing
-
 @router.get("/artist-details")
 async def lastfm_artist_details(artist: str):
-    return await get_artist_details(artist)
+    try:
+        return await get_artist_details(artist)
+    except Exception:
+        return {
+            "name": artist,
+            "image": None,
+            "images": [],
+            "fans": None,
+            "top_tracks": [],
+        }
 
 @router.get("/now-playing")
 async def lastfm_now_playing(
@@ -266,33 +301,41 @@ async def lastfm_now_playing(
     session: Session = Depends(get_session),
     current_user: Optional[User] = Depends(get_optional_current_user),
 ):
-    lfm_username = None
+    fallback_empty = {
+        "name": None,
+        "artist": None,
+        "album": None,
+        "is_now_playing": False,
+        "album_art": None,
+        "landscape_art": None,
+        "preview_url": None,
+    }
 
-    if username:
-        # Check if username belongs to an app user
-        app_user = session.exec(select(User).where(User.username == username)).first()
-        if app_user:
-            profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)).first()
+    try:
+        lfm_username = None
+
+        if username and username.strip():
+            clean_username = username.strip()
+            # Check if username belongs to an app user (case-insensitive)
+            app_user = session.exec(
+                select(User).where(func.lower(User.username) == clean_username.lower())
+            ).first()
+            if app_user:
+                profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == app_user.id)).first()
+                if profile:
+                    lfm_username = profile.lastfm_username
+            # Fall back to treating it as a raw Last.fm username, unless the caller
+            # only wants app users with a linked Last.fm account (e.g. the Circle strip).
+            if not lfm_username and not linked_only:
+                lfm_username = clean_username
+        elif current_user:
+            profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
             if profile:
                 lfm_username = profile.lastfm_username
-        # Fall back to treating it as a raw Last.fm username, unless the caller
-        # only wants app users with a linked Last.fm account (e.g. the Circle strip).
-        if not lfm_username and not linked_only:
-            lfm_username = username
-    elif current_user:
-        profile = session.exec(select(LastfmProfile).where(LastfmProfile.user_id == current_user.id)).first()
-        if profile:
-            lfm_username = profile.lastfm_username
 
-    if not lfm_username:
-        return {
-            "name": None,
-            "artist": None,
-            "album": None,
-            "is_now_playing": False,
-            "album_art": None,
-            "landscape_art": None,
-            "preview_url": None,
-        }
+        if not lfm_username:
+            return fallback_empty
 
-    return await get_now_playing(lfm_username)
+        return await get_now_playing(lfm_username)
+    except Exception:
+        return fallback_empty

@@ -11,24 +11,26 @@ const PERIODS = [
   { value: "12month", label: "1 Year" },
 ];
 
-export default function TopArtists({ onSelectTag }) {
+export default function TopArtists({ onSelectTag, username = null, limit = null, isSelf = true }) {
   const [artists, setArtists] = useState([]);
   const [period, setPeriod] = useState("overall");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isNotConnected, setIsNotConnected] = useState(false);
   const [viewMode, setViewMode] = useState("grid"); // "grid" | "list"
   const [selectedArtist, setSelectedArtist] = useState(null);
   const [artistPhotos, setArtistPhotos] = useState({});
 
   useEffect(() => {
     loadArtists(period);
-  }, [period]);
+  }, [period, username]);
 
   async function loadArtists(p) {
     setLoading(true);
     setError("");
+    setIsNotConnected(false);
     try {
-      const data = await getTopArtists(p);
+      const data = await getTopArtists(p, username);
       const list = Array.isArray(data) ? data : [];
       setArtists(list);
 
@@ -49,13 +51,19 @@ export default function TopArtists({ onSelectTag }) {
       });
     } catch (err) {
       setArtists([]);
-      setError(err.message || "Failed to load artists");
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes("not connected") || msg.includes("404")) {
+        setIsNotConnected(true);
+      } else {
+        setError(msg || "Failed to load artists");
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  const safeArtists = Array.isArray(artists) ? artists : [];
+  const rawArtists = Array.isArray(artists) ? artists : [];
+  const safeArtists = limit ? rawArtists.slice(0, limit) : rawArtists;
   const maxPlays = safeArtists.length > 0 ? Math.max(...safeArtists.map((a) => parseInt(a?.playcount || 0, 10))) : 1;
 
   return (
@@ -65,7 +73,7 @@ export default function TopArtists({ onSelectTag }) {
         <div>
           <h3 className="font-heading font-bold text-base text-text m-0">Top Artists</h3>
           <p className="font-sans text-xs text-text-muted mt-0.5 m-0">
-            Top listened artists from your Last.fm history.
+            {username ? `Top listened artists from @${username}'s Last.fm history.` : "Top listened artists from your Last.fm history."}
           </p>
         </div>
 
@@ -121,22 +129,47 @@ export default function TopArtists({ onSelectTag }) {
         </div>
       </div>
 
-      {error ? (
+      {isNotConnected ? (
+        <div className="p-6 rounded-md border border-border bg-surface text-center space-y-3">
+          <p className="font-sans text-xs text-text-muted m-0">
+            {isSelf
+              ? "Connect your Last.fm account to sync and display your top artists."
+              : `@${username || "This user"} hasn't linked a Last.fm scrobbler account yet.`}
+          </p>
+          {isSelf && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await connectLastfm();
+                } catch (err) {
+                  setError(err.message || "Failed to initiate Last.fm connection");
+                }
+              }}
+              className="inline-flex items-center justify-center h-8 px-4 rounded-md text-xs font-heading font-bold bg-accent text-black hover:bg-accent-hover transition-colors cursor-pointer"
+            >
+              Connect Last.fm
+            </button>
+          )}
+        </div>
+      ) : error ? (
         <div className="p-4 rounded-md border border-border bg-surface text-center space-y-2">
           <p className="font-sans text-xs text-text-muted m-0">{error}</p>
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await connectLastfm();
-              } catch (err) {
-                setError(err.message || "Failed to initiate Last.fm connection");
-              }
-            }}
-            className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-black hover:bg-accent-hover transition-colors cursor-pointer"
-          >
-            Connect Last.fm
-          </button>
+          {isSelf && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await connectLastfm();
+                } catch (err) {
+                  setError(err.message || "Failed to initiate Last.fm connection");
+                }
+              }}
+              className="inline-flex items-center justify-center h-8 px-3.5 rounded-md text-xs font-heading font-bold bg-accent text-black hover:bg-accent-hover transition-colors cursor-pointer"
+            >
+              Connect Last.fm
+            </button>
+          )}
         </div>
       ) : loading ? (
         <div className="text-center py-8">

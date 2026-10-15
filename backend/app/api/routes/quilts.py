@@ -38,8 +38,11 @@ async def create_quilt(
     limit = (grid_size * grid_size) + 20
 
     if quilt_type == "tracks":
-        data = await get_top_tracks(profile.lastfm_username, period=period, limit=limit)
-        items_raw = data.get("toptracks", {}).get("track", [])
+        try:
+            data = await get_top_tracks(profile.lastfm_username, period=period, limit=limit)
+        except Exception:
+            data = {}
+        items_raw = (data.get("toptracks") or {}).get("track", [])
         if isinstance(items_raw, dict):
             items_raw = [items_raw]
         elif not isinstance(items_raw, list):
@@ -58,8 +61,11 @@ async def create_quilt(
                 "artist": artist_name,
             })
     else:
-        data = await get_top_albums(profile.lastfm_username, period=period, limit=limit)
-        items_raw = data.get("topalbums", {}).get("album", [])
+        try:
+            data = await get_top_albums(profile.lastfm_username, period=period, limit=limit)
+        except Exception:
+            data = {}
+        items_raw = (data.get("topalbums") or {}).get("album", [])
         if isinstance(items_raw, dict):
             items_raw = [items_raw]
         elif not isinstance(items_raw, list):
@@ -81,6 +87,12 @@ async def create_quilt(
                 "name": a.get("name", ""),
                 "artist": artist_name,
             })
+
+    if not albums:
+        raise HTTPException(
+            status_code=400,
+            detail="No scrobbled records found on Last.fm for this time period. Try selecting 'All Time'."
+        )
 
     filepath = await generate_quilt(albums, grid_size=grid_size)
 

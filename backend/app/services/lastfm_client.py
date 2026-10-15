@@ -1,4 +1,5 @@
 import hashlib
+import re
 from typing import Optional
 import urllib.parse
 from app.core.config import settings
@@ -30,10 +31,17 @@ async def get_session_key(token: str) -> dict:
     params["api_sig"] = _sign_params(params)
     params["format"] = "json"
 
-    async with get_async_client(timeout=10.0) as client:
-        response = await client.get(LASTFM_API_BASE, params=params)
-        response.raise_for_status()
-        return response.json()
+    try:
+        async with get_async_client(timeout=10.0) as client:
+            response = await client.get(LASTFM_API_BASE, params=params)
+            if response.status_code == 200:
+                return response.json()
+            try:
+                return response.json()
+            except Exception:
+                return {"error": response.status_code, "message": "Failed to exchange session key"}
+    except Exception as e:
+        return {"error": 500, "message": str(e)}
 
 async def get_top_albums(username: str, period: str = "overall", limit: int = 9) -> dict:
     params = {
@@ -44,10 +52,16 @@ async def get_top_albums(username: str, period: str = "overall", limit: int = 9)
         "limit": limit,
         "format": "json",
     }
-    async with get_async_client() as client:
-        response = await client.get(LASTFM_API_BASE, params=params)
-        response.raise_for_status()
-        return response.json()
+    try:
+        async with get_async_client(timeout=10.0) as client:
+            response = await client.get(LASTFM_API_BASE, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                if "error" not in data and "topalbums" in data:
+                    return data
+            return {"topalbums": {"album": []}}
+    except Exception:
+        return {"topalbums": {"album": []}}
 
 async def get_top_tracks(username: str, period: str = "overall", limit: int = 9) -> dict:
     params = {
@@ -58,10 +72,16 @@ async def get_top_tracks(username: str, period: str = "overall", limit: int = 9)
         "limit": limit,
         "format": "json",
     }
-    async with get_async_client() as client:
-        response = await client.get(LASTFM_API_BASE, params=params)
-        response.raise_for_status()
-        return response.json()
+    try:
+        async with get_async_client(timeout=10.0) as client:
+            response = await client.get(LASTFM_API_BASE, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                if "error" not in data and "toptracks" in data:
+                    return data
+            return {"toptracks": {"track": []}}
+    except Exception:
+        return {"toptracks": {"track": []}}
 
 async def get_track_album_art(artist: str, track: str) -> str | None:
     params = {
@@ -71,17 +91,21 @@ async def get_track_album_art(artist: str, track: str) -> str | None:
         "track": track,
         "format": "json",
     }
-    async with get_async_client() as client:
-        response = await client.get(LASTFM_API_BASE, params=params)
-        if response.status_code != 200:
-            return None
-        data = response.json()
-        images = data.get("track", {}).get("album", {}).get("image", [])
-        url = next((img["#text"] for img in images if img["size"] == "extralarge"), None)
-        # Last.fm's placeholder has this hash in the URL — skip it if found
-        if url and "2a96cbd8b46e442fc41c2b86b821562f" in url:
-            return None
-        return url
+    try:
+        async with get_async_client(timeout=6.0) as client:
+            response = await client.get(LASTFM_API_BASE, params=params)
+            if response.status_code != 200:
+                return None
+            data = response.json()
+            images = (data.get("track") or {}).get("album", {}).get("image", [])
+            if not isinstance(images, list):
+                return None
+            url = next((img.get("#text") for img in images if isinstance(img, dict) and img.get("size") == "extralarge"), None)
+            if url and "2a96cbd8b46e442fc41c2b86b821562f" in url:
+                return None
+            return url
+    except Exception:
+        return None
 
 async def get_top_artists(username: str, period: str = "overall", limit: int = 9) -> dict:
     params = {
@@ -92,10 +116,16 @@ async def get_top_artists(username: str, period: str = "overall", limit: int = 9
         "limit": limit,
         "format": "json",
     }
-    async with get_async_client() as client:
-        response = await client.get(LASTFM_API_BASE, params=params)
-        response.raise_for_status()
-        return response.json()
+    try:
+        async with get_async_client(timeout=10.0) as client:
+            response = await client.get(LASTFM_API_BASE, params=params)
+            if response.status_code == 200:
+                data = response.json()
+                if "error" not in data and "topartists" in data:
+                    return data
+            return {"topartists": {"artist": []}}
+    except Exception:
+        return {"topartists": {"artist": []}}
 
 async def get_artist_details(artist_name: str) -> dict:
     result = {
@@ -131,7 +161,6 @@ async def get_artist_details(artist_name: str) -> dict:
                                 search_data = search_resp.json().get("data", [])
                                 if search_data:
                                     # Verify the track actually belongs to the exact artist to prevent fuzzy-match bleeding
-                                    import re
                                     found_artist = search_data[0].get("artist", {})
                                     found_norm = re.sub(r'[^a-z0-9]', '', found_artist.get("name", "").lower())
                                     req_norm = re.sub(r'[^a-z0-9]', '', artist_name.lower())

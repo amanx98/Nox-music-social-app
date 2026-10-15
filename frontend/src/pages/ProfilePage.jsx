@@ -225,10 +225,13 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
   const previewAudioRef = useRef(null);
 
   const fetchNowPlaying = useCallback(async () => {
+    if (!displayUsername || displayUsername === "Listener" || displayUsername === "guest") return;
     try {
       const data = await getNowPlaying(displayUsername);
       if (data?.name && data?.artist) {
         setNowPlaying(data);
+      } else {
+        setNowPlaying(null);
       }
     } catch {
       // Ignore
@@ -2039,7 +2042,7 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
                 <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
-            <TopAlbums limit={4} compact />
+            <TopAlbums username={displayUsername} limit={4} compact isSelf={isSelf} />
           </div>
         </div>
       )}
@@ -2047,7 +2050,7 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
       {/* CONTENT FOR TAB: QUILTS */}
       {activeTab === "quilts" && (
         <div className="space-y-4">
-          <QuiltGallery user={user} />
+          <QuiltGallery user={isSelf ? user : (profileData || { username: displayUsername })} />
         </div>
       )}
 
@@ -2055,10 +2058,10 @@ export default function ProfilePage({ user: propUser, initialTab = "posts", onLo
       {activeTab === "stats" && (
         <div className="space-y-8">
           <ErrorBoundary>
-            <TopAlbums />
+            <TopAlbums username={displayUsername} isSelf={isSelf} />
           </ErrorBoundary>
           <ErrorBoundary>
-            <TopArtists />
+            <TopArtists username={displayUsername} isSelf={isSelf} />
           </ErrorBoundary>
         </div>
       )}

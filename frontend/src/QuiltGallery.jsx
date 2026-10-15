@@ -106,7 +106,7 @@ export default function QuiltGallery({ user }) {
   useEffect(() => {
     loadBentoAlbums(bentoPeriod);
     loadQuilts();
-  }, [bentoPeriod]);
+  }, [bentoPeriod, user?.username]);
 
   useEffect(() => {
     localStorage.setItem("nox_quilt_folders", JSON.stringify(folders));

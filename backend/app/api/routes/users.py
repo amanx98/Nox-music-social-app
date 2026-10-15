@@ -81,15 +81,15 @@ def get_user_profile(
     # Counts
     followers_count = session.exec(
         select(func.count(UserFollow.id)).where(UserFollow.following_id == target.id)
-    ).one()
+    ).one_or_none() or 0
 
     following_count = session.exec(
         select(func.count(UserFollow.id)).where(UserFollow.follower_id == target.id)
-    ).one()
+    ).one_or_none() or 0
 
     threads_count = session.exec(
         select(func.count(Thread.id)).where(Thread.user_id == target.id)
-    ).one()
+    ).one_or_none() or 0
 
     # Friends count (accepted relationships)
     friends_count = session.exec(
@@ -100,7 +100,7 @@ def get_user_profile(
                 Friendship.receiver_id == target.id,
             ),
         )
-    ).one()
+    ).one_or_none() or 0
 
     is_following = False
     is_followed_by = False
